@@ -28,6 +28,7 @@ fi
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+CENTRAL_CONFIG="${PROJECT_ROOT}/configs/config.yml"
 
 # Source common hardening functions
 if [ -f "${SCRIPT_DIR}/../shared/hardening_common.sh" ]; then
@@ -37,16 +38,25 @@ else
     exit 1
 fi
 
-# Configuration
-# Default SSH port (can be changed via environment variable)
-SSH_PORT="${SSH_PORT:-22}"
-SSH_TIMEOUT="${SSH_TIMEOUT:-300}"
-
-# Firewall configuration
-# Ports to open: SSH (required), and any collector ports
-# Collector ports can be customized via environment variable
-COLLECTOR_PORTS="${COLLECTOR_PORTS:-}"
-ALLOWED_NETWORK="${ALLOWED_NETWORK:-}"
+# Load configuration from central config.yml
+if [ -f "$CENTRAL_CONFIG" ] && command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+    # Read hardening configuration from config.yml
+    SSH_PORT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('ssh', {}).get('port', 22))" 2>/dev/null || echo "22")
+    SSH_TIMEOUT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('ssh', {}).get('timeout', 300))" 2>/dev/null || echo "300")
+    ALLOWED_NETWORK=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('firewall', {}).get('allowed_network', ''))" 2>/dev/null || echo "")
+    COLLECTOR_PORTS=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('vm01', {}).get('collector_ports', ''))" 2>/dev/null || echo "")
+    ENABLE_AUDITD=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('vm01', {}).get('enable_auditd', False))" 2>/dev/null || echo "False")
+    
+    log_info "Configuration loaded from: $CENTRAL_CONFIG"
+else
+    # Fallback to environment variables or defaults
+    log_warn "Central config.yml not found or Python/yaml not available, using defaults or environment variables"
+    SSH_PORT="${SSH_PORT:-22}"
+    SSH_TIMEOUT="${SSH_TIMEOUT:-300}"
+    ALLOWED_NETWORK="${ALLOWED_NETWORK:-}"
+    COLLECTOR_PORTS="${COLLECTOR_PORTS:-}"
+    ENABLE_AUDITD="${ENABLE_AUDITD:-false}"
+fi
 
 # Build firewall ports list
 FIREWALL_PORTS="$SSH_PORT"
@@ -144,7 +154,7 @@ echo ""
 # ============================================
 # 6. Optional: System Auditing (auditd)
 # ============================================
-if [ "${ENABLE_AUDITD:-false}" = "true" ]; then
+if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
     echo "=========================================="
     echo "  6. System Auditing (auditd)"
     echo "=========================================="

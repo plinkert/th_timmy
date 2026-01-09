@@ -99,3 +99,37 @@ backup:
   retention_days: 30  # Keep backups for 30 days
   backup_dir: "/var/backups/threat-hunting"
 
+# Hardening Configuration (applies to all VMs)
+hardening:
+  # SSH Configuration (common for all VMs)
+  ssh:
+    port: 22                    # SSH port (default: 22)
+    timeout: 300                # SSH connection timeout in seconds
+    disable_root_login: true     # Disable root login via SSH
+  
+  # Firewall Configuration (common for all VMs)
+  firewall:
+    allowed_network: ""          # Network CIDR to allow (e.g., "192.168.244.0/24")
+                                 # If empty, ports are open to all (less secure)
+                                 # Recommended: restrict to your subnet
+  
+  # VM-01 specific hardening settings
+  vm01:
+    collector_ports: ""          # Comma-separated collector ports (e.g., "8080,9090")
+                                 # These ports will be opened in firewall
+    enable_auditd: false        # Enable system auditing with auditd (optional)
+  
+  # VM-02 specific hardening settings
+  vm02:
+    enable_auditd: false         # Enable system auditing with auditd (optional)
+                                 # Note: PostgreSQL access is controlled via pg_hba.conf
+                                 # in hosts/vm02-database/config.yml
+  
+  # VM-03 specific hardening settings
+  vm03:
+    enable_auditd: false         # Enable system auditing with auditd (optional)
+  
+  # VM-04 specific hardening settings
+  vm04:
+    enable_auditd: false         # Enable system auditing with auditd (optional)
+
