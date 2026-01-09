@@ -11,14 +11,14 @@
 
 set -e
 
-# Kolory dla outputu
+# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Funkcje logowania
+# Logging functions
 log_info() {
     echo -e "${BLUE}[CHECK]${NC} $1"
 }
@@ -96,7 +96,7 @@ check() {
 # Function to check Python version
 check_python_version() {
     TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
-    log_info "Sprawdzam: Python 3.10+"
+    log_info "Checking: Python 3.10+"
     
     if command -v python3 &> /dev/null; then
         version=$(python3 --version 2>&1 | awk '{print $2}')
@@ -239,7 +239,7 @@ check "nano" "nano --version" "GNU nano"
 echo ""
 
 # ============================================
-# 3. Sprawdzenie PostgreSQL
+# 3. PostgreSQL Check
 # ============================================
 echo "--- PostgreSQL ---"
 check_postgresql
@@ -321,9 +321,9 @@ check_database
 echo ""
 
 # ============================================
-# 9. Sprawdzenie konfiguracji PostgreSQL
+# 9. PostgreSQL Configuration Check
 # ============================================
-echo "--- Konfiguracja PostgreSQL ---"
+echo "--- PostgreSQL Configuration ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 log_info "Checking: PostgreSQL configuration"
 
@@ -456,7 +456,98 @@ fi
 echo ""
 
 # ============================================
-# 12. Podsumowanie
+# 12. Data Retention Configuration Check
+# ============================================
+if [ -f "$CONFIG_FILE" ]; then
+    echo "=========================================="
+    echo "  Data Retention Configuration"
+    echo "=========================================="
+    
+    # Check retention configuration
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+    log_info "Checking: Data retention configuration"
+    
+    # Parse retention config
+    RETENTION_DAYS=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('retention_days', 0))" 2>/dev/null || echo "0")
+    AUTO_CLEANUP=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('auto_cleanup', False))" 2>/dev/null || echo "False")
+    
+    if [ "$RETENTION_DAYS" -gt 0 ]; then
+        if [ "$RETENTION_DAYS" -eq 90 ]; then
+            log_success "Data retention configured: $RETENTION_DAYS days (production-ready)"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        else
+            log_warn "Data retention configured: $RETENTION_DAYS days (expected 90 days)"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    else
+        log_warn "Data retention not configured in config.yml"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+    
+    # Check if cleanup function exists
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+    log_info "Checking: cleanup_old_data() function"
+    
+    # Get database name and user from config
+    DB_NAME=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('postgresql', {}).get('database_name', 'threat_hunting'))" 2>/dev/null || echo "threat_hunting")
+    
+    if sudo -u postgres psql -d "$DB_NAME" -tAc "SELECT 1 FROM pg_proc WHERE proname='cleanup_old_data'" 2>/dev/null | grep -q 1; then
+        log_success "cleanup_old_data() function exists"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    else
+        log_warn "cleanup_old_data() function not found (may need to run install_vm02.sh)"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+    
+    # Check if cleanup_log table exists
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+    log_info "Checking: cleanup_log table"
+    
+    if sudo -u postgres psql -d "$DB_NAME" -tAc "SELECT 1 FROM information_schema.tables WHERE table_name='cleanup_log'" 2>/dev/null | grep -q 1; then
+        log_success "cleanup_log table exists"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    else
+        log_warn "cleanup_log table not found (will be created on first cleanup run)"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+    
+    # Check if automatic cleanup is configured (pg_cron or system cron)
+    if [ "$AUTO_CLEANUP" = "True" ] || [ "$AUTO_CLEANUP" = "true" ]; then
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Checking: Automatic cleanup scheduling"
+        
+        # Check pg_cron
+        PG_CRON_EXISTS=false
+        if sudo -u postgres psql -d "$DB_NAME" -tAc "SELECT 1 FROM pg_extension WHERE extname='pg_cron'" 2>/dev/null | grep -q 1; then
+            if sudo -u postgres psql -d "$DB_NAME" -tAc "SELECT 1 FROM cron.job WHERE jobname='cleanup-old-data'" 2>/dev/null | grep -q 1; then
+                log_success "Automatic cleanup scheduled via pg_cron"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+                PG_CRON_EXISTS=true
+            fi
+        fi
+        
+        # Check system cron if pg_cron not found
+        if [ "$PG_CRON_EXISTS" = "false" ]; then
+            if crontab -l 2>/dev/null | grep -q "cleanup_postgres_data.sh"; then
+                log_success "Automatic cleanup scheduled via system cron"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "Automatic cleanup enabled but no cron job found"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        fi
+    else
+        log_info "Automatic cleanup is disabled (set auto_cleanup: true to enable)"
+    fi
+    
+    echo ""
+else
+    log_info "Skipping retention checks (config.yml not found)"
+    echo ""
+fi
+
+# ============================================
+# 13. Summary
 # ============================================
 echo "=========================================="
 echo "  Summary"
