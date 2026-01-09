@@ -5,7 +5,8 @@ Installation and verification scripts for VM-03 (Analysis/Jupyter - JupyterLab).
 ## Files
 
 - `install_vm03.sh` - Installation script for all required tools
-- `health_check.sh` - Installation verification script
+- `health_check.sh` - Installation verification script (includes optional connection tests)
+- `harden_vm03.sh` - Security hardening script
 - `requirements.txt` - List of Python packages required for VM-03
 - `config.example.yml` - Example configuration file (optional)
 - `config.yml` - Configuration file (optional, to be created by user)
@@ -112,6 +113,7 @@ After installation, run the verification script:
 - ✅ JupyterLab service (if enabled)
 - ✅ Port 8888 and firewall
 - ✅ Locale configuration
+- ✅ **Optional:** Connection tests to VM-02 (PostgreSQL) and VM-04 (n8n) if `configs/config.yml` exists
 
 ## Running JupyterLab
 
@@ -180,6 +182,39 @@ If using a token, you can find it in:
 Detailed requirements can be found in:
 - `../../INPUT/VM03_TOOLS_REQUIREMENTS.md`
 
+## Hardening
+
+After installation, you can apply security hardening to VM-03:
+
+```bash
+cd /path/to/th_timmy/hosts/vm03-analysis
+sudo ./harden_vm03.sh
+```
+
+**What does hardening do?**
+- Configures firewall (ufw): SSH and JupyterLab port (8888)
+- Hardens SSH configuration (port, timeout, disable root login)
+- Installs and configures Fail2ban for SSH protection
+- Configures Logrotate for JupyterLab logs
+- Verifies JupyterLab security settings (file upload restrictions)
+- Optionally enables auditd for system auditing
+
+**Configuration:**
+Hardening settings are read from `configs/config.yml`:
+```yaml
+hardening:
+  ssh:
+    port: 22
+    timeout: 300
+    disable_root_login: true
+  firewall:
+    allowed_network: "192.168.244.0/24"  # Optional: restrict access
+  vm03:
+    enable_auditd: false  # Optional: enable system auditing
+```
+
+**Note:** The hardening script sources `hosts/shared/hardening_common.sh` for common functions.
+
 ## Security
 
 ⚠️ **IMPORTANT:**
@@ -187,3 +222,4 @@ Detailed requirements can be found in:
 - Use tokens instead of passwords for security
 - Limit firewall access only to trusted IPs
 - Regularly update JupyterLab and Python packages
+- Run hardening script after installation for production environments
