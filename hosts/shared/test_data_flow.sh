@@ -230,7 +230,8 @@ test_db_read() {
     
     local db_password="${POSTGRES_PASSWORD:-}"
     if [ -z "$db_password" ]; then
-        warn "Database password not set, skipping read test"
+        warn "Database password not set (POSTGRES_PASSWORD), skipping read test"
+        info "To enable database tests, set: export POSTGRES_PASSWORD='your_password'"
         deactivate 2>/dev/null || true
         return 1
     fi
