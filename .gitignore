@@ -35,6 +35,9 @@ configs/*.local.yml
 secrets/
 credentials/
 
+# Test results
+test_results/
+
 # Database
 *.sql
 *.dump

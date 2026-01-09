@@ -1,0 +1,101 @@
+# Threat Hunting Lab - Example Configuration
+# Copy this file to config.yml and fill in values
+# WARNING: DO NOT COMMIT config.yml file with real IP addresses and passwords!
+
+# VM Configuration
+vms:
+  vm01:
+    name: "threat-hunt-vm01"
+    ip: "10.0.0.10"  # REPLACE with real IP address
+    role: "ingest-parser"
+    enabled: true
+    ssh_user: "thadmin"  # Optional: SSH user for remote access
+    ssh_port: 22  # Optional: SSH port (default 22)
+  
+  vm02:
+    name: "threat-hunt-vm02"
+    ip: "10.0.0.11"  # REPLACE with real IP address
+    role: "database"
+    enabled: true
+    ssh_user: "thadmin"  # Optional: SSH user for remote access
+    ssh_port: 22  # Optional: SSH port (default 22)
+  
+  vm03:
+    name: "threat-hunt-vm03"
+    ip: "10.0.0.12"  # REPLACE with real IP address
+    role: "analysis-jupyter"
+    enabled: true
+    ssh_user: "thadmin"  # Optional: SSH user for remote access
+    ssh_port: 22  # Optional: SSH port (default 22)
+  
+  vm04:
+    name: "threat-hunt-vm04"
+    ip: "10.0.0.13"  # REPLACE with real IP address
+    role: "orchestrator-n8n"
+    enabled: true
+    ssh_user: "thadmin"  # Optional: SSH user for remote access
+    ssh_port: 22  # Optional: SSH port (default 22)
+
+# Network Configuration
+network:
+  subnet: "10.0.0.0/24"  # REPLACE with real subnet
+  gateway: "10.0.0.1"     # REPLACE with real gateway
+  dns_servers:  # Optional: Custom DNS servers
+    - "8.8.8.8"
+    - "8.8.4.4"
+
+# Service Ports
+services:
+  postgresql:
+    port: 5432
+    host: "vm02"  # Reference to VM-02
+  jupyterlab:
+    port: 8888
+    host: "vm03"  # Reference to VM-03
+  n8n:
+    port: 5678
+    host: "vm04"  # Reference to VM-04
+
+# Database Configuration
+database:
+  host: "vm02"  # Or use IP address from vms.vm02.ip
+  port: 5432
+  name: "threat_hunting"
+  user: "threat_hunter"
+  # password: Set in .env file or use environment variable
+  # Connection pool settings
+  pool_size: 10
+  max_overflow: 20
+  pool_timeout: 30
+
+# Logging Configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file: "logs/threat-hunting-lab.log"
+  max_size: "10MB"
+  backup_count: 5
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Results Configuration
+results:
+  output_dir: "results"
+  format: "json"  # json, csv, xlsx
+  retention_days: 90  # Data retention: 90 days (production-ready)
+
+# Security Configuration
+security:
+  anonymize_pii: true
+  hash_sensitive_fields: true
+  encryption_enabled: true
+  # SSL/TLS settings (optional)
+  ssl_enabled: false
+  ssl_cert_path: ""  # Path to SSL certificate
+  ssl_key_path: ""   # Path to SSL private key
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2:00 AM (cron format)
+  retention_days: 30  # Keep backups for 30 days
+  backup_dir: "/var/backups/threat-hunting"
+

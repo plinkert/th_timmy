@@ -86,13 +86,31 @@ pip install -r requirements.txt
 
 ### Configuration
 
-1. Copy example configuration files:
+#### Central Configuration File
+
+The central configuration file (`configs/config.yml`) contains network settings, VM IP addresses, and service configurations for all VMs.
+
+1. Copy the example configuration file:
    ```bash
    cp configs/config.example.yml configs/config.yml
-   cp configs/env.example .env
    ```
 
-2. Edit configuration files with your settings (never commit these!)
+2. Edit `configs/config.yml` with your actual settings:
+   - Replace placeholder IP addresses with your VM IPs
+   - Configure network subnet and gateway
+   - Set service ports if different from defaults
+   - Configure data retention (default: 90 days)
+
+3. **Important**: Never commit `configs/config.yml` to the repository (it's in `.gitignore`)
+
+#### VM-Specific Configuration
+
+Each VM has its own configuration file in `hosts/vmXX-*/config.example.yml`:
+- **VM-02**: Database configuration (PostgreSQL settings, allowed IPs)
+- **VM-03**: JupyterLab configuration (IP, port, token/password)
+- **VM-04**: n8n configuration (port, basic auth credentials)
+
+See [Configuration Documentation](docs/CONFIGURATION.md) for detailed instructions.
 
 ## License
 
