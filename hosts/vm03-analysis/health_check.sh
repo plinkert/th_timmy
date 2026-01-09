@@ -421,7 +421,237 @@ fi
 echo ""
 
 # ============================================
-# 11. Sprawdzenie locale
+# 11. Connection Tests (Optional)
+# ============================================
+# These tests are optional - only run if configs/config.yml exists
+if [ -f "$PROJECT_ROOT/configs/config.yml" ]; then
+    echo "=========================================="
+    echo "  Connection Tests (Optional)"
+    echo "=========================================="
+    
+    # Function to test database connection from VM-03 to VM-02
+    test_db_connection_from_vm03() {
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing connection to PostgreSQL on VM-02"
+        
+        # Extract VM-02 IP from config.yml
+        local vm02_ip=""
+        if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+            vm02_ip=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm02', {}).get('ip', ''))" 2>/dev/null || echo "")
+        fi
+        
+        # Fallback to grep if Python parsing failed
+        if [ -z "$vm02_ip" ]; then
+            vm02_ip=$(grep -E "vm02:" "$PROJECT_ROOT/configs/config.yml" -A 3 | grep -E "ip:" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
+        fi
+        
+        if [ -z "$vm02_ip" ]; then
+            log_warn "Could not extract VM-02 IP from config.yml"
+            WARNINGS=$((WARNINGS + 1))
+            return 1
+        fi
+        
+        log_info "VM-02 IP: $vm02_ip"
+        
+        # Test 1: Ping to VM-02
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing ping to VM-02 ($vm02_ip)"
+        if ping -c 2 -W 2 "$vm02_ip" &> /dev/null; then
+            log_success "Ping to VM-02: OK"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        else
+            log_error "Ping to VM-02: FAILED"
+            FAILED_CHECKS=$((FAILED_CHECKS + 1))
+            return 1
+        fi
+        
+        # Test 2: Port connectivity (PostgreSQL port 5432)
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing PostgreSQL port (5432) on VM-02"
+        if command -v nc &> /dev/null; then
+            if nc -z -w 2 "$vm02_ip" 5432 2>/dev/null; then
+                log_success "PostgreSQL port (5432) on VM-02: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "PostgreSQL port (5432) on VM-02: not accessible (PostgreSQL may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        elif command -v timeout &> /dev/null && command -v bash &> /dev/null; then
+            # Fallback: use bash with /dev/tcp
+            if timeout 2 bash -c "echo > /dev/tcp/$vm02_ip/5432" 2>/dev/null; then
+                log_success "PostgreSQL port (5432) on VM-02: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "PostgreSQL port (5432) on VM-02: not accessible (PostgreSQL may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        else
+            log_warn "Port test tools not available (nc or bash with /dev/tcp)"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+        
+        # Test 3: Database authentication (if psycopg2 is available and password is set)
+        if [ -n "${POSTGRES_PASSWORD:-}" ] && [ -d "$PROJECT_ROOT/venv" ]; then
+            TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+            log_info "Testing database authentication"
+            
+            # Activate virtual environment
+            source "$PROJECT_ROOT/venv/bin/activate" 2>/dev/null || true
+            
+            # Check if psycopg2 is available
+            if python3 -c "import psycopg2" 2>/dev/null || python3 -c "import psycopg2_binary" 2>/dev/null; then
+                # Extract database config
+                local db_host="$vm02_ip"
+                local db_port="5432"
+                local db_name="threat_hunting"
+                local db_user="threat_hunter"
+                
+                if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+                    db_host=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); h=d.get('database', {}).get('host', ''); print(d.get('vms', {}).get('vm02', {}).get('ip', '') if h == 'vm02' else h or '$vm02_ip')" 2>/dev/null || echo "$vm02_ip")
+                    db_port=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('database', {}).get('port', 5432))" 2>/dev/null || echo "5432")
+                    db_name=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('database', {}).get('name', 'threat_hunting'))" 2>/dev/null || echo "threat_hunting")
+                    db_user=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('database', {}).get('user', 'threat_hunter'))" 2>/dev/null || echo "threat_hunter")
+                fi
+                
+                # Try connection
+                if python3 << PYTHON_EOF
+import psycopg2
+import os
+import sys
+
+try:
+    conn = psycopg2.connect(
+        host=os.environ.get('DB_HOST', '$db_host'),
+        port=int(os.environ.get('DB_PORT', $db_port)),
+        database=os.environ.get('DB_NAME', '$db_name'),
+        user=os.environ.get('DB_USER', '$db_user'),
+        password=os.environ.get('DB_PASSWORD', os.environ.get('POSTGRES_PASSWORD', '')),
+        connect_timeout=5
+    )
+    conn.close()
+    sys.exit(0)
+except psycopg2.OperationalError as e:
+    if 'password' in str(e).lower() or 'authentication' in str(e).lower():
+        # Port is accessible, authentication issue
+        sys.exit(2)
+    sys.exit(1)
+except Exception as e:
+    sys.exit(1)
+PYTHON_EOF
+                then
+                    log_success "Database authentication: OK"
+                    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+                else
+                    local exit_code=$?
+                    if [ $exit_code -eq 2 ]; then
+                        log_warn "Database port accessible but authentication failed (check POSTGRES_PASSWORD)"
+                        WARNINGS=$((WARNINGS + 1))
+                    else
+                        log_warn "Database connection failed (PostgreSQL may not be running or configured)"
+                        WARNINGS=$((WARNINGS + 1))
+                    fi
+                fi
+                
+                deactivate 2>/dev/null || true
+            else
+                log_warn "psycopg2 not available, skipping database authentication test"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        else
+            log_info "Skipping database authentication test (POSTGRES_PASSWORD not set or venv not found)"
+        fi
+        
+        echo ""
+    }
+    
+    # Function to test n8n connection from VM-03 to VM-04
+    test_n8n_connection_from_vm03() {
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing connection to n8n on VM-04"
+        
+        # Extract VM-04 IP from config.yml
+        local vm04_ip=""
+        if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+            vm04_ip=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm04', {}).get('ip', ''))" 2>/dev/null || echo "")
+        fi
+        
+        # Fallback to grep if Python parsing failed
+        if [ -z "$vm04_ip" ]; then
+            vm04_ip=$(grep -E "vm04:" "$PROJECT_ROOT/configs/config.yml" -A 3 | grep -E "ip:" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
+        fi
+        
+        if [ -z "$vm04_ip" ]; then
+            log_warn "Could not extract VM-04 IP from config.yml"
+            WARNINGS=$((WARNINGS + 1))
+            return 1
+        fi
+        
+        log_info "VM-04 IP: $vm04_ip"
+        
+        # Test 1: Ping to VM-04
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing ping to VM-04 ($vm04_ip)"
+        if ping -c 2 -W 2 "$vm04_ip" &> /dev/null; then
+            log_success "Ping to VM-04: OK"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        else
+            log_error "Ping to VM-04: FAILED"
+            FAILED_CHECKS=$((FAILED_CHECKS + 1))
+            return 1
+        fi
+        
+        # Test 2: Port connectivity (n8n port 5678)
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing n8n port (5678) on VM-04"
+        if command -v nc &> /dev/null; then
+            if nc -z -w 2 "$vm04_ip" 5678 2>/dev/null; then
+                log_success "n8n port (5678) on VM-04: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "n8n port (5678) on VM-04: not accessible (n8n may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        elif command -v timeout &> /dev/null && command -v bash &> /dev/null; then
+            # Fallback: use bash with /dev/tcp
+            if timeout 2 bash -c "echo > /dev/tcp/$vm04_ip/5678" 2>/dev/null; then
+                log_success "n8n port (5678) on VM-04: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "n8n port (5678) on VM-04: not accessible (n8n may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        else
+            log_warn "Port test tools not available (nc or bash with /dev/tcp)"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+        
+        # Test 3: HTTP connectivity (if curl is available)
+        if command -v curl &> /dev/null; then
+            TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+            log_info "Testing HTTP connectivity to n8n"
+            if curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 "http://$vm04_ip:5678" 2>/dev/null | grep -qE "200|301|302|401|403"; then
+                log_success "HTTP connection to n8n: OK"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "HTTP connection to n8n: failed (n8n may not be running or not responding)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        fi
+        
+        echo ""
+    }
+    
+    # Run the tests
+    test_db_connection_from_vm03
+    test_n8n_connection_from_vm03
+else
+    log_info "Skipping connection tests (config.yml not found at $PROJECT_ROOT/configs/config.yml)"
+    log_info "Connection tests are optional and require config.yml with VM IPs"
+    echo ""
+fi
+
+# ============================================
+# 12. Sprawdzenie locale
 # ============================================
 echo "--- Konfiguracja Locale ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -450,7 +680,7 @@ fi
 echo ""
 
 # ============================================
-# 12. Podsumowanie
+# 13. Podsumowanie
 # ============================================
 echo "=========================================="
 echo "  Summary"
