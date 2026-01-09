@@ -69,6 +69,8 @@ See [docs/PHASE1_DEPLOYMENT.md](docs/PHASE1_DEPLOYMENT.md) for detailed installa
 - [Architecture Documentation](docs/ARCHITECTURE.md) - System architecture
 - [User Interface Guide](docs/USER_INTERFACE.md) - UI documentation
 
+**Note**: Planning documents are located in `project plan/` directory (excluded from Git).
+
 ## Development
 
 ### Setup Development Environment
