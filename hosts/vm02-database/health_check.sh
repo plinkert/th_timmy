@@ -206,7 +206,7 @@ echo "VENV_DIR: $PROJECT_ROOT/venv"
 echo ""
 
 # ============================================
-# 1. Sprawdzenie systemu operacyjnego
+# 1. Operating System Check
 # ============================================
 echo "--- System Operacyjny ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -256,7 +256,7 @@ check "rsync" "rsync --version" "rsync"
 echo ""
 
 # ============================================
-# 5. Sprawdzenie Python
+# 5. Python Check
 # ============================================
 echo "--- Python and Environment ---"
 check_python_version
@@ -265,7 +265,7 @@ check "python3-venv" "python3 -m venv --help" ""
 echo ""
 
 # ============================================
-# 6. Sprawdzenie virtual environment
+# 6. Virtual Environment Check
 # ============================================
 echo "--- Virtual Environment ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -314,7 +314,7 @@ fi
 echo ""
 
 # ============================================
-# 8. Sprawdzenie bazy danych
+# 8. Database Check
 # ============================================
 echo "--- Baza Danych ---"
 check_database
@@ -361,7 +361,7 @@ fi
 echo ""
 
 # ============================================
-# 10. Sprawdzenie firewall i portu
+# 10. Firewall and Port Check
 # ============================================
 echo "--- Firewall i Port PostgreSQL ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -427,9 +427,9 @@ fi
 echo ""
 
 # ============================================
-# 11. Sprawdzenie locale
+# 11. Locale Check
 # ============================================
-echo "--- Konfiguracja Locale ---"
+echo "--- Locale Configuration ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 log_info "Checking: Locale en_US.UTF-8"
 
