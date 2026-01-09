@@ -5,7 +5,8 @@ Installation and verification scripts for VM-04 (Orchestrator - n8n in Docker).
 ## Files
 
 - `install_vm04.sh` - Installation script for all required tools
-- `health_check.sh` - Installation verification script
+- `health_check.sh` - Installation verification script (includes optional connection tests)
+- `harden_vm04.sh` - Security hardening script
 - `requirements.txt` - List of Python packages required for VM-04
 - `docker-compose.yml` - n8n configuration in Docker container
 - `config.example.yml` - Example configuration file
@@ -113,6 +114,7 @@ After installation, run the verification script:
 - ✅ n8n Docker container (status)
 - ✅ Port 5678 and firewall
 - ✅ Locale configuration
+- ✅ **Optional:** Connection test to VM-03 (JupyterLab) if `configs/config.yml` exists
 
 ## Managing n8n
 
@@ -205,6 +207,48 @@ Login using:
 Detailed requirements can be found in:
 - `../../INPUT/VM04_TOOLS_REQUIREMENTS.md`
 
+## Hardening
+
+After installation, you can apply security hardening to VM-04:
+
+```bash
+cd /path/to/th_timmy/hosts/vm04-orchestrator
+sudo ./harden_vm04.sh
+```
+
+**What does hardening do?**
+- Configures firewall (ufw): SSH and n8n port (5678)
+- Hardens SSH configuration (port, timeout, disable root login)
+- Configures Docker security (log rotation, no-new-privileges)
+- Updates docker-compose.yml with security options (security_opt, resource limits, non-root user)
+- Installs and configures Fail2ban for SSH protection
+- Configures Logrotate for Docker and n8n logs
+- Verifies n8n security settings (basic auth, container security)
+- Optionally enables auditd for system auditing
+
+**Configuration:**
+Hardening settings are read from `configs/config.yml`:
+```yaml
+hardening:
+  ssh:
+    port: 22
+    timeout: 300
+    disable_root_login: true
+  firewall:
+    allowed_network: "192.168.244.0/24"  # Optional: restrict access
+  vm04:
+    enable_auditd: false  # Optional: enable system auditing
+```
+
+**Important:** After hardening, restart n8n container to apply security settings:
+```bash
+cd $HOME/th_timmy/hosts/vm04-orchestrator
+docker compose down
+docker compose up -d
+```
+
+**Note:** The hardening script sources `hosts/shared/hardening_common.sh` for common functions.
+
 ## Security
 
 ⚠️ **IMPORTANT:**
@@ -213,6 +257,7 @@ Detailed requirements can be found in:
 - Limit firewall access only to trusted IPs
 - Regularly update Docker and container images
 - Consider using HTTPS in production (requires additional configuration)
+- Run hardening script after installation for production environments
 
 ## Updating n8n
 
