@@ -262,3 +262,73 @@ configure_auditd() {
     log_success "auditd configured and started"
 }
 
+# Show available functions and usage information
+show_help() {
+    cat << EOF
+hardening_common.sh - Common Hardening Functions Library
+
+This is a library of hardening functions that should be SOURCED by other scripts,
+not executed directly.
+
+USAGE:
+    source hardening_common.sh
+    
+    # Then use the functions:
+    configure_firewall "22,5432,8888" "10.0.0.0/24"
+    configure_ssh true 22 300
+    install_fail2ban "sshd,postgresql"
+
+AVAILABLE FUNCTIONS:
+
+1. configure_firewall(ports, allowed_ips)
+   - Configures ufw firewall
+   - Example: configure_firewall "22,5432,8888" "10.0.0.0/24"
+
+2. configure_ssh(disable_root, port, timeout)
+   - Configures SSH security settings
+   - Example: configure_ssh true 22 300
+
+3. install_fail2ban(services)
+   - Installs and configures fail2ban
+   - Example: install_fail2ban "sshd,postgresql"
+
+4. configure_logrotate(config_file, log_path)
+   - Configures log rotation
+   - Example: configure_logrotate "/etc/logrotate.d/app" "/var/log/app/*.log"
+
+5. configure_auto_updates()
+   - Configures automatic security updates
+   - Example: configure_auto_updates
+
+6. configure_auditd()
+   - Configures system auditing (optional)
+   - Example: configure_auditd
+
+LOGGING FUNCTIONS:
+- log_info(message)    - Blue info message
+- log_success(message)  - Green success message
+- log_warn(message)      - Yellow warning message
+- log_error(message)     - Red error message
+
+EXAMPLE SCRIPT:
+    #!/bin/bash
+    source hardening_common.sh
+    
+    configure_firewall "22,5432" "10.0.0.0/24"
+    configure_ssh true 22 300
+    install_fail2ban "sshd"
+    configure_auto_updates
+
+EOF
+}
+
+# If script is executed directly (not sourced), show help
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    echo "ERROR: This is a library file and should be SOURCED, not executed directly."
+    echo ""
+    echo "Usage: source $(basename "${BASH_SOURCE[0]}")"
+    echo ""
+    show_help
+    exit 1
+fi
+
