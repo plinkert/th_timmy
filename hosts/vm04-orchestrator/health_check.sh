@@ -412,7 +412,108 @@ fi
 echo ""
 
 # ============================================
-# 10. Locale Check
+# 10. Connection Tests (Optional)
+# ============================================
+# These tests are optional - only run if configs/config.yml exists
+if [ -f "$PROJECT_ROOT/configs/config.yml" ]; then
+    echo "=========================================="
+    echo "  Connection Tests (Optional)"
+    echo "=========================================="
+    
+    # Function to test JupyterLab connection from VM-04 to VM-03
+    test_jupyter_connection_from_vm04() {
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing connection to JupyterLab on VM-03"
+        
+        # Extract VM-03 IP from config.yml
+        local vm03_ip=""
+        if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+            vm03_ip=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm03', {}).get('ip', ''))" 2>/dev/null || echo "")
+        fi
+        
+        # Fallback to grep if Python parsing failed
+        if [ -z "$vm03_ip" ]; then
+            vm03_ip=$(grep -E "vm03:" "$PROJECT_ROOT/configs/config.yml" -A 3 | grep -E "ip:" | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
+        fi
+        
+        if [ -z "$vm03_ip" ]; then
+            log_warn "Could not extract VM-03 IP from config.yml"
+            WARNINGS=$((WARNINGS + 1))
+            return 1
+        fi
+        
+        log_info "VM-03 IP: $vm03_ip"
+        
+        # Get JupyterLab port from config.yml or use default
+        local jupyter_port="8888"
+        if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+            jupyter_port=$(python3 -c "import yaml; f=open('$PROJECT_ROOT/configs/config.yml'); d=yaml.safe_load(f); print(d.get('services', {}).get('jupyter', {}).get('port', 8888))" 2>/dev/null || echo "8888")
+        fi
+        
+        # Test 1: Ping to VM-03
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing ping to VM-03 ($vm03_ip)"
+        if ping -c 2 -W 2 "$vm03_ip" &> /dev/null; then
+            log_success "Ping to VM-03: OK"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        else
+            log_error "Ping to VM-03: FAILED"
+            FAILED_CHECKS=$((FAILED_CHECKS + 1))
+            return 1
+        fi
+        
+        # Test 2: Port connectivity (JupyterLab port 8888)
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing JupyterLab port ($jupyter_port) on VM-03"
+        if command -v nc &> /dev/null; then
+            if nc -z -w 2 "$vm03_ip" "$jupyter_port" 2>/dev/null; then
+                log_success "JupyterLab port ($jupyter_port) on VM-03: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "JupyterLab port ($jupyter_port) on VM-03: not accessible (JupyterLab may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        elif command -v timeout &> /dev/null && command -v bash &> /dev/null; then
+            # Fallback: use bash with /dev/tcp
+            if timeout 2 bash -c "echo > /dev/tcp/$vm03_ip/$jupyter_port" 2>/dev/null; then
+                log_success "JupyterLab port ($jupyter_port) on VM-03: accessible"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "JupyterLab port ($jupyter_port) on VM-03: not accessible (JupyterLab may not be running)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        else
+            log_warn "Port test tools not available (nc or bash with /dev/tcp)"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+        
+        # Test 3: HTTP connectivity (if curl is available)
+        if command -v curl &> /dev/null; then
+            TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+            log_info "Testing HTTP connectivity to JupyterLab"
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 "http://$vm03_ip:$jupyter_port" 2>/dev/null || echo "000")
+            if echo "$http_code" | grep -qE "200|301|302|401|403"; then
+                log_success "HTTP connection to JupyterLab: OK (HTTP $http_code)"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "HTTP connection to JupyterLab: failed (HTTP $http_code) - JupyterLab may not be running or not responding"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        fi
+        
+        echo ""
+    }
+    
+    # Run the test
+    test_jupyter_connection_from_vm04
+else
+    log_info "Skipping connection tests (config.yml not found at $PROJECT_ROOT/configs/config.yml)"
+    log_info "Connection tests are optional and require config.yml with VM IPs"
+    echo ""
+fi
+
+# ============================================
+# 11. Locale Check
 # ============================================
 echo "--- Locale Configuration ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
@@ -441,7 +542,7 @@ fi
 echo ""
 
 # ============================================
-# 11. Summary
+# 12. Summary
 # ============================================
 echo "=========================================="
 echo "  Summary"
