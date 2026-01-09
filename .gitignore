@@ -30,6 +30,7 @@ configs/*.local.yml
 hosts/vm02-database/config.yml
 hosts/vm03-analysis/config.yml
 hosts/vm04-orchestrator/config.yml
+hosts/*/hardening.conf
 .env
 .env.local
 *.key
