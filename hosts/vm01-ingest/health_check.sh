@@ -141,7 +141,7 @@ check_python_package() {
 echo "=========================================="
 echo "  Health Check - VM-01: Ingest/Parser"
 echo "=========================================="
-echo "Użytkownik: $(whoami)"
+echo "User: $(whoami)"
 echo "USER_HOME: $USER_HOME"
 echo "PROJECT_ROOT: $PROJECT_ROOT"
 echo "VENV_DIR: $PROJECT_ROOT/venv"
