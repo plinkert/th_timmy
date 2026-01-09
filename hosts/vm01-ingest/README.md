@@ -5,7 +5,9 @@ Installation and verification scripts for VM-01 (Ingest/Parser).
 ## Files
 
 - `install_vm01.sh` - Installation script for all required tools
-- `health_check.sh` - Installation verification script
+- `health_check.sh` - Installation verification script (includes optional connection tests)
+- `harden_vm01.sh` - Security hardening script
+- `hardening.conf.example` - Example hardening configuration file
 - `requirements.txt` - List of Python packages required for VM-01
 
 ## Installation
@@ -85,6 +87,7 @@ After installation, run the verification script:
 - ✅ Virtual environment
 - ✅ All required Python packages
 - ✅ Locale configuration
+- ✅ Connection to VM-02 (PostgreSQL) - optional, requires `configs/config.yml`
 
 ## Using Virtual Environment
 
@@ -116,6 +119,57 @@ sudo apt-get install python3-venv
 1. Check if all system libraries are installed
 2. Make sure you have internet access
 3. Check installation logs
+
+## Security Hardening
+
+After installation, you can apply security hardening:
+
+```bash
+cd /path/to/th_timmy/hosts/vm01-ingest
+sudo ./harden_vm01.sh
+```
+
+### Hardening Configuration
+
+You can customize hardening by creating a `hardening.conf` file:
+
+```bash
+# Copy example configuration
+cp hardening.conf.example hardening.conf
+
+# Edit configuration
+nano hardening.conf
+
+# Source it before running hardening
+source hardening.conf
+sudo ./harden_vm01.sh
+```
+
+### What does hardening configure?
+
+- ✅ Firewall (ufw) - opens SSH and collector ports
+- ✅ SSH hardening - disables root login, configurable port/timeout
+- ✅ Fail2ban - protection against brute-force attacks
+- ✅ Log rotation - automatic log file rotation
+- ✅ Automatic security updates - keeps system up-to-date
+- ✅ Optional: System auditing (auditd)
+
+### Important Notes
+
+- **Always test SSH access** after hardening to ensure you're not locked out
+- Firewall rules can be checked with: `sudo ufw status`
+- SSH configuration can be checked with: `sudo systemctl status ssh`
+- Fail2ban status: `sudo fail2ban-client status`
+
+## Connection Tests
+
+The `health_check.sh` script includes optional connection tests to VM-02 (Database):
+
+- Tests ping connectivity to VM-02
+- Tests PostgreSQL port (5432) accessibility
+- Tests database authentication (if `POSTGRES_PASSWORD` is set)
+
+These tests only run if `configs/config.yml` exists with VM IP addresses configured.
 
 ## Documentation
 
