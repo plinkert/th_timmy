@@ -37,6 +37,25 @@ network:
     # - "192.168.1.101/32"  # VM-03
     # Add IPs of other VMs here
 
+# Data Retention Configuration
+retention:
+  # Retention period in days (default: 90 days)
+  retention_days: 90
+  
+  # Enable automatic cleanup of old data
+  auto_cleanup: true
+  
+  # Cleanup schedule (cron format)
+  # Daily at 3:00 AM
+  cleanup_schedule: "0 3 * * *"
+  
+  # Tables to apply retention (empty = all tables with created_at/timestamp columns)
+  # If empty, cleanup will apply to all tables with timestamp columns
+  # tables: []
+  
+  # Enable logging of cleanup operations
+  log_cleanup: true
+
 # Backup Configuration
 backup:
   # Enable automatic backups

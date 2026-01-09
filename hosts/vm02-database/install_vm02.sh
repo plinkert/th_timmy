@@ -429,7 +429,189 @@ if ! grep -q "LC_ALL=en_US.UTF-8" "$BASHRC" 2>/dev/null; then
 fi
 
 # ============================================
-# 12. Summary
+# 12. Data Retention Configuration (90 days)
+# ============================================
+log_info "Configuring data retention (90 days)..."
+
+# Parse retention configuration
+RETENTION_DAYS=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('retention_days', 90))" 2>/dev/null || echo "90")
+AUTO_CLEANUP=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('auto_cleanup', True))" 2>/dev/null || echo "True")
+CLEANUP_SCHEDULE=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('cleanup_schedule', '0 3 * * *'))" 2>/dev/null || echo "0 3 * * *")
+LOG_CLEANUP=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('retention', {}).get('log_cleanup', True))" 2>/dev/null || echo "True")
+
+log_info "Retention period: $RETENTION_DAYS days"
+log_info "Auto cleanup: $AUTO_CLEANUP"
+log_info "Cleanup schedule: $CLEANUP_SCHEDULE"
+
+# Create cleanup function in PostgreSQL
+log_info "Creating cleanup_old_data() function in PostgreSQL..."
+
+sudo -u postgres psql -d "$DB_NAME" << EOF
+-- Create cleanup function
+CREATE OR REPLACE FUNCTION cleanup_old_data()
+RETURNS TABLE(
+    table_name TEXT,
+    rows_deleted BIGINT,
+    cleanup_time TIMESTAMP
+) AS \$\$
+DECLARE
+    table_record RECORD;
+    deleted_count BIGINT;
+    cleanup_log_time TIMESTAMP := NOW();
+BEGIN
+    -- Create cleanup log table if it doesn't exist
+    CREATE TABLE IF NOT EXISTS cleanup_log (
+        id SERIAL PRIMARY KEY,
+        table_name TEXT NOT NULL,
+        rows_deleted BIGINT NOT NULL,
+        cleanup_time TIMESTAMP NOT NULL,
+        retention_days INTEGER NOT NULL
+    );
+
+    -- Loop through tables with timestamp columns
+    FOR table_record IN
+        SELECT tablename
+        FROM pg_tables
+        WHERE schemaname = 'public'
+        AND tablename NOT IN ('cleanup_log', 'schema_migrations')
+    LOOP
+        -- Try to delete old data from table
+        -- Check if table has created_at, timestamp, or created_date column
+        BEGIN
+            -- Try created_at column
+            EXECUTE format('DELETE FROM %I WHERE created_at < NOW() - INTERVAL ''%s days''',
+                table_record.tablename, $RETENTION_DAYS);
+            GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            
+            -- If no rows deleted, try timestamp column
+            IF deleted_count = 0 THEN
+                EXECUTE format('DELETE FROM %I WHERE timestamp < NOW() - INTERVAL ''%s days''',
+                    table_record.tablename, $RETENTION_DAYS);
+                GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            END IF;
+            
+            -- If still no rows deleted, try created_date column
+            IF deleted_count = 0 THEN
+                EXECUTE format('DELETE FROM %I WHERE created_date < NOW() - INTERVAL ''%s days''',
+                    table_record.tablename, $RETENTION_DAYS);
+                GET DIAGNOSTICS deleted_count = ROW_COUNT;
+            END IF;
+            
+            -- Log cleanup if enabled
+            IF $LOG_CLEANUP AND deleted_count > 0 THEN
+                EXECUTE format('INSERT INTO cleanup_log (table_name, rows_deleted, cleanup_time, retention_days)
+                    VALUES (%L, %s, %L, %s)',
+                    table_record.tablename, deleted_count, cleanup_log_time, $RETENTION_DAYS);
+            END IF;
+            
+            -- Return result
+            table_name := table_record.tablename;
+            rows_deleted := deleted_count;
+            cleanup_time := cleanup_log_time;
+            RETURN NEXT;
+            
+        EXCEPTION
+            WHEN OTHERS THEN
+                -- Table might not have timestamp columns, skip it
+                CONTINUE;
+        END;
+    END LOOP;
+    
+    RETURN;
+END;
+\$\$ LANGUAGE plpgsql;
+
+-- Grant execute permission to database user
+GRANT EXECUTE ON FUNCTION cleanup_old_data() TO $DB_USER;
+
+-- Create index on cleanup_log for better performance
+CREATE INDEX IF NOT EXISTS idx_cleanup_log_time ON cleanup_log(cleanup_time);
+CREATE INDEX IF NOT EXISTS idx_cleanup_log_table ON cleanup_log(table_name);
+
+EOF
+
+if [ $? -eq 0 ]; then
+    log_success "Cleanup function created successfully"
+else
+    log_warn "Failed to create cleanup function (may already exist)"
+fi
+
+# Configure automatic cleanup if enabled
+if [ "$AUTO_CLEANUP" = "True" ] || [ "$AUTO_CLEANUP" = "true" ]; then
+    log_info "Configuring automatic cleanup..."
+    
+    # Check if pg_cron is available
+    if sudo -u postgres psql -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pg_cron;" 2>/dev/null; then
+        log_info "pg_cron extension available, using it for scheduled cleanup"
+        
+        # Parse cron schedule (format: "minute hour * * *")
+        CRON_MINUTE=$(echo "$CLEANUP_SCHEDULE" | awk '{print $1}')
+        CRON_HOUR=$(echo "$CLEANUP_SCHEDULE" | awk '{print $2}')
+        
+        # Schedule cleanup job with pg_cron
+        sudo -u postgres psql -d "$DB_NAME" << EOF
+-- Remove existing job if it exists
+SELECT cron.unschedule('cleanup-old-data') WHERE EXISTS (
+    SELECT 1 FROM cron.job WHERE jobname = 'cleanup-old-data'
+);
+
+-- Schedule new cleanup job
+SELECT cron.schedule(
+    'cleanup-old-data',
+    '$CLEANUP_SCHEDULE',
+    \$\$SELECT cleanup_old_data()\$\$
+);
+EOF
+        
+        if [ $? -eq 0 ]; then
+            log_success "pg_cron job scheduled successfully"
+        else
+            log_warn "Failed to schedule pg_cron job, falling back to system cron"
+            AUTO_CLEANUP_FALLBACK=true
+        fi
+    else
+        log_warn "pg_cron not available, using system cron"
+        AUTO_CLEANUP_FALLBACK=true
+    fi
+    
+    # Fallback to system cron if pg_cron failed
+    if [ "${AUTO_CLEANUP_FALLBACK:-false}" = "true" ]; then
+        log_info "Setting up system cron job for cleanup..."
+        
+        # Create cleanup script
+        CLEANUP_SCRIPT="/usr/local/bin/cleanup_postgres_data.sh"
+        cat > "$CLEANUP_SCRIPT" << 'SCRIPT_EOF'
+#!/bin/bash
+# PostgreSQL data cleanup script
+# This script is called by cron to clean up old data
+
+DB_NAME="threat_hunting"
+DB_USER="threat_hunter"
+
+# Get password from environment or config
+if [ -f /etc/postgresql/14/main/.pgpass ]; then
+    export PGPASSFILE=/etc/postgresql/14/main/.pgpass
+fi
+
+# Run cleanup function
+sudo -u postgres psql -d "$DB_NAME" -c "SELECT cleanup_old_data();" > /var/log/postgresql_cleanup.log 2>&1
+SCRIPT_EOF
+        
+        chmod +x "$CLEANUP_SCRIPT"
+        
+        # Add to crontab (avoid duplicates)
+        (crontab -l 2>/dev/null | grep -v "cleanup_postgres_data.sh"; echo "$CLEANUP_SCHEDULE $CLEANUP_SCRIPT") | crontab -
+        
+        log_success "System cron job configured"
+    fi
+else
+    log_info "Automatic cleanup disabled (set auto_cleanup: true to enable)"
+fi
+
+echo ""
+
+# ============================================
+# 13. Summary
 # ============================================
 log_info "Installation completed successfully!"
 echo ""
