@@ -1,0 +1,44 @@
+# Core dependencies
+pandas>=1.5.0
+numpy>=1.23.0
+
+# Data processing
+pyarrow>=10.0.0
+
+# Database
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# API (for Phase 4)
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# Jupyter
+jupyterlab>=4.0.0
+notebook>=7.0.0
+ipykernel>=6.25.0
+ipywidgets>=8.0.0
+
+# ML/AI
+scikit-learn>=1.3.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+openai>=1.0.0
+
+# Security
+cryptography>=41.0.0
+python-dotenv>=1.0.0
+
+# Utilities
+pyyaml>=6.0
+python-dateutil>=2.8.0
+requests>=2.31.0
+
+# Logging
+loguru>=0.7.0
+
+# Testing (optional, for development)
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
