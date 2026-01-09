@@ -90,6 +90,39 @@ results:
 
 **Note**: The actual implementation of data retention is done in VM-02 (PostgreSQL) - see VM-02 documentation for details.
 
+## Hardening Configuration
+
+Security hardening configuration is centralized in `configs/config.yml`:
+
+```yaml
+hardening:
+  # SSH Configuration (common for all VMs)
+  ssh:
+    port: 22                    # SSH port
+    timeout: 300                # SSH connection timeout
+    disable_root_login: true    # Disable root login
+  
+  # Firewall Configuration
+  firewall:
+    allowed_network: ""         # Network CIDR to restrict access
+  
+  # VM-specific settings
+  vm01:
+    collector_ports: ""         # Collector ports for VM-01
+    enable_auditd: false        # Enable auditd
+  
+  vm02:
+    enable_auditd: false        # Enable auditd
+  
+  vm03:
+    enable_auditd: false        # Enable auditd
+  
+  vm04:
+    enable_auditd: false        # Enable auditd
+```
+
+All hardening scripts (`harden_vm01.sh`, `harden_vm02.sh`, etc.) automatically read from this central configuration.
+
 ## VM-Specific Configuration
 
 Each VM has its own configuration file in `hosts/vmXX-*/config.example.yml`:
@@ -99,6 +132,7 @@ Each VM has its own configuration file in `hosts/vmXX-*/config.example.yml`:
 - PostgreSQL settings
 - Allowed IP addresses for database connections
 - Database user and password settings
+- Data retention configuration (90 days)
 
 ### VM-03: JupyterLab Configuration
 

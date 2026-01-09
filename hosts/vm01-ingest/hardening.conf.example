@@ -1,30 +1,21 @@
-# Hardening Configuration Example for VM-01: Ingest/Parser
-# Copy this file to hardening.conf and customize as needed
-# Usage: source hardening.conf before running harden_vm01.sh
-
-# SSH Configuration
-export SSH_PORT=22              # SSH port (default: 22)
-export SSH_TIMEOUT=300          # SSH connection timeout in seconds (default: 300)
-
-# Firewall Configuration
-export COLLECTOR_PORTS=""       # Comma-separated list of collector ports (e.g., "8080,9090")
-export ALLOWED_NETWORK=""       # Network CIDR to allow (e.g., "192.168.244.0/24")
-                                # If empty, ports are open to all (less secure)
-
-# Optional Features
-export ENABLE_AUDITD=false      # Enable system auditing with auditd (default: false)
-
-# Examples:
-# 
-# Restrict access to specific network:
-# export ALLOWED_NETWORK="192.168.244.0/24"
+# DEPRECATED: Hardening Configuration
 #
-# Open collector ports:
-# export COLLECTOR_PORTS="8080,9090"
+# This file is deprecated. Hardening configuration has been moved to
+# the central configs/config.yml file.
 #
-# Enable auditd:
-# export ENABLE_AUDITD=true
+# Please configure hardening settings in:
+#   configs/config.yml
 #
-# Change SSH port:
-# export SSH_PORT=2222
-
+# See configs/config.example.yml for the new structure:
+#   hardening:
+#     ssh:
+#       port: 22
+#       timeout: 300
+#     firewall:
+#       allowed_network: ""
+#     vm01:
+#       collector_ports: ""
+#       enable_auditd: false
+#
+# The harden_vm01.sh script will automatically read from configs/config.yml.
+# This file is kept for reference only and will be removed in a future version.

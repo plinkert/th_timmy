@@ -131,19 +131,29 @@ sudo ./harden_vm01.sh
 
 ### Hardening Configuration
 
-You can customize hardening by creating a `hardening.conf` file:
+Hardening configuration is now centralized in `configs/config.yml`:
+
+```yaml
+hardening:
+  ssh:
+    port: 22
+    timeout: 300
+    disable_root_login: true
+  firewall:
+    allowed_network: "192.168.244.0/24"  # Optional: restrict to subnet
+  vm01:
+    collector_ports: "8080,9090"  # Optional: collector ports
+    enable_auditd: false
+```
+
+Edit `configs/config.yml` and run:
 
 ```bash
-# Copy example configuration
-cp hardening.conf.example hardening.conf
-
-# Edit configuration
-nano hardening.conf
-
-# Source it before running hardening
-source hardening.conf
 sudo ./harden_vm01.sh
 ```
+
+**Note:** The script automatically reads configuration from `configs/config.yml`. 
+If the file is not found, it falls back to environment variables or defaults.
 
 ### What does hardening configure?
 
