@@ -252,3 +252,7 @@ main() {
     section "Test Suite Complete"
     success "All tests completed. Review the comparison results above."
     echo ""
+}
+
+# Run main function
+main "$@"

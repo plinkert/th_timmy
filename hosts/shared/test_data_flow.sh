@@ -6,7 +6,7 @@
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -126,6 +126,8 @@ test_db_write() {
     local db_password="${POSTGRES_PASSWORD:-}"
     if [ -z "$db_password" ]; then
         warn "Database password not set (POSTGRES_PASSWORD), skipping write test"
+        info "To enable database tests, set: export POSTGRES_PASSWORD='your_password'"
+        info "Or create .env file with: POSTGRES_PASSWORD=your_password"
         deactivate 2>/dev/null || true
         return 1
     fi
@@ -434,10 +436,10 @@ main() {
     info "Database: $DB_HOST:$DB_PORT/$DB_NAME"
     echo ""
     
-    # Run tests
-    test_db_write
-    test_db_read
-    test_n8n_integration
+    # Run tests (continue even if one fails)
+    test_db_write || true
+    test_db_read || true
+    test_n8n_integration || true
     
     # Cleanup
     info "Cleaning up test data..."

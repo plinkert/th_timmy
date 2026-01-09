@@ -6,7 +6,7 @@
 export LC_ALL=en_US.UTF-8
 export LANG=en_US.UTF-8
 
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -340,30 +340,30 @@ main() {
     info "VM-04 (Orchestrator): $VM04_IP"
     echo ""
     
-    # Test basic connectivity
+    # Test basic connectivity (continue even if one fails)
     echo "=========================================="
     echo "Basic Connectivity (Ping)"
     echo "=========================================="
-    test_ping "$VM01_IP" "VM-01"
-    test_ping "$VM02_IP" "VM-02"
-    test_ping "$VM03_IP" "VM-03"
-    test_ping "$VM04_IP" "VM-04"
+    test_ping "$VM01_IP" "VM-01" || true
+    test_ping "$VM02_IP" "VM-02" || true
+    test_ping "$VM03_IP" "VM-03" || true
+    test_ping "$VM04_IP" "VM-04" || true
     echo ""
     
-    # Test SSH (if available)
+    # Test SSH (if available, continue even if one fails)
     echo "=========================================="
     echo "SSH Connectivity"
     echo "=========================================="
-    test_ssh "$VM01_IP" "VM-01"
-    test_ssh "$VM02_IP" "VM-02"
-    test_ssh "$VM03_IP" "VM-03"
-    test_ssh "$VM04_IP" "VM-04"
+    test_ssh "$VM01_IP" "VM-01" || true
+    test_ssh "$VM02_IP" "VM-02" || true
+    test_ssh "$VM03_IP" "VM-03" || true
+    test_ssh "$VM04_IP" "VM-04" || true
     echo ""
     
-    # Test service-specific connections
-    test_db_connection
-    test_jupyter_connection
-    test_n8n_connection
+    # Test service-specific connections (continue even if one fails)
+    test_db_connection || true
+    test_jupyter_connection || true
+    test_n8n_connection || true
     
     echo "=========================================="
     echo "Connection Test Summary"
