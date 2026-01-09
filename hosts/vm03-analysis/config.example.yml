@@ -23,6 +23,19 @@ jupyter:
   
   # Enable as systemd service (true/false)
   enable_service: true
+  
+  # File upload configuration
+  allow_file_upload: true
+  max_file_size: "100MB"  # Maximum file size for upload (documentation only - JupyterLab doesn't enforce this natively)
+  allowed_file_extensions:
+    - ".ipynb"
+    - ".py"
+    - ".csv"
+    - ".json"
+    - ".txt"
+    - ".md"
+    - ".yml"
+    - ".yaml"
 
 # Network Configuration
 network:

@@ -301,8 +301,9 @@ if [ "$CONFIG_EXISTS" = true ]; then
     JUPYTER_TOKEN=$(parse_config "d.get('jupyter', {}).get('token', '')" "")
     JUPYTER_PASSWORD=$(parse_config "d.get('jupyter', {}).get('password', '')" "")
     ENABLE_SERVICE=$(parse_config "d.get('jupyter', {}).get('enable_service', False)" "False")
+    ALLOW_FILE_UPLOAD=$(parse_config "d.get('jupyter', {}).get('allow_file_upload', True)" "True")
     
-    log_info "Read from config.yml: IP=$JUPYTER_IP, PORT=$JUPYTER_PORT"
+    log_info "Read from config.yml: IP=$JUPYTER_IP, PORT=$JUPYTER_PORT, allow_file_upload=$ALLOW_FILE_UPLOAD"
 fi
 
 # Generate JupyterLab configuration
@@ -369,6 +370,15 @@ if updates:
             f.write(\"c.ServerApp.token = '$JUPYTER_TOKEN'\\n\")
         if '$JUPYTER_PASSWORD_HASH' and '$JUPYTER_PASSWORD_HASH' != '':
             f.write(\"c.ServerApp.password = '$JUPYTER_PASSWORD_HASH'\\n\")
+        
+        # File upload configuration
+        if '$ALLOW_FILE_UPLOAD' and '$ALLOW_FILE_UPLOAD' == 'True':
+            f.write('\\n# File upload security settings\\n')
+            f.write('c.ContentsManager.allow_hidden = False\\n')
+            f.write('c.ContentsManager.pre_save_hook = None\\n')
+            f.write('c.FileContentsManager.delete_to_trash = True\\n')
+            f.write('# Note: JupyterLab does not enforce file size limits natively.\\n')
+            f.write('# Consider using nginx reverse proxy with client_max_body_size for production.\\n')
 PYTHON_EOF
     " || log_warn "Failed to update JupyterLab configuration"
     
