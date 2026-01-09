@@ -1,0 +1,38 @@
+# VM-03: Analysis/Jupyter Configuration
+# Copy this file to config.yml and fill in values (optional)
+
+# JupyterLab Configuration
+jupyter:
+  # IP address on which JupyterLab will listen
+  # '0.0.0.0' = all interfaces, '127.0.0.1' = localhost only
+  ip: "0.0.0.0"
+  
+  # JupyterLab port (default 8888)
+  port: 8888
+  
+  # Access token (empty = auto-generated, or set your own)
+  # You can generate token: jupyter lab --generate-config
+  token: ""
+  
+  # Password (optional, if you want to use password instead of token)
+  # You can generate password: python3 -c "from jupyter_server.auth import passwd; print(passwd())"
+  password: ""
+  
+  # Automatically open browser (false for server)
+  open_browser: false
+  
+  # Enable as systemd service (true/false)
+  enable_service: true
+
+# Network Configuration
+network:
+  # Port to open in firewall
+  jupyter_port: 8888
+
+# Optional: Database connection (if you need to connect to VM02)
+database:
+  # host: "192.168.1.101"  # VM-02 IP
+  # port: 5432
+  # database: "threat_hunting"
+  # user: "threat_hunter"
+  # password: "your_password_here"

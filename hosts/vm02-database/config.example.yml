@@ -1,0 +1,50 @@
+# VM-02: Database Configuration
+# Copy this file to config.yml and fill in values
+
+# PostgreSQL Configuration
+postgresql:
+  # PostgreSQL version (default 14 for Ubuntu 22.04)
+  version: "14"
+  
+  # Database name
+  database_name: "threat_hunting"
+  
+  # Database user
+  database_user: "threat_hunter"
+  
+  # PASSWORD - REQUIRED - fill in before use!
+  database_password: "CHANGE_ME_STRONG_PASSWORD"
+  
+  # PostgreSQL port (default 5432)
+  port: 5432
+  
+  # Maximum number of connections
+  max_connections: 100
+  
+  # Shared buffers (adjust to available RAM)
+  shared_buffers: "256MB"
+  
+  # Effective cache size (adjust to available RAM)
+  effective_cache_size: "1GB"
+
+# Network Configuration
+network:
+  # IP addresses of VMs that should have access to the database
+  # Format: list of IPs with mask (e.g. 192.168.1.100/32)
+  allowed_ips:
+    - "127.0.0.1/32"  # localhost
+    # - "192.168.1.100/32"  # VM-01
+    # - "192.168.1.101/32"  # VM-03
+    # Add IPs of other VMs here
+
+# Backup Configuration
+backup:
+  # Enable automatic backups
+  enabled: true
+  
+  # Backup directory
+  backup_dir: "/var/backups/postgresql"
+  
+  # Backup schedule (cron format)
+  # Example: daily at 2:00
+  schedule: "0 2 * * *"

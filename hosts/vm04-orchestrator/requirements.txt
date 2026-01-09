@@ -1,0 +1,11 @@
+# Utilities
+pyyaml>=6.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Logging
+loguru>=0.7.0
+
+# Docker (optional, for container management via Python)
+docker>=6.0.0
+
