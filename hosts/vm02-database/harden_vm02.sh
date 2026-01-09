@@ -46,20 +46,30 @@ if [ ! -f "$CONFIG_FILE" ]; then
     exit 1
 fi
 
-# Configuration
-SSH_PORT="${SSH_PORT:-22}"
-SSH_TIMEOUT="${SSH_TIMEOUT:-300}"
-
-# Get VM IPs from central config if available
+# Load configuration from central config.yml
 CENTRAL_CONFIG="${PROJECT_ROOT}/configs/config.yml"
-VM01_IP=""
-VM03_IP=""
 
-if [ -f "$CENTRAL_CONFIG" ]; then
-    if command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
-        VM01_IP=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm01', {}).get('ip', ''))" 2>/dev/null || echo "")
-        VM03_IP=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm03', {}).get('ip', ''))" 2>/dev/null || echo "")
-    fi
+if [ -f "$CENTRAL_CONFIG" ] && command -v python3 &> /dev/null && python3 -c "import yaml" 2>/dev/null; then
+    # Read hardening configuration from config.yml
+    SSH_PORT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('ssh', {}).get('port', 22))" 2>/dev/null || echo "22")
+    SSH_TIMEOUT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('ssh', {}).get('timeout', 300))" 2>/dev/null || echo "300")
+    ALLOWED_NETWORK=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('firewall', {}).get('allowed_network', ''))" 2>/dev/null || echo "")
+    ENABLE_AUDITD=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('vm02', {}).get('enable_auditd', False))" 2>/dev/null || echo "False")
+    
+    # Get VM IPs from central config
+    VM01_IP=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm01', {}).get('ip', ''))" 2>/dev/null || echo "")
+    VM03_IP=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('vms', {}).get('vm03', {}).get('ip', ''))" 2>/dev/null || echo "")
+    
+    log_info "Configuration loaded from: $CENTRAL_CONFIG"
+else
+    # Fallback to environment variables or defaults
+    log_warn "Central config.yml not found or Python/yaml not available, using defaults or environment variables"
+    SSH_PORT="${SSH_PORT:-22}"
+    SSH_TIMEOUT="${SSH_TIMEOUT:-300}"
+    ALLOWED_NETWORK="${ALLOWED_NETWORK:-}"
+    ENABLE_AUDITD="${ENABLE_AUDITD:-false}"
+    VM01_IP=""
+    VM03_IP=""
 fi
 
 # Get database config
@@ -346,7 +356,7 @@ echo ""
 # ============================================
 # 9. Optional: System Auditing (auditd)
 # ============================================
-if [ "${ENABLE_AUDITD:-false}" = "true" ]; then
+if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
     echo "=========================================="
     echo "  9. System Auditing (auditd)"
     echo "=========================================="
