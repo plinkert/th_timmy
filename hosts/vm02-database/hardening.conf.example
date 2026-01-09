@@ -1,0 +1,30 @@
+# Hardening Configuration Example for VM-02: Database
+# Copy this file to hardening.conf and customize as needed
+# Usage: source hardening.conf before running harden_vm02.sh
+
+# SSH Configuration
+export SSH_PORT=22              # SSH port (default: 22)
+export SSH_TIMEOUT=300         # SSH connection timeout in seconds (default: 300)
+
+# Firewall Configuration
+export ALLOWED_NETWORK=""      # Network CIDR to allow (e.g., "192.168.244.0/24")
+                                # If empty, ports are open to all (less secure)
+                                # PostgreSQL access is controlled via pg_hba.conf
+
+# Optional Features
+export ENABLE_AUDITD=false     # Enable system auditing with auditd (default: false)
+
+# Examples:
+# 
+# Restrict firewall access to specific network:
+# export ALLOWED_NETWORK="192.168.244.0/24"
+#
+# Enable auditd:
+# export ENABLE_AUDITD=true
+#
+# Change SSH port:
+# export SSH_PORT=2222
+#
+# Note: PostgreSQL access is configured in config.yml (network.allowed_ips)
+#       and applied via pg_hba.conf during hardening
+
