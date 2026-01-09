@@ -101,7 +101,6 @@ log_info "Configuring firewall for VM-02 (Database)"
 
 # Configure firewall with SSH and PostgreSQL ports
 FIREWALL_PORTS="$SSH_PORT,$PG_PORT"
-ALLOWED_NETWORK="${ALLOWED_NETWORK:-}"
 
 if [ -n "$ALLOWED_NETWORK" ]; then
     log_info "Restricting access to network: $ALLOWED_NETWORK"
@@ -384,7 +383,7 @@ echo "  ✓ Fail2ban installed and configured (SSH + PostgreSQL)"
 echo "  ✓ Automatic backups configured"
 echo "  ✓ Log rotation configured"
 echo "  ✓ Automatic security updates enabled"
-if [ "${ENABLE_AUDITD:-false}" = "true" ]; then
+if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
     echo "  ✓ System auditing (auditd) enabled"
 fi
 echo ""

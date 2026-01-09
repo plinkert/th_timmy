@@ -179,7 +179,7 @@ echo "  ✓ SSH hardened (root login disabled, port: $SSH_PORT)"
 echo "  ✓ Fail2ban installed and configured"
 echo "  ✓ Log rotation configured"
 echo "  ✓ Automatic security updates enabled"
-if [ "${ENABLE_AUDITD:-false}" = "true" ]; then
+if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
     echo "  ✓ System auditing (auditd) enabled"
 fi
 echo ""
