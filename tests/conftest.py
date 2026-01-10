@@ -30,9 +30,15 @@ def project_root_path():
 
 
 @pytest.fixture(scope="session")
-def test_config() -> Dict[str, Any]:
+def project_root_path():
+    """Return project root path."""
+    return Path(__file__).parent.parent
+
+
+@pytest.fixture(scope="session")
+def test_config(project_root_path) -> Dict[str, Any]:
     """Load test configuration from config.yml."""
-    config_path = project_root_path() / "configs" / "config.yml"
+    config_path = project_root_path / "configs" / "config.yml"
     
     if not config_path.exists():
         pytest.skip("config.yml not found. Please create it from config.example.yml")
