@@ -29,6 +29,7 @@ openai>=1.0.0
 # Security
 cryptography>=41.0.0
 python-dotenv>=1.0.0
+paramiko>=3.0.0  # SSH client for remote execution
 
 # Utilities
 pyyaml>=6.0
