@@ -99,6 +99,18 @@ backup:
   retention_days: 30  # Keep backups for 30 days
   backup_dir: "/var/backups/threat-hunting"
 
+# Repository Configuration
+repository:
+  main_repo_path: "/home/user/th_timmy"  # Main repository path on VM04 (orchestrator)
+  vm_repo_paths:  # Repository paths on each VM
+    vm01: "/home/user/th_timmy"
+    vm02: "/home/user/th_timmy"
+    vm03: "/home/user/th_timmy"
+    vm04: "/home/user/th_timmy"
+  auto_sync: true  # Automatically sync repository on changes
+  sync_on_deploy: true  # Sync repository during deployment
+  branch: "main"  # Default branch to sync
+
 # Hardening Configuration (applies to all VMs)
 hardening:
   # SSH Configuration (common for all VMs)
