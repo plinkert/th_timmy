@@ -1,0 +1,226 @@
+"""
+Pytest configuration and fixtures for test suite.
+"""
+
+import os
+import sys
+import tempfile
+import shutil
+import pytest
+import yaml
+from pathlib import Path
+from typing import Dict, Any, Optional
+
+# Add project root to path
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+# Import with proper path handling
+automation_scripts_path = project_root / "automation-scripts"
+sys.path.insert(0, str(automation_scripts_path))
+
+from services.ssh_client import SSHClient
+from services.remote_executor import RemoteExecutor
+
+
+@pytest.fixture(scope="session")
+def project_root_path():
+    """Return project root path."""
+    return Path(__file__).parent.parent
+
+
+@pytest.fixture(scope="session")
+def test_config() -> Dict[str, Any]:
+    """Load test configuration from config.yml."""
+    config_path = project_root_path() / "configs" / "config.yml"
+    
+    if not config_path.exists():
+        pytest.skip("config.yml not found. Please create it from config.example.yml")
+    
+    with open(config_path, 'r') as f:
+        config = yaml.safe_load(f)
+    
+    return config
+
+
+@pytest.fixture(scope="session")
+def vm_configs(test_config) -> Dict[str, Dict[str, Any]]:
+    """Extract VM configurations from test config."""
+    return test_config.get('vms', {})
+
+
+@pytest.fixture(scope="session")
+def ssh_key_path() -> Optional[str]:
+    """Get SSH key path from environment or default locations."""
+    # Check environment variable
+    key_path = os.getenv('SSH_KEY_PATH')
+    if key_path and os.path.exists(key_path):
+        return key_path
+    
+    # Check default locations
+    home = Path.home()
+    default_keys = [
+        home / '.ssh' / 'id_rsa',
+        home / '.ssh' / 'id_ed25519',
+        home / '.ssh' / 'id_rsa_th',
+    ]
+    
+    for key in default_keys:
+        if key.exists():
+            return str(key)
+    
+    # If no key found, return None (will use password if available)
+    return None
+
+
+@pytest.fixture(scope="session")
+def ssh_password() -> Optional[str]:
+    """Get SSH password from environment."""
+    return os.getenv('SSH_PASSWORD')
+
+
+@pytest.fixture(scope="function")
+def temp_dir():
+    """Create temporary directory for test files."""
+    temp_path = tempfile.mkdtemp(prefix="th_test_")
+    yield temp_path
+    shutil.rmtree(temp_path, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
+def test_file(temp_dir):
+    """Create test file with content."""
+    test_file_path = os.path.join(temp_dir, "test.txt")
+    with open(test_file_path, 'w') as f:
+        f.write("test content")
+    return test_file_path
+
+
+@pytest.fixture(scope="function")
+def test_script(temp_dir):
+    """Create test bash script."""
+    script_path = os.path.join(temp_dir, "test_script.sh")
+    with open(script_path, 'w') as f:
+        f.write("#!/bin/bash\n")
+        f.write("date\n")
+    os.chmod(script_path, 0o755)
+    return script_path
+
+
+@pytest.fixture(scope="function")
+def remote_executor(test_config, ssh_key_path, ssh_password, temp_dir):
+    """Create RemoteExecutor instance for testing."""
+    audit_log_path = os.path.join(temp_dir, "audit.log")
+    
+    executor = RemoteExecutor(
+        config=test_config,
+        ssh_key_path=ssh_key_path,
+        ssh_password=ssh_password,
+        audit_log_path=audit_log_path
+    )
+    
+    yield executor
+    
+    # Cleanup
+    executor.close_connections()
+
+
+@pytest.fixture(scope="function")
+def ssh_client_vm01(vm_configs, ssh_key_path, ssh_password):
+    """Create SSH client for VM01."""
+    if 'vm01' not in vm_configs:
+        pytest.skip("VM01 not configured")
+    
+    vm_config = vm_configs['vm01']
+    client = SSHClient(
+        hostname=vm_config['ip'],
+        username=vm_config.get('ssh_user', 'thadmin'),
+        port=vm_config.get('ssh_port', 22),
+        key_path=ssh_key_path,
+        password=ssh_password,
+        timeout=30
+    )
+    
+    yield client
+    
+    # Cleanup
+    client.disconnect()
+
+
+@pytest.fixture(scope="function")
+def ssh_client_vm02(vm_configs, ssh_key_path, ssh_password):
+    """Create SSH client for VM02."""
+    if 'vm02' not in vm_configs:
+        pytest.skip("VM02 not configured")
+    
+    vm_config = vm_configs['vm02']
+    client = SSHClient(
+        hostname=vm_config['ip'],
+        username=vm_config.get('ssh_user', 'thadmin'),
+        port=vm_config.get('ssh_port', 22),
+        key_path=ssh_key_path,
+        password=ssh_password,
+        timeout=30
+    )
+    
+    yield client
+    
+    # Cleanup
+    client.disconnect()
+
+
+@pytest.fixture(scope="function")
+def ssh_client_vm03(vm_configs, ssh_key_path, ssh_password):
+    """Create SSH client for VM03."""
+    if 'vm03' not in vm_configs:
+        pytest.skip("VM03 not configured")
+    
+    vm_config = vm_configs['vm03']
+    client = SSHClient(
+        hostname=vm_config['ip'],
+        username=vm_config.get('ssh_user', 'thadmin'),
+        port=vm_config.get('ssh_port', 22),
+        key_path=ssh_key_path,
+        password=ssh_password,
+        timeout=30
+    )
+    
+    yield client
+    
+    # Cleanup
+    client.disconnect()
+
+
+@pytest.fixture(scope="function")
+def all_vm_ids(vm_configs):
+    """Return list of all enabled VM IDs."""
+    return [vm_id for vm_id, config in vm_configs.items() if config.get('enabled', True)]
+
+
+@pytest.fixture(scope="function")
+def skip_if_no_ssh_key(ssh_key_path, ssh_password):
+    """Skip test if no SSH authentication available."""
+    if not ssh_key_path and not ssh_password:
+        pytest.skip("No SSH key or password available for authentication")
+
+
+@pytest.fixture(scope="function")
+def skip_if_vm_unreachable(vm_configs):
+    """Skip test if VMs are not reachable (basic connectivity check)."""
+    import socket
+    
+    for vm_id, config in vm_configs.items():
+        if not config.get('enabled', True):
+            continue
+        
+        ip = config.get('ip')
+        port = config.get('ssh_port', 22)
+        
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(2)
+            result = sock.connect_ex((ip, port))
+            sock.close()
+        except Exception:
+            pytest.skip(f"VM {vm_id} ({ip}) is not reachable")
+
