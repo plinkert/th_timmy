@@ -222,7 +222,7 @@ This project is licensed under the Business Source License 1.1 (BUSL 1.1).
 - ✅ Free for internal business use (non-commercial)
 - ❌ **Commercial use requires written permission** - you cannot sell, license, or commercialize this software without explicit authorization from the copyright holder
 
-The license will automatically convert to MIT License on **January 1, 2027**, making it fully open source at that time.
+The license will automatically convert to Apache License 2.0 on **January 1, 2029**, making it fully open source at that time.
 
 For commercial use inquiries, please contact the project maintainers. See the [LICENSE](LICENSE) file for full terms and conditions.
 
