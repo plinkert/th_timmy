@@ -261,3 +261,87 @@ def skip_if_vm_unreachable(vm_configs):
         except Exception:
             pytest.skip(f"VM {vm_id} ({ip}) is not reachable")
 
+
+@pytest.fixture(scope="function")
+def repo_sync_service(test_config, remote_executor, project_root_path):
+    """Create RepoSyncService instance for testing."""
+    # Ensure repository config exists
+    # Use /home/thadmin/th_timmy on VMs (where repo actually is)
+    vm_repo_path = '/home/thadmin/th_timmy'
+    
+    if 'repository' not in test_config:
+        # Add default repository config
+        test_config['repository'] = {
+            'main_repo_path': str(project_root_path),  # Local path for VM04
+            'vm_repo_paths': {
+                'vm01': vm_repo_path,
+                'vm02': vm_repo_path,
+                'vm03': vm_repo_path,
+                'vm04': vm_repo_path,
+            },
+            'branch': 'main',
+            'auto_sync': False
+        }
+    else:
+        # Update paths if they're relative or use defaults
+        repo_config = test_config['repository']
+        if 'vm_repo_paths' not in repo_config:
+            repo_config['vm_repo_paths'] = {
+                'vm01': vm_repo_path,
+                'vm02': vm_repo_path,
+                'vm03': vm_repo_path,
+                'vm04': vm_repo_path,
+            }
+        # Update main_repo_path if not set
+        if 'main_repo_path' not in repo_config:
+            repo_config['main_repo_path'] = str(project_root_path)
+    
+    # Import RepoSyncService
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load repo_sync
+    repo_sync_path = automation_scripts_path / "services" / "repo_sync.py"
+    repo_sync_spec = importlib.util.spec_from_file_location("automation_scripts.services.repo_sync", repo_sync_path)
+    repo_sync_module = importlib.util.module_from_spec(repo_sync_spec)
+    sys.modules["automation_scripts.services.repo_sync"] = repo_sync_module
+    
+    # Inject dependencies
+    repo_sync_module.RemoteExecutor = RemoteExecutor
+    repo_sync_module.RemoteExecutorError = RemoteExecutorError
+    
+    # Load utils.git_manager if needed
+    try:
+        git_manager_path = automation_scripts_path / "utils" / "git_manager.py"
+        if git_manager_path.exists():
+            git_manager_spec = importlib.util.spec_from_file_location("automation_scripts.utils.git_manager", git_manager_path)
+            git_manager_module = importlib.util.module_from_spec(git_manager_spec)
+            sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+            sys.modules["automation_scripts.utils.git_manager"] = git_manager_module
+            git_manager_spec.loader.exec_module(git_manager_module)
+            repo_sync_module.GitManager = git_manager_module.GitManager
+            repo_sync_module.GitManagerError = git_manager_module.GitManagerError
+    except Exception as e:
+        # GitManager might not be available, that's OK for some tests
+        pass
+    
+    repo_sync_spec.loader.exec_module(repo_sync_module)
+    RepoSyncService = repo_sync_module.RepoSyncService
+    
+    # Create service instance
+    service = RepoSyncService(
+        config=test_config,
+        remote_executor=remote_executor
+    )
+    
+    yield service
+    
+    # Cleanup
+    service.close()
+

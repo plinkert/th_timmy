@@ -276,7 +276,14 @@ class TestErrorHandling:
         # RemoteExecutor wraps errors, so check for either the original or wrapped message
         error_msg = str(exc_info.value).lower()
         # Message is: "Unexpected error executing command on nonexistent_vm: VM 'nonexistent_vm' not found in configuration"
-        assert ("nonexistent" in error_msg and "not found" in error_msg), \
+        has_nonexistent = "nonexistent" in error_msg
+        has_not_found = "not found" in error_msg
+        if not (has_nonexistent and has_not_found):
+            # Debug output
+            print(f"DEBUG: error_msg = '{error_msg}'")
+            print(f"DEBUG: has_nonexistent = {has_nonexistent}")
+            print(f"DEBUG: has_not_found = {has_not_found}")
+        assert (has_nonexistent and has_not_found), \
             f"Expected error message about VM not found, got: {error_msg}"
     
     def test_audit_logging(self, remote_executor, temp_dir, skip_if_vm_unreachable):
