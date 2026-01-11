@@ -1,10 +1,10 @@
 # Configuration Guide
 
-This guide explains how to configure the Threat Hunting Lab system.
+This guide walks you through configuring the Threat Hunting Lab system. We'll cover the central configuration file, VM-specific settings, and some common scenarios you might encounter.
 
 ## Central Configuration File
 
-The central configuration file (`configs/config.yml`) contains network settings, VM IP addresses, and service configurations for all VMs.
+Everything starts with the central configuration file at `configs/config.yml`. This file holds all the network settings, VM IP addresses, and service configurations that the system needs to operate.
 
 ### Setup
 
@@ -77,18 +77,18 @@ results:
 
 ## Data Retention Configuration
 
-The system is configured with a **90-day data retention** policy by default. This is production-ready and ensures compliance with most data retention requirements.
+By default, the system keeps data for **90 days** before automatically cleaning it up. This works well for most production environments and helps with compliance requirements. If you need a different retention period, you can change it.
 
 ### Changing Retention Period
 
-To change the retention period, edit `configs/config.yml`:
+Edit the `results` section in `configs/config.yml`:
 
 ```yaml
 results:
-  retention_days: 30  # Change to desired number of days
+  retention_days: 30  # Keep data for 30 days instead of 90
 ```
 
-**Note**: The actual implementation of data retention is done in VM-02 (PostgreSQL) - see VM-02 documentation for details.
+**Important:** After changing this, you'll also need to update the retention setting in VM-02's configuration file (`hosts/vm02-database/config.yml`) and restart the cleanup job. Check the VM-02 README for the exact steps.
 
 ## Hardening Configuration
 
@@ -207,29 +207,61 @@ results:
 
 ## Troubleshooting
 
-### Problem: Cannot connect to VMs
+### Can't connect to VMs?
 
-- Check IP addresses in `configs/config.yml`
-- Verify network connectivity: `ping <vm_ip>`
-- Check firewall rules on VMs
+First, double-check your IP addresses in `configs/config.yml` - typos happen! Then try:
 
-### Problem: Database connection fails
+```bash
+# Test basic connectivity
+ping <vm_ip>
 
-- Verify PostgreSQL is running: `systemctl status postgresql`
-- Check database credentials in `.env`
-- Verify firewall allows connections on port 5432
+# Check if SSH is working
+ssh user@<vm_ip>
+```
 
-### Problem: Configuration file not found
+If ping works but SSH doesn't, check the firewall on the target VM. The hardening scripts should have opened port 22, but it's worth verifying with `sudo ufw status`.
 
-- Ensure `configs/config.yml` exists (copy from `configs/config.example.yml`)
-- Check file permissions: `ls -l configs/config.yml`
-- Verify you're running scripts from the project root directory
+### Database connection failing?
+
+This is usually one of three things:
+
+1. **PostgreSQL isn't running:**
+   ```bash
+   sudo systemctl status postgresql
+   # If it's stopped, start it:
+   sudo systemctl start postgresql
+   ```
+
+2. **Wrong password:** Check your `.env` file or the password you set in VM-02's config.yml
+
+3. **Firewall blocking:** Make sure port 5432 is open and your IP is in the `allowed_ips` list in VM-02's config
+
+### Configuration file not found?
+
+If scripts complain about missing config files:
+
+```bash
+# Make sure you're in the project root
+cd ~/th_timmy
+
+# Check if the file exists
+ls -l configs/config.yml
+
+# If it doesn't exist, copy from example
+cp configs/config.example.yml configs/config.yml
+```
 
 ## Best Practices
 
-1. **Always use example files**: Copy `*.example.yml` files before editing
-2. **Never commit sensitive data**: Keep `config.yml` and `.env` in `.gitignore`
-3. **Use environment variables**: Store passwords and tokens in `.env`
-4. **Document changes**: Keep notes of any custom configurations
-5. **Test after changes**: Run connection tests after modifying configuration
+Here are some tips we've learned the hard way:
+
+1. **Always start from example files** - Don't create config files from scratch. Copy the `.example.yml` files first. They have all the required fields and comments explaining what each setting does.
+
+2. **Never commit sensitive data** - The `.gitignore` file should already exclude `config.yml` and `.env`, but double-check before committing. We've seen passwords in repos before, and it's not pretty.
+
+3. **Use environment variables for secrets** - Store passwords and API keys in `.env` files, not in the YAML configs. This makes it easier to manage different environments (dev, staging, prod).
+
+4. **Test after changes** - After modifying configuration, run the connection tests (`./hosts/shared/test_connections.sh`) to make sure everything still works. It only takes a minute and can save you hours of debugging later.
+
+5. **Document your customizations** - If you change something from the defaults, make a note somewhere. Future you (or your teammates) will thank you.
 

@@ -1,14 +1,14 @@
 # Testing Guide
 
-This guide explains how to use the testing scripts for connectivity and data flow validation.
+This guide covers the testing scripts we use to verify that everything is working correctly. These scripts help catch connectivity issues, data flow problems, and verify that hardening didn't break anything.
 
 ## Overview
 
-The testing suite includes three main scripts:
+We have three main testing scripts:
 
-1. **`test_connections.sh`** - Tests connectivity between VMs
-2. **`test_data_flow.sh`** - Tests data flow between VMs
-3. **`test_before_after_hardening.sh`** - Tests before and after hardening
+1. **`test_connections.sh`** - Checks if all VMs can talk to each other
+2. **`test_data_flow.sh`** - Verifies the data pipeline works end-to-end
+3. **`test_before_after_hardening.sh`** - Compares system state before and after hardening
 
 ## Prerequisites
 
@@ -42,7 +42,9 @@ The script provides:
 - Summary statistics (passed/failed/warnings)
 - JSON results file in `test_results/connections_YYYYMMDD_HHMMSS.json`
 
-### Example Output
+### What to Expect
+
+When everything is working, you'll see output like this:
 
 ```
 ==========================================
@@ -77,6 +79,8 @@ Connection Test Summary
 ✓ All connection tests passed!
 ```
 
+If you see warnings (like SSH tests), that's usually fine - they might just need SSH keys set up. Failures are what you need to investigate.
+
 ## Data Flow Testing
 
 ### Basic Usage
@@ -94,9 +98,10 @@ cd /path/to/th_timmy
 
 ### Prerequisites
 
-- PostgreSQL must be running on VM-02
-- Database credentials must be set in environment variable `POSTGRES_PASSWORD`
-- Virtual environment with psycopg2 installed (optional, for database tests)
+Before running data flow tests, make sure:
+- PostgreSQL is running on VM-02 (check with `systemctl status postgresql`)
+- You have the database password set as an environment variable
+- The virtual environment has psycopg2 installed (it should be there if you installed from requirements.txt)
 
 ### Output
 
@@ -161,13 +166,15 @@ The script automatically compares before/after results and shows:
 # ... (comparison results)
 ```
 
-## Interpreting Results
+## Understanding the Results
 
-### Test Status
+### What the Symbols Mean
 
-- **PASS (✓)**: Test completed successfully
-- **FAIL (✗)**: Test failed - investigate the issue
-- **WARN (⚠)**: Test completed but with warnings (e.g., service not running)
+- **✓ (PASS)**: Everything worked as expected
+- **✗ (FAIL)**: Something broke - you need to fix this
+- **⚠ (WARN)**: It worked, but there's something to be aware of (like a service that's not running but isn't critical)
+
+Don't panic if you see warnings - they're usually informational. Failures are what need your attention.
 
 ### Common Issues
 
@@ -242,11 +249,17 @@ The script automatically compares before/after results and shows:
 
 ## Best Practices
 
-1. **Run tests regularly**: Test connectivity after any network changes
-2. **Save results**: Keep JSON result files for comparison
-3. **Test before/after changes**: Always test before and after configuration changes
-4. **Document issues**: Note any failures and their resolutions
-5. **Automate testing**: Consider adding tests to CI/CD pipeline
+Here's what we've found works well:
+
+1. **Run tests after changes** - Any time you modify network settings, firewall rules, or service configurations, run the tests. It's quick and catches problems early.
+
+2. **Keep test results** - The JSON files are timestamped, so you can compare results over time. This is especially useful when troubleshooting "it worked yesterday" issues.
+
+3. **Test before and after hardening** - The `test_before_after_hardening.sh` script is specifically designed for this. It saves you from wondering if a problem existed before or was introduced by hardening.
+
+4. **Document what you fixed** - If a test fails and you fix it, make a note. Someone else (or future you) might hit the same issue.
+
+5. **Automate if possible** - If you're setting up CI/CD, these tests are perfect candidates. They're fast and catch real problems.
 
 ## Integration with CI/CD
 
