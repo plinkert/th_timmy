@@ -15,12 +15,43 @@ from typing import Dict, Any, Optional
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Import with proper path handling
+# Add automation-scripts to path
 automation_scripts_path = project_root / "automation-scripts"
 sys.path.insert(0, str(automation_scripts_path))
 
-from services.ssh_client import SSHClient
-from services.remote_executor import RemoteExecutor
+# Import directly from files, avoiding __init__.py which has problematic imports
+# We need to create a proper module structure for relative imports to work
+import importlib.util
+import types
+
+# Create full package structure
+if "automation_scripts" not in sys.modules:
+    sys.modules["automation_scripts"] = types.ModuleType("automation_scripts")
+    sys.modules["automation_scripts"].__path__ = [str(automation_scripts_path)]
+if "automation_scripts.services" not in sys.modules:
+    sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    sys.modules["automation_scripts.services"].__path__ = [str(automation_scripts_path / "services")]
+
+# Load ssh_client first (no dependencies on other services)
+ssh_client_path = automation_scripts_path / "services" / "ssh_client.py"
+ssh_spec = importlib.util.spec_from_file_location("automation_scripts.services.ssh_client", ssh_client_path)
+ssh_module = importlib.util.module_from_spec(ssh_spec)
+sys.modules["automation_scripts.services.ssh_client"] = ssh_module
+ssh_spec.loader.exec_module(ssh_module)
+SSHClient = ssh_module.SSHClient
+SSHClientError = ssh_module.SSHClientError
+
+# Now load remote_executor
+# It uses "from .ssh_client import" which should work now
+remote_executor_path = automation_scripts_path / "services" / "remote_executor.py"
+remote_spec = importlib.util.spec_from_file_location("automation_scripts.services.remote_executor", remote_executor_path)
+remote_module = importlib.util.module_from_spec(remote_spec)
+sys.modules["automation_scripts.services.remote_executor"] = remote_module
+
+# Execute the module - it will import from .ssh_client which is already loaded
+remote_spec.loader.exec_module(remote_module)
+RemoteExecutor = remote_module.RemoteExecutor
+RemoteExecutorError = remote_module.RemoteExecutorError
 
 
 @pytest.fixture(scope="session")

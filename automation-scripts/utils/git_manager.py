@@ -394,3 +394,4 @@ class GitManager:
         except Exception:
             return None
 
+

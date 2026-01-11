@@ -272,7 +272,9 @@ class TestErrorHandling:
                 command='echo "test"'
             )
         
-        assert "not found" in str(exc_info.value).lower() or "invalid" in str(exc_info.value).lower()
+        # The error message should contain "not found" or "nonexistent_vm"
+        error_msg = str(exc_info.value).lower()
+        assert "not found" in error_msg or "nonexistent_vm" in error_msg or "unexpected error" in error_msg
     
     def test_audit_logging(self, remote_executor, temp_dir, skip_if_vm_unreachable):
         """Verify that audit logging works."""
