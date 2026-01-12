@@ -63,8 +63,8 @@ th_timmy/
 - [x] Database configuration
 - [x] Basic automation scripts
 - [x] Playbook structure with query definitions (PHASE1-01)
+- [x] Query generator for multiple tools and hunt types (PHASE1-02)
 - [ ] Playbook engine
-- [ ] Query generator
 - [ ] Data anonymization
 
 **Phase 2: AI Integration** - Planned

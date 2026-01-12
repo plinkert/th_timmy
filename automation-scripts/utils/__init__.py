@@ -10,7 +10,20 @@ from .git_manager import GitManager
 from .config_validator import ConfigValidator
 from .config_backup import ConfigBackup
 from .alert_manager import AlertManager, AlertLevel
+from .query_generator import QueryGenerator, QueryGeneratorError
+from .query_templates import QueryTemplates, QueryTool, QueryMode
 
-__all__ = ['GitManager', 'ConfigValidator', 'ConfigBackup', 'AlertManager', 'AlertLevel']
+__all__ = [
+    'GitManager',
+    'ConfigValidator',
+    'ConfigBackup',
+    'AlertManager',
+    'AlertLevel',
+    'QueryGenerator',
+    'QueryGeneratorError',
+    'QueryTemplates',
+    'QueryTool',
+    'QueryMode'
+]
 
 
