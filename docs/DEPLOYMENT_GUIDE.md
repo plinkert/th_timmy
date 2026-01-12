@@ -1,10 +1,9 @@
 # Comprehensive Deployment Guide - Threat Hunting Automation Lab
 
 **Version**: 1.0  
-**Date**: 2025-01-12  
-**For**: Non-technical users
+**Date**: 2025-01-12
 
-> **Note:** This guide was written specifically for people without technical experience. If you're an experienced system administrator, you can jump to the [Quick Start Guide](QUICK_START.md) for faster installation.
+> **Note:** This guide provides comprehensive step-by-step instructions for system deployment. For experienced system administrators, the [Quick Start Guide](QUICK_START.md) offers a faster installation path.
 
 ---
 
@@ -25,9 +24,7 @@
 
 ## Introduction
 
-This guide was created specifically for people who don't have technical experience. Every step is described in detail, step by step, so you can deploy and use the Threat Hunting Automation Lab system on your own.
-
-**Don't worry** - even if you don't know what "SSH" or "PostgreSQL" is, this guide will walk you through the entire process.
+This guide provides comprehensive step-by-step instructions for deploying and configuring the Threat Hunting Automation Lab system. Each step is documented in detail to ensure successful deployment.
 
 ---
 
@@ -40,8 +37,8 @@ This guide was created specifically for people who don't have technical experien
 3. **VM-03 (Analysis/Jupyter)** - Enables data analysis and report creation
 4. **VM-04 (Orchestrator)** - Central management of the entire system
 
-**Simple usage example:**
-Imagine you want to check if there are any suspicious activities in your network. Instead of manually reviewing thousands of logs, the system:
+**Usage example:**
+The system enables automated threat detection by processing security logs. For example, to check for suspicious activities in your network, the system:
 - Automatically collects logs from various systems (firewall, servers, workstations)
 - Analyzes them for known threat patterns (e.g., intrusion attempts, malware)
 - Generates readable reports with results
@@ -86,7 +83,7 @@ Each virtual machine must have installed:
 
 - **User account** on each machine with administrator privileges (sudo)
 - **Passwords** or **SSH keys** to log into machines
-- **Basic knowledge** of terminal/command line (but don't worry - everything is described)
+- **Familiarity** with terminal/command line interface (all commands are documented in this guide)
 
 ---
 
@@ -160,10 +157,10 @@ VM-04 will be the management machine, so we start with it.
 ssh your_username@<VM-04_IP>
 ```
 
-**If you don't know how to log in via SSH:**
-- On Windows you can use **PuTTY** or **Windows Terminal**
-- On Linux/Mac use terminal and `ssh` command
-- You need username and password (or SSH key)
+**SSH access methods:**
+- On Windows: Use **PuTTY** or **Windows Terminal**
+- On Linux/Mac: Use terminal with `ssh` command
+- Authentication: Username and password, or SSH key
 
 #### Step 1.2: Download project code
 
@@ -180,14 +177,14 @@ git clone <repository-url> th_timmy
 cd th_timmy
 ```
 
-**If you don't have access to Git repository:**
-- You can download project as ZIP file
-- Extract it in home directory
+**Alternative download method (without Git):**
+- Download project as ZIP file
+- Extract to home directory
 - Rename directory to `th_timmy`
 
 #### Step 1.3: Copy project to remaining machines
 
-You need the same code on all machines. Simplest way:
+You need the same code on all machines. Recommended method:
 
 ```bash
 # From VM-04, copy project to remaining machines
@@ -224,7 +221,7 @@ cp configs/config.example.yml configs/config.yml
 Open file `configs/config.yml` in text editor:
 
 ```bash
-# Use nano (simple text editor)
+# Use nano (text editor)
 nano configs/config.yml
 ```
 
@@ -310,7 +307,7 @@ nano config.yml
 
 **What you need to set:**
 
-1. **`database_password`** - Strong password for database (write it down!)
+1. **`database_password`** - Strong password for database (store securely)
    ```yaml
    database_password: "YourStrongPassword123!"
    ```
@@ -337,7 +334,7 @@ sudo ./install_vm02.sh
 - Configures network access
 - Installs helper tools
 
-**This may take 10-15 minutes.** Don't close terminal during installation! Wait until you see message "Installation completed successfully" or similar.
+**Installation duration:** 10-15 minutes. Keep the terminal session open during installation. Wait for the "Installation completed successfully" message or similar confirmation.
 
 **Step 3.5: Check if installation succeeded**
 
@@ -480,7 +477,7 @@ nano config.yml
    basic_auth_user: "admin"
    ```
 
-2. **`basic_auth_password`** - Password for logging into n8n (write it down!)
+2. **`basic_auth_password`** - Password for logging into n8n (store securely)
    ```yaml
    basic_auth_password: "YourStrongPassword123!"
    ```
@@ -1181,6 +1178,4 @@ This guide walked you through:
 - ✅ Usage of all available tools
 - ✅ Troubleshooting
 
-The system is now ready to use! You can start threat hunting and data analysis.
-
-**Good luck!** 🎉
+The system is now ready to use. You can proceed with threat hunting and data analysis operations.

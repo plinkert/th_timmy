@@ -1,9 +1,8 @@
 # Tools Guide - Threat Hunting Automation Lab
 
-**Version**: 1.0  
-**For**: Non-technical users
+**Version**: 1.0
 
-This guide describes all available tools in the system, what they're for and how to use them step by step.
+This guide describes all available tools in the system, their purpose, and detailed usage instructions.
 
 ---
 
@@ -1010,7 +1009,7 @@ curl -X POST http://<VM-04_IP>:8000/api/health/check \
 
 ## Summary
 
-This guide described all available tools in the system. Remember:
+This guide described all available tools in the system. Summary:
 
 - **Management Dashboard** - daily monitoring
 - **Testing Management** - verification and diagnostics
@@ -1021,6 +1020,4 @@ This guide described all available tools in the system. Remember:
 - **JupyterLab** - data analysis
 - **Command line tools** - advanced operations
 
-All tools are designed to be easy to use, even for non-technical people. If you have questions, check documentation or contact system administrator.
-
-**Good luck!** 🎉
+All tools are designed with clear interfaces and comprehensive documentation. For additional support, refer to the documentation or contact the system administrator.

@@ -227,7 +227,7 @@ If tests fail after hardening:
 ### Maintenance Tips
 
 1. **Review Quarterly** - Security isn't set-and-forget. Review your firewall rules, SSH config, and fail2ban settings every few months.
-2. **Document Changes** - If you customize hardening beyond what the scripts do, write it down. Future you will appreciate it.
+2. **Document Changes** - Document any custom hardening configurations beyond the standard scripts for future reference and maintenance.
 3. **Test After Changes** - Any time you modify security settings, run the tests again.
 4. **Watch the Logs** - Set up log monitoring if possible. Even just checking `journalctl` weekly helps catch issues.
 

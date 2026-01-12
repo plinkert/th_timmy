@@ -7,7 +7,7 @@
 
 ## Documentation overview
 
-Project documentation has been comprehensively reviewed, completed and corrected. All documents are written in an accessible way for non-technical users, with detailed step-by-step instructions.
+Project documentation has been comprehensively reviewed, completed and corrected. All documents are written in an accessible way for all users, with detailed step-by-step instructions.
 
 ### Statistics
 
@@ -20,12 +20,12 @@ Project documentation has been comprehensively reviewed, completed and corrected
 
 ## Documentation structure
 
-### Main guides (for non-technical users)
+### Main guides
 
 1. **DEPLOYMENT_GUIDE.md** (1,174 lines)
    - Comprehensive deployment guide from scratch
    - Step-by-step instructions for each machine
-   - Detailed explanations for people without technical experience
+   - Detailed explanations with comprehensive coverage
    - Troubleshooting
    - Usage examples
 
@@ -206,7 +206,7 @@ All 7 tasks from Phase 1 are implemented and documented:
 
 1. **Detail**
    - All steps are described in detail
-   - Step-by-step instructions for non-technical users
+   - Comprehensive step-by-step instructions
    - Practical examples
 
 2. **Completeness**
@@ -215,9 +215,9 @@ All 7 tasks from Phase 1 are implemented and documented:
    - Troubleshooting for each tool
 
 3. **Accessibility**
-   - Language adapted for non-technical users
-   - Explanations of basic concepts
-   - No assumption of prior technical knowledge
+   - Clear and comprehensive language
+   - Detailed explanations of concepts
+   - Self-contained documentation
 
 4. **Consistency**
    - All documents are consistent
@@ -288,7 +288,7 @@ All 7 tasks from Phase 1 are implemented and documented:
 
 ## User recommendations
 
-### For non-technical users
+### Recommended reading path
 
 **Start with:**
 1. **DEPLOYMENT_GUIDE.md** - Complete deployment guide
@@ -299,7 +299,7 @@ All 7 tasks from Phase 1 are implemented and documented:
 - CONFIGURATION.md - Configuration details
 - TESTING.md - How to test system
 
-### For technical users
+### Advanced users
 
 **Start with:**
 1. **QUICK_START.md** - Quick start
@@ -332,14 +332,14 @@ All 7 tasks from Phase 1 are implemented and documented:
 
 ## Summary
 
-Project documentation is **complete and ready for publication**. All available tools are documented in detail with instructions for non-technical users. Documentation was written in a natural way, without AI-characteristic formulations, with practical examples and tips.
+Project documentation is **complete and ready for publication**. All available tools are documented in detail with comprehensive instructions. Documentation provides clear, professional guidance with practical examples and troubleshooting information.
 
 **Main achievements:**
 - ✅ 5,362 lines of documentation
 - ✅ 12 documentation files
-- ✅ 2 comprehensive guides for non-technical users
+- ✅ 2 comprehensive deployment and tools guides
 - ✅ All tools documented
-- ✅ Natural, accessible language
+- ✅ Clear, professional language
 - ✅ Practical examples and scenarios
 - ✅ Troubleshooting for each tool
 

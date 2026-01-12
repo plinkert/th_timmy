@@ -9,7 +9,7 @@ The Data Package provides a standardized structure for threat hunting data that 
 - **Standardization**: Unified data structure regardless of source
 - **Validation**: JSON schema-based validation ensures data integrity
 - **Metadata**: Rich metadata for tracking data provenance
-- **User-Friendly**: Simple API for non-technical users
+- **Usability**: Simple, intuitive API interface
 - **Flexibility**: Supports various data sources and ingestion modes
 
 ## Structure

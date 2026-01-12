@@ -15,7 +15,7 @@ The Query Generator automatically generates ready-to-use queries for threat hunt
 - **Dual Mode**: Generates queries for both manual execution and API automation
 - **Parameter Replacement**: Automatically replaces placeholders ({{time_range}}, etc.) with actual values
 - **Template Fallback**: Uses base templates when playbook-specific queries are not available
-- **User-Friendly**: Simple API designed for non-technical users
+- **Usability**: Simple, intuitive API interface
 
 ## Usage
 
