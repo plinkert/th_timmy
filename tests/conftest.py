@@ -813,3 +813,291 @@ def temp_playbooks_with_multiple(project_root_path):
         if temp_path.exists():
             shutil.rmtree(temp_path, ignore_errors=True)
 
+
+@pytest.fixture(scope="function")
+def temp_anonymizer(project_root_path):
+    """
+    Create a temporary DeterministicAnonymizer instance for testing.
+    Uses SQLite in-memory database for testing without PostgreSQL dependency.
+    """
+    import sqlite3
+    import tempfile
+    from pathlib import Path
+    
+    try:
+        import sys
+        import importlib.util
+        import types
+        
+        automation_scripts_path = project_root_path / "automation-scripts"
+        sys.path.insert(0, str(automation_scripts_path))
+        
+        if "automation_scripts" not in sys.modules:
+            sys.modules["automation_scripts"] = types.ModuleType("automation_scripts")
+            sys.modules["automation_scripts"].__path__ = [str(automation_scripts_path)]
+        if "automation_scripts.utils" not in sys.modules:
+            sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+            sys.modules["automation_scripts.utils"].__path__ = [str(automation_scripts_path / "utils")]
+        
+        deterministic_anonymizer_path = automation_scripts_path / "utils" / "deterministic_anonymizer.py"
+        spec = importlib.util.spec_from_file_location(
+            "automation_scripts.utils.deterministic_anonymizer", deterministic_anonymizer_path
+        )
+        deterministic_anonymizer_module = importlib.util.module_from_spec(spec)
+        sys.modules["automation_scripts.utils.deterministic_anonymizer"] = deterministic_anonymizer_module
+        spec.loader.exec_module(deterministic_anonymizer_module)
+        
+        DeterministicAnonymizer = deterministic_anonymizer_module.DeterministicAnonymizer
+        
+        temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+        temp_db_path = temp_db.name
+        temp_db.close()
+        
+        class SQLiteConnection:
+            def __init__(self, db_path):
+                self.conn = sqlite3.connect(db_path, check_same_thread=False)
+                self.conn.row_factory = sqlite3.Row
+                self.autocommit = True
+                self._db_path = db_path
+                # Create table and indexes separately for SQLite
+                self.conn.execute("""
+                    CREATE TABLE IF NOT EXISTS anonymization_mapping (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        original_hash VARCHAR(64) NOT NULL,
+                        original_value TEXT,
+                        anonymized_value VARCHAR(255) NOT NULL,
+                        value_type VARCHAR(50) NOT NULL,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(original_hash, value_type)
+                    )
+                """)
+                self.conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_hash 
+                    ON anonymization_mapping(original_hash, value_type)
+                """)
+                self.conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_anonymized 
+                    ON anonymization_mapping(anonymized_value, value_type)
+                """)
+                self.conn.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_type 
+                    ON anonymization_mapping(value_type)
+                """)
+                self.conn.commit()
+            
+            def cursor(self, cursor_factory=None):
+                # Return a cursor that supports context manager and executescript for multiple statements
+                class SQLiteCursor:
+                    def __init__(self, conn):
+                        self.conn = conn
+                        self.cursor = conn.cursor()
+                    
+                    def __enter__(self):
+                        return self
+                    
+                    def __exit__(self, exc_type, exc_val, exc_tb):
+                        self.cursor.close()
+                        return False
+                    
+                    def execute(self, query, params=None):
+                        # SQLite doesn't support multiple statements in one execute
+                        # Split by semicolon and execute separately
+                        # Also convert PostgreSQL %s to SQLite ?
+                        if params is None:
+                            params = ()
+                        # Convert PostgreSQL %s to SQLite ?
+                        query = query.replace('%s', '?')
+                        # Convert SERIAL to INTEGER for SQLite
+                        query = query.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
+                        # Remove PostgreSQL-specific syntax
+                        query = query.replace('TIMESTAMP WITH TIME ZONE', 'TIMESTAMP')
+                        statements = [s.strip() for s in query.split(';') if s.strip()]
+                        for stmt in statements:
+                            if stmt:
+                                self.cursor.execute(stmt, params)
+                        return self.cursor
+                    
+                    def fetchone(self):
+                        return self.cursor.fetchone()
+                    
+                    def fetchall(self):
+                        return self.cursor.fetchall()
+                
+                return SQLiteCursor(self.conn)
+            
+            def close(self):
+                self.conn.close()
+                try:
+                    Path(self._db_path).unlink()
+                except:
+                    pass
+        
+        try:
+            import psycopg2
+            original_connect = psycopg2.connect
+            
+            def mock_connect(**kwargs):
+                return SQLiteConnection(temp_db_path)
+            
+            psycopg2.connect = mock_connect
+            import psycopg2.extras
+            psycopg2.extras.RealDictCursor = sqlite3.Row
+            
+            anonymizer = DeterministicAnonymizer(
+                db_config={'database': temp_db_path},
+                use_cache=True,
+                salt="test_salt_for_determinism"
+            )
+            
+            yield anonymizer
+            
+            anonymizer.close()
+            psycopg2.connect = original_connect
+        except ImportError:
+            pytest.skip("psycopg2 not available")
+    except Exception as e:
+        pytest.skip(f"DeterministicAnonymizer not available: {e}")
+
+
+@pytest.fixture(scope="function")
+def temp_anonymizer_factory(project_root_path):
+    """Factory fixture for creating DeterministicAnonymizer instances with custom salt."""
+    import sqlite3
+    import tempfile
+    from pathlib import Path
+    
+    def _create_anonymizer(salt=None):
+        try:
+            import sys
+            import importlib.util
+            import types
+            
+            automation_scripts_path = project_root_path / "automation-scripts"
+            sys.path.insert(0, str(automation_scripts_path))
+            
+            if "automation_scripts" not in sys.modules:
+                sys.modules["automation_scripts"] = types.ModuleType("automation_scripts")
+                sys.modules["automation_scripts"].__path__ = [str(automation_scripts_path)]
+            if "automation_scripts.utils" not in sys.modules:
+                sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+                sys.modules["automation_scripts.utils"].__path__ = [str(automation_scripts_path / "utils")]
+            
+            deterministic_anonymizer_path = automation_scripts_path / "utils" / "deterministic_anonymizer.py"
+            spec = importlib.util.spec_from_file_location(
+                "automation_scripts.utils.deterministic_anonymizer", deterministic_anonymizer_path
+            )
+            deterministic_anonymizer_module = importlib.util.module_from_spec(spec)
+            sys.modules["automation_scripts.utils.deterministic_anonymizer"] = deterministic_anonymizer_module
+            spec.loader.exec_module(deterministic_anonymizer_module)
+            
+            DeterministicAnonymizer = deterministic_anonymizer_module.DeterministicAnonymizer
+            
+            temp_db = tempfile.NamedTemporaryFile(delete=False, suffix='.db')
+            temp_db_path = temp_db.name
+            temp_db.close()
+            
+            class SQLiteConnection:
+                def __init__(self, db_path):
+                    self.conn = sqlite3.connect(db_path, check_same_thread=False)
+                    self.conn.row_factory = sqlite3.Row
+                    self.autocommit = True
+                    self._db_path = db_path
+                    # Create table and indexes separately for SQLite
+                    self.conn.execute("""
+                        CREATE TABLE IF NOT EXISTS anonymization_mapping (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            original_hash VARCHAR(64) NOT NULL,
+                            original_value TEXT,
+                            anonymized_value VARCHAR(255) NOT NULL,
+                            value_type VARCHAR(50) NOT NULL,
+                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            last_used TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                            UNIQUE(original_hash, value_type)
+                        )
+                    """)
+                    self.conn.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_hash 
+                        ON anonymization_mapping(original_hash, value_type)
+                    """)
+                    self.conn.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_anonymized 
+                        ON anonymization_mapping(anonymized_value, value_type)
+                    """)
+                    self.conn.execute("""
+                        CREATE INDEX IF NOT EXISTS idx_anonymization_mapping_type 
+                        ON anonymization_mapping(value_type)
+                    """)
+                    self.conn.commit()
+                
+                def cursor(self, cursor_factory=None):
+                    # Return a cursor that supports context manager and executescript for multiple statements
+                    class SQLiteCursor:
+                        def __init__(self, conn):
+                            self.conn = conn
+                            self.cursor = conn.cursor()
+                        
+                        def __enter__(self):
+                            return self
+                        
+                        def __exit__(self, exc_type, exc_val, exc_tb):
+                            self.cursor.close()
+                            return False
+                        
+                        def execute(self, query, params=None):
+                            # SQLite doesn't support multiple statements in one execute
+                            # Split by semicolon and execute separately
+                            # Also convert PostgreSQL %s to SQLite ?
+                            if params is None:
+                                params = ()
+                            # Convert PostgreSQL %s to SQLite ?
+                            query = query.replace('%s', '?')
+                            # Convert SERIAL to INTEGER for SQLite
+                            query = query.replace('SERIAL PRIMARY KEY', 'INTEGER PRIMARY KEY AUTOINCREMENT')
+                            # Remove PostgreSQL-specific syntax
+                            query = query.replace('TIMESTAMP WITH TIME ZONE', 'TIMESTAMP')
+                            statements = [s.strip() for s in query.split(';') if s.strip()]
+                            for stmt in statements:
+                                if stmt:
+                                    self.cursor.execute(stmt, params)
+                            return self.cursor
+                        
+                        def fetchone(self):
+                            return self.cursor.fetchone()
+                        
+                        def fetchall(self):
+                            return self.cursor.fetchall()
+                    
+                    return SQLiteCursor(self.conn)
+                
+                def close(self):
+                    self.conn.close()
+                    try:
+                        Path(self._db_path).unlink()
+                    except:
+                        pass
+            
+            try:
+                import psycopg2
+                original_connect = psycopg2.connect
+                
+                def mock_connect(**kwargs):
+                    return SQLiteConnection(temp_db_path)
+                
+                psycopg2.connect = mock_connect
+                import psycopg2.extras
+                psycopg2.extras.RealDictCursor = sqlite3.Row
+                
+                anonymizer = DeterministicAnonymizer(
+                    db_config={'database': temp_db_path},
+                    use_cache=True,
+                    salt=salt or "test_salt_for_determinism"
+                )
+                
+                return anonymizer
+            except ImportError:
+                pytest.skip("psycopg2 not available")
+        except Exception as e:
+            pytest.skip(f"DeterministicAnonymizer not available: {e}")
+    
+    return _create_anonymizer
