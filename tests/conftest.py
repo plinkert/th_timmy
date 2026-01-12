@@ -553,7 +553,46 @@ def test_runner(test_config, remote_executor, project_root_path, temp_dir):
 
 
 @pytest.fixture(scope="function")
-def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, test_runner, project_root_path, temp_dir):
+def deployment_manager(test_config, remote_executor, project_root_path, temp_dir):
+    """Create DeploymentManager instance for testing."""
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load deployment_manager
+    deployment_manager_path = automation_scripts_path / "services" / "deployment_manager.py"
+    deployment_manager_spec = importlib.util.spec_from_file_location("automation_scripts.services.deployment_manager", deployment_manager_path)
+    deployment_manager_module = importlib.util.module_from_spec(deployment_manager_spec)
+    sys.modules["automation_scripts.services.deployment_manager"] = deployment_manager_module
+    
+    # Inject dependencies
+    deployment_manager_module.RemoteExecutor = RemoteExecutor
+    deployment_manager_module.RemoteExecutorError = RemoteExecutorError
+    
+    deployment_manager_spec.loader.exec_module(deployment_manager_module)
+    DeploymentManager = deployment_manager_module.DeploymentManager
+    
+    # Create service instance with temp directories
+    service = DeploymentManager(
+        config=test_config,
+        remote_executor=remote_executor,
+        logs_dir=os.path.join(temp_dir, 'deployment_logs'),
+        history_file=os.path.join(temp_dir, 'deployment_history.json')
+    )
+    
+    yield service
+    
+    # Cleanup
+    service.close()
+
+
+@pytest.fixture(scope="function")
+def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, test_runner, deployment_manager, project_root_path, temp_dir):
     """Create TestClient for Dashboard API."""
     from fastapi.testclient import TestClient
     import importlib.util
@@ -582,6 +621,7 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     dashboard_api_module.get_config_manager = lambda: config_manager
     dashboard_api_module.get_remote_executor = lambda: remote_executor
     dashboard_api_module.get_test_runner = lambda: test_runner
+    dashboard_api_module.get_deployment_manager = lambda: deployment_manager
     
     app = dashboard_api_module.app
     client = TestClient(app)

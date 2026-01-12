@@ -108,10 +108,20 @@ class DeploymentManager:
         }
         
         # Determine project root on VMs
-        self.vm_project_root = self.config.get('repository', {}).get('vm_repo_paths', {}).get(
-            'vm01',
-            '/home/thadmin/th_timmy'
-        )
+        # Try configuration_management first, then repository
+        self.vm_project_root = None
+        if 'configuration_management' in self.config:
+            vm_paths = self.config.get('configuration_management', {}).get('vm_config_paths', {})
+            if 'vm01' in vm_paths:
+                # Extract directory from config path
+                config_path = vm_paths['vm01']
+                self.vm_project_root = str(Path(config_path).parent.parent)
+        
+        if not self.vm_project_root:
+            self.vm_project_root = self.config.get('repository', {}).get('vm_repo_paths', {}).get(
+                'vm01',
+                '/home/thadmin/th_timmy'
+            )
         
         self.logger.info("DeploymentManager initialized")
     
