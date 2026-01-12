@@ -214,16 +214,22 @@ class TestValidateConfig:
             'network': {'subnet': '192.168.1.0/24'}
         }
         
-        # Try to update with invalid config - should raise ConfigManagerError
-        # The exception is expected, so we catch it
-        try:
+        # Use pytest.raises to properly catch the exception
+        # Get the exception class from the same module instance that config_manager uses
+        import sys
+        actual_module = sys.modules.get('automation_scripts.services.config_manager')
+        if actual_module:
+            ExpectedError = actual_module.ConfigManagerError
+        else:
+            ExpectedError = ConfigManagerError
+        
+        with pytest.raises(ExpectedError) as exc_info:
             config_manager.update_config(invalid_config, validate=True)
-            pytest.fail("Should have raised ConfigManagerError for invalid config")
-        except ConfigManagerError as e:
-            # Verify error message contains validation information
-            error_msg = str(e).lower()
-            assert any(keyword in error_msg for keyword in ['validation', 'missing', 'vms', 'required']), \
-                f"Error message should mention validation/missing/vms/required. Got: {error_msg}"
+        
+        # Verify error message contains validation information
+        error_msg = str(exc_info.value).lower()
+        assert any(keyword in error_msg for keyword in ['validation', 'missing', 'vms', 'required']), \
+            f"Error message should mention validation/missing/vms/required. Got: {error_msg}"
 
 
 class TestBackupConfig:
