@@ -644,6 +644,41 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     if "automation_scripts.api" not in sys.modules:
         sys.modules["automation_scripts.api"] = types.ModuleType("automation_scripts.api")
     
+    # Create package structure for imports
+    if "automation_scripts" not in sys.modules:
+        sys.modules["automation_scripts"] = types.ModuleType("automation_scripts")
+        sys.modules["automation_scripts"].__path__ = [str(automation_scripts_path)]
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+        sys.modules["automation_scripts.services"].__path__ = [str(automation_scripts_path / "services")]
+    if "automation_scripts.utils" not in sys.modules:
+        sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+        sys.modules["automation_scripts.utils"].__path__ = [str(automation_scripts_path / "utils")]
+    if "automation_scripts.api" not in sys.modules:
+        sys.modules["automation_scripts.api"] = types.ModuleType("automation_scripts.api")
+        sys.modules["automation_scripts.api"].__path__ = [str(automation_scripts_path / "api")]
+    
+    # Load required modules first
+    # Load query_generator
+    query_generator_path = automation_scripts_path / "utils" / "query_generator.py"
+    query_generator_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.query_generator", query_generator_path
+    )
+    query_generator_module = importlib.util.module_from_spec(query_generator_spec)
+    sys.modules["automation_scripts.utils.query_generator"] = query_generator_module
+    
+    # Load query_templates first (dependency)
+    query_templates_path = automation_scripts_path / "utils" / "query_templates.py"
+    query_templates_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.query_templates", query_templates_path
+    )
+    query_templates_module = importlib.util.module_from_spec(query_templates_spec)
+    sys.modules["automation_scripts.utils.query_templates"] = query_templates_module
+    query_templates_spec.loader.exec_module(query_templates_module)
+    
+    # Now load query_generator
+    query_generator_spec.loader.exec_module(query_generator_module)
+    
     # Load dashboard_api
     dashboard_api_path = automation_scripts_path / "api" / "dashboard_api.py"
     dashboard_api_spec = importlib.util.spec_from_file_location("automation_scripts.api.dashboard_api", dashboard_api_path)
@@ -664,8 +699,45 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     dashboard_api_module.get_deployment_manager = lambda: deployment_manager
     dashboard_api_module.get_hardening_manager = lambda: hardening_manager
     
+    # Override get_query_generator to use test playbooks directory if provided
+    # This will be set by tests that need custom playbooks
+    if hasattr(dashboard_api_module, 'get_query_generator'):
+        original_get_query_generator = dashboard_api_module.get_query_generator
+        def get_query_generator_with_playbooks_dir(playbooks_dir=None):
+            if playbooks_dir:
+                # Create QueryGenerator with custom playbooks directory
+                import sys
+                import importlib.util
+                import types
+                automation_scripts_path = project_root_path / "automation-scripts"
+                sys.path.insert(0, str(automation_scripts_path))
+                
+                if "automation_scripts.utils" not in sys.modules:
+                    sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+                    sys.modules["automation_scripts.utils"].__path__ = [str(automation_scripts_path / "utils")]
+                
+                query_generator_path = automation_scripts_path / "utils" / "query_generator.py"
+                spec = importlib.util.spec_from_file_location(
+                    "automation_scripts.utils.query_generator", query_generator_path
+                )
+                query_generator_module = importlib.util.module_from_spec(spec)
+                sys.modules["automation_scripts.utils.query_generator"] = query_generator_module
+                spec.loader.exec_module(query_generator_module)
+                
+                QueryGenerator = query_generator_module.QueryGenerator
+                return QueryGenerator(playbooks_dir=playbooks_dir)
+            else:
+                return original_get_query_generator()
+        
+        # Store original and custom function
+        dashboard_api_module._original_get_query_generator = original_get_query_generator
+        dashboard_api_module._get_query_generator_with_playbooks_dir = get_query_generator_with_playbooks_dir
+    
     app = dashboard_api_module.app
     client = TestClient(app)
+    
+    # Store dashboard_api_module for later use
+    client._dashboard_api_module = dashboard_api_module
     
     yield client
 
