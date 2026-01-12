@@ -100,7 +100,7 @@ Complete test suite has been implemented and committed to repository. Tests are 
    ping 10.0.0.10  # VM01
    ping 10.0.0.11  # VM02
    ping 10.0.0.12  # VM03
-   ping 192.168.244.148  # VM04
+   ping 10.0.0.13  # VM04
    ```
 
 2. **Verify SSH access:**
