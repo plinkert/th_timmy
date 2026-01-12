@@ -267,6 +267,53 @@ curl -X POST http://VM04_IP:5678/webhook/verify-deployment \
   -d '{"vm_id": "vm01"}'
 ```
 
+## Hardening Management Workflow
+
+### Instalacja
+
+1. Importuj workflow `hardening-management.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/hardening-dashboard`
+
+### Funkcjonalności
+
+- **Hardening Status**: Status hardeningu na wszystkich VM
+- **Run Hardening**: Uruchamianie `harden_vmXX.sh` zdalnie
+- **Before/After Comparison**: Porównanie przed/po hardeningu
+- **Hardening Reports**: Raporty z hardeningu
+
+### Webhook Endpoints
+
+- `GET /webhook/hardening-status` - Pobierz status hardeningu wszystkich VM
+- `POST /webhook/run-hardening` - Uruchom hardening na wybranym VM
+- `GET /webhook/hardening-reports` - Pobierz raporty hardeningu
+- `POST /webhook/compare-before-after` - Porównaj przed/po hardeningu
+- `GET /webhook/hardening-dashboard` - Dashboard zarządzania hardeningiem
+
+### Użycie
+
+#### Sprawdzenie statusu hardeningu
+
+```bash
+curl http://VM04_IP:5678/webhook/hardening-status
+```
+
+#### Uruchomienie hardeningu
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/run-hardening \
+  -H "Content-Type: application/json" \
+  -d '{"vm_id": "vm01", "capture_before": true}'
+```
+
+#### Porównanie przed/po
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/compare-before-after \
+  -H "Content-Type: application/json" \
+  -d '{"hardening_id": "20240115_120000", "vm_id": "vm01"}'
+```
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów

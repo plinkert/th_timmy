@@ -27,6 +27,7 @@ from ..services.config_manager import ConfigManager, ConfigManagerError
 from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
 from ..services.test_runner import TestRunner, TestRunnerError
 from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
+from ..services.hardening_manager import HardeningManager, HardeningManagerError
 
 
 # Security
@@ -108,6 +109,7 @@ _config_manager: Optional[ConfigManager] = None
 _remote_executor: Optional[RemoteExecutor] = None
 _test_runner: Optional[TestRunner] = None
 _deployment_manager: Optional[DeploymentManager] = None
+_hardening_manager: Optional[HardeningManager] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -210,6 +212,25 @@ def get_deployment_manager() -> DeploymentManager:
         )
     
     return _deployment_manager
+
+
+def get_hardening_manager() -> HardeningManager:
+    """Get or create HardeningManager instance."""
+    global _hardening_manager
+    
+    if _hardening_manager is None:
+        config_path = os.getenv('CONFIG_PATH', 'configs/config.yml')
+        remote_executor = get_remote_executor()
+        test_runner = get_test_runner()
+        
+        _hardening_manager = HardeningManager(
+            config_path=config_path,
+            remote_executor=remote_executor,
+            test_runner=test_runner,
+            logger=logger
+        )
+    
+    return _hardening_manager
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -1041,6 +1062,267 @@ async def get_deployment_summary(
         summary = deployment_manager.get_deployment_summary()
         
         return DeploymentSummaryResponse(
+            success=True,
+            summary=summary,
+            timestamp=datetime.utcnow().isoformat()
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# Hardening Management Models
+class HardeningStatusResponse(BaseModel):
+    """Response model for hardening status."""
+    success: bool
+    data: Dict[str, Any]
+    timestamp: str
+
+
+class RunHardeningRequest(BaseModel):
+    """Request model for running hardening."""
+    vm_id: str = Field(..., description="VM identifier (e.g., 'vm01')")
+    project_root: Optional[str] = Field(None, description="Project root path on VM")
+    capture_before: bool = Field(True, description="Capture system state before hardening")
+
+
+class RunHardeningResponse(BaseModel):
+    """Response model for hardening execution."""
+    success: bool
+    hardening_id: str
+    vm_id: str
+    status: str
+    message: str
+    timestamp: str
+
+
+class HardeningReportsResponse(BaseModel):
+    """Response model for hardening reports."""
+    success: bool
+    reports: List[Dict[str, Any]]
+    total: int
+
+
+class CompareBeforeAfterRequest(BaseModel):
+    """Request model for before/after comparison."""
+    hardening_id: str = Field(..., description="Hardening ID")
+    vm_id: Optional[str] = Field(None, description="VM identifier (optional)")
+
+
+class CompareBeforeAfterResponse(BaseModel):
+    """Response model for before/after comparison."""
+    success: bool
+    hardening_id: str
+    vm_id: str
+    comparison: Dict[str, Any]
+    timestamp: str
+
+
+class HardeningSummaryResponse(BaseModel):
+    """Response model for hardening summary."""
+    success: bool
+    summary: Dict[str, Any]
+    timestamp: str
+
+
+# Hardening Management Endpoints
+@app.get("/hardening/status", response_model=HardeningStatusResponse)
+async def get_hardening_status(
+    vm_id: Optional[str] = None,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get hardening status for VM(s).
+    
+    Args:
+        vm_id: Optional VM identifier (if not provided, returns status for all VMs)
+    
+    Returns:
+        Hardening status
+    """
+    try:
+        hardening_manager = get_hardening_manager()
+        
+        if vm_id:
+            status = hardening_manager.get_hardening_status(vm_id)
+            return HardeningStatusResponse(
+                success=True,
+                data=status,
+                timestamp=datetime.utcnow().isoformat()
+            )
+        else:
+            all_status = hardening_manager.get_hardening_status_all()
+            return HardeningStatusResponse(
+                success=True,
+                data=all_status,
+                timestamp=datetime.utcnow().isoformat()
+            )
+            
+    except HardeningManagerError as e:
+        logger.error(f"Hardening manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/hardening/run", response_model=RunHardeningResponse)
+async def run_hardening(
+    request: RunHardeningRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Run hardening script on VM.
+    
+    Args:
+        request: Hardening request
+    
+    Returns:
+        Hardening result
+    """
+    try:
+        hardening_manager = get_hardening_manager()
+        
+        result = hardening_manager.run_hardening(
+            vm_id=request.vm_id,
+            project_root=request.project_root,
+            capture_before=request.capture_before
+        )
+        
+        return RunHardeningResponse(
+            success=result.get('status') in ['success', 'completed'],
+            hardening_id=result.get('hardening_id', ''),
+            vm_id=result.get('vm_id', request.vm_id),
+            status=result.get('status', 'unknown'),
+            message=f"Hardening {'completed' if result.get('status') == 'success' else 'failed'}",
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat())
+        )
+        
+    except HardeningManagerError as e:
+        logger.error(f"Hardening manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/hardening/reports", response_model=HardeningReportsResponse)
+async def get_hardening_reports(
+    vm_id: Optional[str] = None,
+    hardening_id: Optional[str] = None,
+    limit: Optional[int] = 50,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get hardening reports.
+    
+    Args:
+        vm_id: Optional VM identifier filter
+        hardening_id: Optional hardening ID filter
+        limit: Maximum number of reports to return
+    
+    Returns:
+        Hardening reports
+    """
+    try:
+        hardening_manager = get_hardening_manager()
+        
+        reports = hardening_manager.get_hardening_reports(
+            vm_id=vm_id,
+            hardening_id=hardening_id,
+            limit=limit
+        )
+        
+        return HardeningReportsResponse(
+            success=True,
+            reports=reports,
+            total=len(reports)
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/hardening/compare", response_model=CompareBeforeAfterResponse)
+async def compare_before_after(
+    request: CompareBeforeAfterRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Compare before/after hardening state.
+    
+    Args:
+        request: Comparison request
+    
+    Returns:
+        Comparison result
+    """
+    try:
+        hardening_manager = get_hardening_manager()
+        
+        comparison = hardening_manager.compare_before_after(
+            hardening_id=request.hardening_id,
+            vm_id=request.vm_id
+        )
+        
+        return CompareBeforeAfterResponse(
+            success=True,
+            hardening_id=comparison.get('hardening_id', request.hardening_id),
+            vm_id=comparison.get('vm_id', request.vm_id or ''),
+            comparison=comparison,
+            timestamp=comparison.get('timestamp', datetime.utcnow().isoformat())
+        )
+        
+    except HardeningManagerError as e:
+        logger.error(f"Hardening manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/hardening/summary", response_model=HardeningSummaryResponse)
+async def get_hardening_summary(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get hardening summary statistics.
+    
+    Returns:
+        Hardening summary
+    """
+    try:
+        hardening_manager = get_hardening_manager()
+        
+        summary = hardening_manager.get_hardening_summary()
+        
+        return HardeningSummaryResponse(
             success=True,
             summary=summary,
             timestamp=datetime.utcnow().isoformat()

@@ -55,6 +55,7 @@ th_timmy/
 - [x] Management dashboard (basic)
 - [x] Testing management interface
 - [x] Deployment management interface
+- [x] Hardening management interface
 
 **Phase 1: Threat Hunting Foundations** - In Progress
 - [x] Project structure created

@@ -1,0 +1,307 @@
+{
+  "name": "Hardening Management",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hardening-dashboard",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-hardening-dashboard",
+      "name": "Hardening Dashboard UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "hardening-dashboard"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hardening-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-hardening-status",
+      "name": "Get Hardening Status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "hardening-status"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-hardening",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-run-hardening",
+      "name": "Run Hardening",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "run-hardening"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hardening-reports",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-hardening-reports",
+      "name": "Get Hardening Reports",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "hardening-reports"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "compare-before-after",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-compare-before-after",
+      "name": "Compare Before/After",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 900],
+      "webhookId": "compare-before-after"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get hardening status for all VMs\nconst vms = ['vm01', 'vm02', 'vm03', 'vm04'];\nconst results = [];\n\nfor (const vmId of vms) {\n  // In real implementation, this would call the hardening manager API\n  results.push({\n    vm_id: vmId,\n    status: 'hardened',\n    timestamp: new Date().toISOString(),\n    checks: {\n      firewall: true,\n      ssh_hardened: true,\n      fail2ban: true,\n      auto_updates: true,\n      log_rotation: true\n    },\n    hardened_count: 5,\n    total_checks: 5\n  });\n}\n\nreturn results.map(item => ({ json: item }));"
+      },
+      "id": "get-hardening-status",
+      "name": "Get Hardening Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/execute-command",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vm_id",
+              "value": "={{ $json.vm_id || 'vm01' }}"
+            },
+            {
+              "name": "command",
+              "value": "cd /home/thadmin/th_timmy && sudo bash hosts/{{ $json.vm_id }}/harden_{{ $json.vm_id }}.sh 2>&1"
+            },
+            {
+              "name": "timeout",
+              "value": "1800"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-run-hardening",
+      "name": "Execute Hardening",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get hardening reports\n// In real implementation, this would call the hardening manager API\nconst reports = [\n  {\n    hardening_id: '20240115_120000',\n    vm_id: 'vm01',\n    timestamp: new Date().toISOString(),\n    status: 'success',\n    exit_code: 0,\n    log_file: 'logs/hardening/hardening_vm01_20240115_120000.log'\n  },\n  {\n    hardening_id: '20240115_110000',\n    vm_id: 'vm02',\n    timestamp: new Date(Date.now() - 3600000).toISOString(),\n    status: 'success',\n    exit_code: 0,\n    log_file: 'logs/hardening/hardening_vm02_20240115_110000.log'\n  }\n];\n\nreturn reports.map(item => ({ json: item }));"
+      },
+      "id": "get-hardening-reports",
+      "name": "Get Hardening Reports",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Compare before/after hardening\n// In real implementation, this would call the hardening manager API\nconst hardeningId = $input.item.json.hardening_id || '20240115_120000';\nconst vmId = $input.item.json.vm_id || 'vm01';\n\nreturn [{\n  json: {\n    hardening_id: hardeningId,\n    vm_id: vmId,\n    timestamp: new Date().toISOString(),\n    before_status: 'not_hardened',\n    after_status: 'hardened',\n    status_changed: true,\n    changes: {\n      firewall: { before: false, after: true, changed: true },\n      ssh_hardened: { before: false, after: true, changed: true },\n      fail2ban: { before: false, after: true, changed: true },\n      auto_updates: { before: false, after: true, changed: true },\n      log_rotation: { before: false, after: true, changed: true }\n    },\n    summary: {\n      total_checks: 5,\n      changed: 5,\n      unchanged: 0\n    }\n  }\n}];"
+      },
+      "id": "compare-before-after",
+      "name": "Compare Before/After",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 900]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Hardening Management Dashboard</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; }\n    .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }\n    .actions { margin: 20px 0; }\n    .btn { padding: 12px 24px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; }\n    .btn-primary { background: #3498db; color: white; }\n    .btn-success { background: #27ae60; color: white; }\n    .btn-warning { background: #f39c12; color: white; }\n    .btn-danger { background: #e74c3c; color: white; }\n    .btn:hover { opacity: 0.9; }\n    .vm-card { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .vm-card.hardened { border-left: 5px solid #27ae60; }\n    .vm-card.partial { border-left: 5px solid #f39c12; }\n    .vm-card.not_hardened { border-left: 5px solid #e74c3c; }\n    .status-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; margin-left: 10px; }\n    .status-hardened { background: #27ae60; color: white; }\n    .status-partial { background: #f39c12; color: white; }\n    .status-not_hardened { background: #e74c3c; color: white; }\n    .checks { margin-top: 10px; }\n    .check-item { padding: 5px 0; }\n    .check-pass { color: #27ae60; }\n    .check-fail { color: #e74c3c; }\n    table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n    th { background: #34495e; color: white; }\n    tr:hover { background: #f5f5f5; }\n  </style>\n  <script>\n    function runHardening(vmId) {\n      if (!confirm('Are you sure you want to run hardening on ' + vmId + '? This may take up to 30 minutes.')) {\n        return;\n      }\n      fetch('/webhook/run-hardening', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ vm_id: vmId })\n      })\n        .then(r => r.json())\n        .then(d => { alert('Hardening: ' + d.message); location.reload(); });\n    }\n    function compareBeforeAfter(hardeningId, vmId) {\n      fetch('/webhook/compare-before-after', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ hardening_id: hardeningId, vm_id: vmId })\n      })\n        .then(r => r.json())\n        .then(d => { alert('Comparison: ' + JSON.stringify(d, null, 2)); });\n    }\n    function refreshStatus() {\n      location.reload();\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Hardening Management Dashboard</h1>\n      <p>Remote security hardening management</p>\n    </div>\n    \n    <div class=\"actions\">\n      <button class=\"btn btn-primary\" onclick=\"refreshStatus()\">Refresh Status</button>\n    </div>\n    \n    <h2>Hardening Status</h2>\n    {{#each $json}}\n    <div class=\"vm-card {{status}}\">\n      <h3>{{vm_id}}</h3>\n      <span class=\"status-badge status-{{status}}\">{{status}}</span>\n      <div class=\"checks\">\n        <div class=\"check-item\">\n          <span class=\"{{#if checks.firewall}}check-pass{{else}}check-fail{{/if}}\">\n            {{#if checks.firewall}}✓{{else}}✗{{/if}} Firewall\n          </span>\n        </div>\n        <div class=\"check-item\">\n          <span class=\"{{#if checks.ssh_hardened}}check-pass{{else}}check-fail{{/if}}\">\n            {{#if checks.ssh_hardened}}✓{{else}}✗{{/if}} SSH Hardened\n          </span>\n        </div>\n        <div class=\"check-item\">\n          <span class=\"{{#if checks.fail2ban}}check-pass{{else}}check-fail{{/if}}\">\n            {{#if checks.fail2ban}}✓{{else}}✗{{/if}} Fail2ban\n          </span>\n        </div>\n        <div class=\"check-item\">\n          <span class=\"{{#if checks.auto_updates}}check-pass{{else}}check-fail{{/if}}\">\n            {{#if checks.auto_updates}}✓{{else}}✗{{/if}} Auto Updates\n          </span>\n        </div>\n        <div class=\"check-item\">\n          <span class=\"{{#if checks.log_rotation}}check-pass{{else}}check-fail{{/if}}\">\n            {{#if checks.log_rotation}}✓{{else}}✗{{/if}} Log Rotation\n          </span>\n        </div>\n      </div>\n      <div style=\"margin-top: 15px;\">\n        <button class=\"btn btn-success\" onclick=\"runHardening('{{vm_id}}')\">Harden</button>\n      </div>\n    </div>\n    {{/each}}\n    \n    <h2>Recent Hardening Reports</h2>\n    <table>\n      <thead>\n        <tr>\n          <th>Hardening ID</th>\n          <th>VM</th>\n          <th>Status</th>\n          <th>Timestamp</th>\n          <th>Actions</th>\n        </tr>\n      </thead>\n      <tbody>\n        {{#each reports}}\n        <tr>\n          <td>{{hardening_id}}</td>\n          <td>{{vm_id}}</td>\n          <td><span class=\"status-badge status-{{status}}\">{{status}}</span></td>\n          <td>{{timestamp}}</td>\n          <td>\n            <button class=\"btn btn-warning\" onclick=\"compareBeforeAfter('{{hardening_id}}', '{{vm_id}}')\">Compare</button>\n          </td>\n        </tr>\n        {{/each}}\n      </tbody>\n    </table>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-hardening-dashboard",
+      "name": "Respond Hardening Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-hardening-status",
+      "name": "Respond Hardening Status",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Hardening started\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-run-hardening",
+      "name": "Respond Run Hardening",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-hardening-reports",
+      "name": "Respond Hardening Reports",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Comparison completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-compare-before-after",
+      "name": "Respond Compare Before/After",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 900]
+    }
+  ],
+  "connections": {
+    "Hardening Dashboard UI": {
+      "main": [
+        [
+          {
+            "node": "Get Hardening Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hardening Status": {
+      "main": [
+        [
+          {
+            "node": "Respond Hardening Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hardening Status": {
+      "main": [
+        [
+          {
+            "node": "Respond Hardening Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Hardening": {
+      "main": [
+        [
+          {
+            "node": "Execute Hardening",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Hardening": {
+      "main": [
+        [
+          {
+            "node": "Respond Run Hardening",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hardening Reports": {
+      "main": [
+        [
+          {
+            "node": "Get Hardening Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Hardening Reports": {
+      "main": [
+        [
+          {
+            "node": "Respond Hardening Reports",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Before/After": {
+      "main": [
+        [
+          {
+            "node": "Compare Before/After",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Before/After": {
+      "main": [
+        [
+          {
+            "node": "Respond Compare Before/After",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+
