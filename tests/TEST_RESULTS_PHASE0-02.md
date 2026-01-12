@@ -117,9 +117,9 @@
 - ✅ Performance validation
 
 ### VM Connectivity
-- ✅ VM01 (192.168.244.143) - Connected, repo accessible
-- ✅ VM02 (192.168.244.144) - Connected, repo accessible
-- ✅ VM03 (192.168.244.145) - Connected, repo accessible
+- ✅ VM01 (10.0.0.10) - Connected, repo accessible
+- ✅ VM02 (10.0.0.11) - Connected, repo accessible
+- ✅ VM03 (10.0.0.12) - Connected, repo accessible
 - ✅ VM04 (192.168.244.148) - Connected, repo accessible
 
 ## Acceptance Criteria

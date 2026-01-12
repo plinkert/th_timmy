@@ -97,9 +97,9 @@ Complete test suite has been implemented and committed to repository. Tests are 
 1. **Ensure VMs are available:**
    ```bash
    # Check VM connectivity
-   ping 192.168.244.143  # VM01
-   ping 192.168.244.144  # VM02
-   ping 192.168.244.145  # VM03
+   ping 10.0.0.10  # VM01
+   ping 10.0.0.11  # VM02
+   ping 10.0.0.12  # VM03
    ping 192.168.244.148  # VM04
    ```
 
