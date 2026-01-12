@@ -4,6 +4,8 @@
 **Data**: 2025-01-12  
 **Dla**: Użytkowników nietechnicznych
 
+> **Uwaga:** Ten przewodnik został napisany z myślą o osobach, które nie mają doświadczenia technicznego. Jeśli jesteś doświadczonym administratorem systemów, możesz przejść do [Quick Start Guide](QUICK_START.md) dla szybszej instalacji.
+
 ---
 
 ## Spis Treści
@@ -39,10 +41,11 @@ Ten przewodnik został stworzony specjalnie dla osób, które nie mają doświad
 4. **VM-04 (Orchestrator)** - Centralne zarządzanie całym systemem
 
 **Prosty przykład użycia:**
-- System automatycznie zbiera logi z różnych systemów
-- Analizuje je pod kątem podejrzanych działań
-- Generuje raporty z wynikami
-- Wszystko zarządzane z jednego miejsca (dashboard)
+Wyobraź sobie, że chcesz sprawdzić, czy w Twojej sieci nie ma podejrzanych działań. Zamiast ręcznie przeglądać tysiące logów, system:
+- Automatycznie zbiera logi z różnych systemów (firewall, serwery, stacje robocze)
+- Analizuje je pod kątem znanych wzorców zagrożeń (np. próby włamania, malware)
+- Generuje czytelne raporty z wynikami
+- Wszystko zarządzane z jednego miejsca (dashboard w przeglądarce)
 
 ---
 
@@ -59,7 +62,7 @@ Musisz mieć dostęp do **4 maszyn wirtualnych (VM)** z następującymi specyfik
 | VM-03 | 4 rdzenie | 8 GB | 30 GB | Analiza (więcej mocy obliczeniowej) |
 | VM-04 | 2 rdzenie | 4 GB | 20 GB | Zarządzanie |
 
-**Uwaga:** Jeśli nie masz dostępu do maszyn wirtualnych, możesz je utworzyć w chmurze (np. AWS, Azure, Google Cloud) lub na własnym serwerze.
+**Uwaga:** Jeśli nie masz dostępu do maszyn wirtualnych, możesz je utworzyć w chmurze (np. AWS, Azure, Google Cloud) lub na własnym serwerze. Większość dostawców chmury oferuje darmowe okresy próbne, więc możesz przetestować system bez kosztów.
 
 ### Wymagania oprogramowania
 
@@ -254,11 +257,22 @@ network:
   gateway: "10.0.0.1"     # ZMIEŃ na bramę sieciową
 ```
 
-**Jak znaleźć informacje o sieci:**
-- Na każdej maszynie wpisz: `ip addr show` lub `ifconfig`
-- Zobaczysz adres IP maszyny i informacje o sieci
-- Subnet to zazwyczaj pierwsze 3 liczby adresu IP + ".0/24" (np. jeśli IP to 192.168.1.10, subnet to 192.168.1.0/24)
-- Gateway to zazwyczaj adres IP routera (często kończy się na .1)
+**Jak znaleźć informacje o sieci (krok po kroku):**
+
+1. Zaloguj się na dowolną maszynę przez SSH
+2. W terminalu wpisz: `ip addr show`
+3. Zobaczysz coś takiego:
+   ```
+   inet 192.168.1.10/24
+   ```
+   - Adres IP to: `192.168.1.10`
+   - Subnet to: `192.168.1.0/24` (pierwsze 3 liczby + ".0/24")
+4. Aby znaleźć gateway (bramę sieciową), wpisz: `ip route show`
+5. Zobaczysz coś takiego:
+   ```
+   default via 192.168.1.1
+   ```
+   - Gateway to: `192.168.1.1` (często kończy się na .1)
 
 Zapisz plik (Ctrl+O, Enter) i zamknij (Ctrl+X).
 
@@ -323,7 +337,7 @@ sudo ./install_vm02.sh
 - Konfiguruje dostęp sieciowy
 - Instaluje narzędzia pomocnicze
 
-**To może zająć 10-15 minut.** Poczekaj, aż instalacja się zakończy.
+**To może zająć 10-15 minut.** Nie zamykaj terminala podczas instalacji! Poczekaj, aż zobaczysz komunikat "Installation completed successfully" lub podobny.
 
 **Krok 3.5: Sprawdź, czy instalacja się powiodła**
 
@@ -426,7 +440,7 @@ source ~/th_timmy/venv/bin/activate
 jupyter lab --ip=0.0.0.0 --port=8888
 ```
 
-**Zapisz token, który się pojawi!** Będziesz go potrzebował do logowania.
+**Zapisz token, który się pojawi!** Będziesz go potrzebował do logowania. Token wygląda mniej więcej tak: `abc123def456ghi789...` - skopiuj cały token i zapisz w bezpiecznym miejscu (np. w notatniku).
 
 **Przykład wyjścia:**
 ```
