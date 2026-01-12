@@ -62,6 +62,7 @@ th_timmy/
 - [x] VM setup scripts
 - [x] Database configuration
 - [x] Basic automation scripts
+- [x] Playbook structure with query definitions (PHASE1-01)
 - [ ] Playbook engine
 - [ ] Query generator
 - [ ] Data anonymization

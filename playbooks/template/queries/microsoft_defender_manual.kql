@@ -1,0 +1,19 @@
+// Microsoft Defender for Endpoint - Manual Query
+// Description: Detects suspicious process execution patterns
+// Usage: Copy this query to Microsoft Defender Advanced Hunting and execute manually
+// Time Range: Adjust the ago() parameter to change the time range (default: 7 days)
+
+DeviceProcessEvents
+| where TimeGenerated >= ago(7d)
+| where ProcessCommandLine contains "suspicious_pattern"
+    or ProcessCommandLine contains "powershell -enc"
+    or ProcessCommandLine contains "cmd /c"
+| project TimeGenerated, DeviceName, ProcessName, ProcessCommandLine, AccountName, InitiatingProcessName
+| order by TimeGenerated desc
+
+// Instructions:
+// 1. Replace "suspicious_pattern" with the actual pattern you're looking for
+// 2. Adjust the time range by changing "7d" to your desired range (e.g., "1d", "30d")
+// 3. Add additional filters as needed
+// 4. Review the results and export to CSV
+

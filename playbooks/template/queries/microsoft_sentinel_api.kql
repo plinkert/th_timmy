@@ -1,0 +1,16 @@
+// Microsoft Sentinel - API Query
+// Description: Searches for suspicious activities (for automated execution)
+// Usage: This query is designed for automated execution via Azure Log Analytics API
+// Parameters: time_range (default: 7d), workspace (your workspace name)
+
+SecurityEvent
+| where TimeGenerated >= ago({{time_range}})
+| where EventID == 4624 or EventID == 4625
+| where AccountType == "User"
+| where IpAddress != "127.0.0.1"
+| project TimeGenerated, Computer, EventID, Account, IpAddress, LogonType
+| order by TimeGenerated desc
+
+// Note: This query uses placeholder {{time_range}} that will be replaced
+// by the query_generator service when executing via API.
+

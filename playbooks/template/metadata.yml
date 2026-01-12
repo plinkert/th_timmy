@@ -1,0 +1,286 @@
+playbook:
+  id: "TEMPLATE-playbook-name"
+  name: "Playbook Name"
+  version: "1.0.0"
+  author: "Your Name"
+  created: "2025-01-XX"
+  updated: "2025-01-XX"
+  description: |
+    Brief description of what this playbook detects and how it works.
+    This description helps non-technical users understand the playbook's purpose.
+
+mitre:
+  technique_id: "T####"
+  technique_name: "Technique Name"
+  tactic: "Tactic Name"
+  sub_techniques: []
+
+hypothesis: |
+  Your hypothesis statement here.
+  Describe what threat behavior this playbook is designed to detect.
+  This helps users understand what they are hunting for.
+
+data_sources:
+  # Microsoft Defender for Endpoint
+  - name: "Microsoft Defender for Endpoint"
+    type: "EDR"
+    required: true
+    description: "Endpoint detection and response data from Microsoft Defender"
+    queries:
+      manual:
+        - name: "Basic Detection Query"
+          description: |
+            This query detects suspicious process execution patterns.
+            Use this query when you want to manually investigate in Microsoft Defender Advanced Hunting.
+          file: "queries/microsoft_defender_manual.kql"
+          parameters:
+            time_range: "7d"
+            severity: "high"
+          expected_fields:
+            - TimeGenerated
+            - DeviceName
+            - ProcessName
+            - ProcessCommandLine
+            - AccountName
+          instructions: |
+            Step-by-step instructions:
+            1. Open Microsoft Defender Security Center (https://security.microsoft.com)
+            2. Navigate to "Advanced hunting" in the left menu
+            3. Click "New query"
+            4. Copy the query from queries/microsoft_defender_manual.kql
+            5. Paste it into the query editor
+            6. Adjust the time_range parameter if needed (default: 7 days)
+            7. Click "Run query" button
+            8. Review the results
+            9. Click "Export" and select "Export to CSV"
+            10. Save the file with a descriptive name (e.g., "T####_defender_results.csv")
+      api:
+        - name: "API Detection Query"
+          description: |
+            This query is designed for automated execution via Microsoft Defender API.
+            Use this when you want to run the query programmatically.
+          file: "queries/microsoft_defender_api.kql"
+          parameters:
+            time_range: "7d"
+            severity: "high"
+          api_endpoint: "https://api.security.microsoft.com/v1.0/advancedHunting/run"
+          api_method: "POST"
+          api_authentication: "OAuth2"
+          expected_fields:
+            - TimeGenerated
+            - DeviceName
+            - ProcessName
+            - ProcessCommandLine
+            - AccountName
+          instructions: |
+            This query is executed automatically by the system via API.
+            No manual steps required. The query_generator service will handle execution.
+
+  # Microsoft Sentinel
+  - name: "Microsoft Sentinel"
+    type: "SIEM"
+    required: false
+    description: "Security information and event management data from Microsoft Sentinel"
+    queries:
+      manual:
+        - name: "Sentinel Detection Query"
+          description: |
+            This query searches for suspicious activities in Microsoft Sentinel logs.
+            Use this query in Sentinel's Log Analytics workspace.
+          file: "queries/microsoft_sentinel_manual.kql"
+          parameters:
+            time_range: "7d"
+            workspace: "your-workspace"
+          expected_fields:
+            - TimeGenerated
+            - Computer
+            - EventID
+            - EventData
+          instructions: |
+            Step-by-step instructions:
+            1. Open Azure Portal (https://portal.azure.com)
+            2. Navigate to your Log Analytics workspace
+            3. Click "Logs" in the left menu
+            4. Click "New query"
+            5. Copy the query from queries/microsoft_sentinel_manual.kql
+            6. Paste it into the query editor
+            7. Adjust the time_range parameter if needed
+            8. Click "Run" button
+            9. Review the results
+            10. Click "Export" and select "Export to CSV"
+            11. Save the file with a descriptive name
+      api:
+        - name: "Sentinel API Query"
+          description: |
+            This query is designed for automated execution via Azure Log Analytics API.
+          file: "queries/microsoft_sentinel_api.kql"
+          parameters:
+            time_range: "7d"
+            workspace: "your-workspace"
+          api_endpoint: "https://api.loganalytics.io/v1/workspaces/{workspace_id}/query"
+          api_method: "POST"
+          api_authentication: "Azure AD"
+          expected_fields:
+            - TimeGenerated
+            - Computer
+            - EventID
+            - EventData
+          instructions: |
+            This query is executed automatically by the system via API.
+            The query_generator service will handle authentication and execution.
+
+  # Splunk
+  - name: "Splunk"
+    type: "SIEM"
+    required: false
+    description: "Security information and event management data from Splunk"
+    queries:
+      manual:
+        - name: "Splunk Detection Query"
+          description: |
+            This query searches for suspicious activities in Splunk.
+            Use this query in Splunk Search & Reporting.
+          file: "queries/splunk_manual.spl"
+          parameters:
+            time_range: "7d"
+            index: "security"
+          expected_fields:
+            - _time
+            - host
+            - user
+            - action
+          instructions: |
+            Step-by-step instructions:
+            1. Open Splunk Web Interface
+            2. Click "Search & Reporting" in the left menu
+            3. Click "New Search"
+            4. Copy the query from queries/splunk_manual.spl
+            5. Paste it into the search bar
+            6. Adjust the time range using the time picker (default: Last 7 days)
+            7. Click "Search" button
+            8. Review the results
+            9. Click "Export" and select "Export Results as CSV"
+            10. Save the file with a descriptive name
+      api:
+        - name: "Splunk API Query"
+          description: |
+            This query is designed for automated execution via Splunk REST API.
+          file: "queries/splunk_api.spl"
+          parameters:
+            time_range: "7d"
+            index: "security"
+          api_endpoint: "https://your-splunk-instance:8089/services/search/jobs"
+          api_method: "POST"
+          api_authentication: "Basic Auth or Token"
+          expected_fields:
+            - _time
+            - host
+            - user
+            - action
+          instructions: |
+            This query is executed automatically by the system via Splunk REST API.
+            The query_generator service will handle authentication and execution.
+
+  # Elasticsearch
+  - name: "Elasticsearch"
+    type: "SIEM"
+    required: false
+    description: "Security information and event management data from Elasticsearch"
+    queries:
+      manual:
+        - name: "Elasticsearch Detection Query"
+          description: |
+            This query searches for suspicious activities in Elasticsearch.
+            Use this query in Kibana Discover or Dev Tools.
+          file: "queries/elasticsearch_manual.json"
+          parameters:
+            time_range: "7d"
+            index: "security-*"
+          expected_fields:
+            - @timestamp
+            - host.name
+            - user.name
+            - event.action
+          instructions: |
+            Step-by-step instructions:
+            1. Open Kibana (https://your-kibana-instance)
+            2. Navigate to "Dev Tools" in the left menu
+            3. Copy the query from queries/elasticsearch_manual.json
+            4. Paste it into the Dev Tools console
+            5. Adjust the time range in the query if needed
+            6. Click the play button (▶) to execute
+            7. Review the results
+            8. Export results using "Export" button or copy JSON results
+            9. Save the file with a descriptive name
+      api:
+        - name: "Elasticsearch API Query"
+          description: |
+            This query is designed for automated execution via Elasticsearch REST API.
+          file: "queries/elasticsearch_api.json"
+          parameters:
+            time_range: "7d"
+            index: "security-*"
+          api_endpoint: "https://your-elasticsearch-instance:9200/{index}/_search"
+          api_method: "POST"
+          api_authentication: "Basic Auth or API Key"
+          expected_fields:
+            - @timestamp
+            - host.name
+            - user.name
+            - event.action
+          instructions: |
+            This query is executed automatically by the system via Elasticsearch REST API.
+            The query_generator service will handle authentication and execution.
+
+  # Generic SIEM (for tools not specifically supported)
+  - name: "Generic SIEM"
+    type: "SIEM"
+    required: false
+    description: "Generic SIEM query for tools that are not specifically supported"
+    queries:
+      manual:
+        - name: "Generic Detection Query"
+          description: |
+            This is a generic query that can be adapted to various SIEM tools.
+            Adapt the query syntax to match your SIEM tool's query language.
+          file: "queries/generic_siem_manual.txt"
+          parameters:
+            time_range: "7d"
+          expected_fields:
+            - timestamp
+            - host
+            - user
+            - action
+          instructions: |
+            Step-by-step instructions:
+            1. Open your SIEM tool's query interface
+            2. Copy the query from queries/generic_siem_manual.txt
+            3. Adapt the query syntax to match your SIEM tool's language
+            4. Adjust the time range parameter if needed
+            5. Execute the query
+            6. Review the results
+            7. Export results as CSV or JSON
+            8. Save the file with a descriptive name
+
+inputs:
+  - name: "time_range"
+    type: "string"
+    default: "7d"
+    description: "Time range for analysis (e.g., '7d', '30d', '1h')"
+    required: true
+  - name: "severity"
+    type: "string"
+    default: "medium"
+    description: "Minimum severity level to include (low, medium, high, critical)"
+    required: false
+
+outputs:
+  - name: "findings"
+    type: "json"
+    description: "List of findings with evidence and severity"
+
+dependencies:
+  python:
+    - "pandas>=1.5.0"
+    - "numpy>=1.23.0"
+

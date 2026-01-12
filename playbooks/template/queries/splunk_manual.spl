@@ -1,0 +1,17 @@
+# Splunk - Manual Query
+# Description: Searches for suspicious activities in Splunk
+# Usage: Copy this query to Splunk Search & Reporting and execute manually
+# Time Range: Adjust using the time picker (default: Last 7 days)
+
+index=security earliest=-7d@d latest=now
+| search "suspicious_pattern" OR "powershell -enc" OR "cmd /c"
+| stats count by host, user, action
+| sort -count
+
+# Instructions:
+# 1. Replace "suspicious_pattern" with the actual pattern you're looking for
+# 2. Adjust the time range using the time picker (default: Last 7 days)
+# 3. Replace "security" with your actual index name
+# 4. Add additional filters as needed
+# 5. Review the results and export to CSV
+

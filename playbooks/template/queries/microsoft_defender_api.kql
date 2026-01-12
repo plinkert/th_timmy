@@ -1,0 +1,17 @@
+// Microsoft Defender for Endpoint - API Query
+// Description: Detects suspicious process execution patterns (for automated execution)
+// Usage: This query is designed for automated execution via Microsoft Defender API
+// Parameters: time_range (default: 7d), severity (default: high)
+
+DeviceProcessEvents
+| where TimeGenerated >= ago({{time_range}})
+| where ProcessCommandLine contains "suspicious_pattern"
+    or ProcessCommandLine contains "powershell -enc"
+    or ProcessCommandLine contains "cmd /c"
+| where Severity == "{{severity}}" or Severity == "Critical"
+| project TimeGenerated, DeviceName, ProcessName, ProcessCommandLine, AccountName, InitiatingProcessName, Severity
+| order by TimeGenerated desc
+
+// Note: This query uses placeholders {{time_range}} and {{severity}} that will be replaced
+// by the query_generator service when executing via API.
+

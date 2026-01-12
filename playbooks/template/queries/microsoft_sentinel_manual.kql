@@ -1,0 +1,19 @@
+// Microsoft Sentinel - Manual Query
+// Description: Searches for suspicious activities in Microsoft Sentinel logs
+// Usage: Copy this query to Azure Log Analytics workspace and execute manually
+// Time Range: Adjust the ago() parameter to change the time range (default: 7 days)
+
+SecurityEvent
+| where TimeGenerated >= ago(7d)
+| where EventID == 4624 or EventID == 4625
+| where AccountType == "User"
+| where IpAddress != "127.0.0.1"
+| project TimeGenerated, Computer, EventID, Account, IpAddress, LogonType
+| order by TimeGenerated desc
+
+// Instructions:
+// 1. Replace EventID values with the events you're looking for
+// 2. Adjust the time range by changing "7d" to your desired range
+// 3. Add additional filters as needed
+// 4. Review the results and export to CSV
+

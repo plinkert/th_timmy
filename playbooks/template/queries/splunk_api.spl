@@ -1,0 +1,13 @@
+# Splunk - API Query
+# Description: Searches for suspicious activities (for automated execution)
+# Usage: This query is designed for automated execution via Splunk REST API
+# Parameters: time_range (default: 7d), index (default: security)
+
+index={{index}} earliest=-{{time_range}}@d latest=now
+| search "suspicious_pattern" OR "powershell -enc" OR "cmd /c"
+| stats count by host, user, action
+| sort -count
+
+# Note: This query uses placeholders {{time_range}} and {{index}} that will be replaced
+# by the query_generator service when executing via API.
+

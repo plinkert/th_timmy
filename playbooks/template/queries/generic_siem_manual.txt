@@ -1,0 +1,47 @@
+Generic SIEM Query - Manual Execution
+=====================================
+
+Description: Generic query template for SIEM tools that are not specifically supported.
+Adapt this query to match your SIEM tool's query language.
+
+Query Template:
+--------------
+Search for events where:
+- Time range: Last 7 days
+- Field: action contains "suspicious_pattern"
+- Field: user is not empty
+- Field: host is not empty
+
+Sort by: timestamp (descending)
+Limit: 1000 results
+
+Example Adaptations:
+-------------------
+
+For QRadar:
+SELECT * FROM events WHERE action LIKE '%suspicious_pattern%' 
+AND startTime >= NOW() - INTERVAL '7' DAY
+ORDER BY startTime DESC
+LIMIT 1000
+
+For ArcSight:
+action contains "suspicious_pattern" AND startTime >= NOW() - 7d
+| sort startTime desc
+| head 1000
+
+For LogRhythm:
+SELECT * FROM Log WHERE Action LIKE '%suspicious_pattern%'
+AND DateOccurred >= DATEADD(day, -7, GETDATE())
+ORDER BY DateOccurred DESC
+LIMIT 1000
+
+Instructions:
+-------------
+1. Identify your SIEM tool's query language
+2. Adapt the query template above to match your tool's syntax
+3. Replace "suspicious_pattern" with the actual pattern you're looking for
+4. Adjust the time range (default: 7 days)
+5. Execute the query in your SIEM tool
+6. Export results as CSV or JSON
+7. Save the file with a descriptive name
+
