@@ -514,7 +514,46 @@ def health_monitor(test_config, remote_executor, project_root_path, temp_dir):
 
 
 @pytest.fixture(scope="function")
-def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, project_root_path, temp_dir):
+def test_runner(test_config, remote_executor, project_root_path, temp_dir):
+    """Create TestRunner instance for testing."""
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load test_runner
+    test_runner_path = automation_scripts_path / "services" / "test_runner.py"
+    test_runner_spec = importlib.util.spec_from_file_location("automation_scripts.services.test_runner", test_runner_path)
+    test_runner_module = importlib.util.module_from_spec(test_runner_spec)
+    sys.modules["automation_scripts.services.test_runner"] = test_runner_module
+    
+    # Inject dependencies
+    test_runner_module.RemoteExecutor = RemoteExecutor
+    test_runner_module.RemoteExecutorError = RemoteExecutorError
+    
+    test_runner_spec.loader.exec_module(test_runner_module)
+    TestRunner = test_runner_module.TestRunner
+    
+    # Create service instance with temp directories
+    service = TestRunner(
+        config=test_config,
+        remote_executor=remote_executor,
+        results_dir=os.path.join(temp_dir, 'test_results'),
+        history_file=os.path.join(temp_dir, 'test_history.json')
+    )
+    
+    yield service
+    
+    # Cleanup
+    service.close()
+
+
+@pytest.fixture(scope="function")
+def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, test_runner, project_root_path, temp_dir):
     """Create TestClient for Dashboard API."""
     from fastapi.testclient import TestClient
     import importlib.util
@@ -542,6 +581,7 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     dashboard_api_module.get_repo_sync = lambda: repo_sync_service
     dashboard_api_module.get_config_manager = lambda: config_manager
     dashboard_api_module.get_remote_executor = lambda: remote_executor
+    dashboard_api_module.get_test_runner = lambda: test_runner
     
     app = dashboard_api_module.app
     client = TestClient(app)

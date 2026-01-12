@@ -6,6 +6,7 @@ system overview, health monitoring, repository sync, and configuration managemen
 """
 
 import os
+import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -24,6 +25,7 @@ from ..services.health_monitor import HealthMonitor, HealthMonitorError
 from ..services.repo_sync import RepoSyncService, RepoSyncError
 from ..services.config_manager import ConfigManager, ConfigManagerError
 from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
+from ..services.test_runner import TestRunner, TestRunnerError
 
 
 # Security
@@ -103,6 +105,7 @@ _health_monitor: Optional[HealthMonitor] = None
 _repo_sync: Optional[RepoSyncService] = None
 _config_manager: Optional[ConfigManager] = None
 _remote_executor: Optional[RemoteExecutor] = None
+_test_runner: Optional[TestRunner] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -167,6 +170,27 @@ def get_remote_executor() -> RemoteExecutor:
         )
     
     return _remote_executor
+
+
+def get_test_runner() -> TestRunner:
+    """Get or create TestRunner instance."""
+    global _test_runner
+    
+    if _test_runner is None:
+        config_path = os.getenv('CONFIG_PATH', 'configs/config.yml')
+        remote_executor = get_remote_executor()
+        results_dir = os.getenv('TEST_RESULTS_DIR', 'test_results')
+        history_file = os.getenv('TEST_HISTORY_FILE', 'test_results/test_history.json')
+        
+        _test_runner = TestRunner(
+            config_path=config_path,
+            remote_executor=remote_executor,
+            results_dir=results_dir,
+            history_file=history_file,
+            logger=logger
+        )
+    
+    return _test_runner
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -443,6 +467,311 @@ async def update_config(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)
         )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+class ConnectionTestRequest(BaseModel):
+    """Request model for connection tests."""
+    vm_id: Optional[str] = Field('vm04', description="VM identifier to run tests from")
+
+
+class ConnectionTestResponse(BaseModel):
+    """Response model for connection tests."""
+    success: bool
+    test_type: str
+    vm_id: str
+    timestamp: str
+    status: str
+    passed: int
+    failed: int
+    warnings: int
+    execution_time: float
+    result_file: Optional[str] = None
+
+
+class DataFlowTestRequest(BaseModel):
+    """Request model for data flow tests."""
+    vm_id: Optional[str] = Field('vm04', description="VM identifier to run tests from")
+
+
+class DataFlowTestResponse(BaseModel):
+    """Response model for data flow tests."""
+    success: bool
+    test_type: str
+    vm_id: str
+    timestamp: str
+    status: str
+    passed: int
+    failed: int
+    warnings: int
+    execution_time: float
+    result_file: Optional[str] = None
+
+
+class TestHistoryResponse(BaseModel):
+    """Response model for test history."""
+    success: bool
+    tests: List[Dict[str, Any]]
+    total: int
+    filters: Optional[Dict[str, Any]] = None
+
+
+class ExportResultsRequest(BaseModel):
+    """Request model for exporting test results."""
+    format: str = Field('json', description="Export format: json or csv")
+    test_type: Optional[str] = Field(None, description="Filter by test type")
+    vm_id: Optional[str] = Field(None, description="Filter by VM ID")
+    limit: Optional[int] = Field(None, description="Maximum number of results")
+
+
+class ExportResultsResponse(BaseModel):
+    """Response model for export results."""
+    success: bool
+    file_path: str
+    format: str
+    count: int
+    message: str
+
+
+@app.post("/tests/connection", response_model=ConnectionTestResponse)
+async def run_connection_tests(
+    request: ConnectionTestRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Run connection tests.
+    
+    Args:
+        request: Connection test request
+    
+    Returns:
+        Connection test result
+    """
+    start_time = datetime.utcnow()
+    
+    try:
+        test_runner = get_test_runner()
+        result = test_runner.run_connection_tests(vm_id=request.vm_id)
+        execution_time = (datetime.utcnow() - start_time).total_seconds()
+        
+        return ConnectionTestResponse(
+            success=result.get('success', False),
+            test_type=result.get('test_type', 'connections'),
+            vm_id=result.get('vm_id', request.vm_id),
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat()),
+            status=result.get('status', 'unknown'),
+            passed=result.get('passed', 0),
+            failed=result.get('failed', 0),
+            warnings=result.get('warnings', 0),
+            execution_time=execution_time,
+            result_file=result.get('result_file')
+        )
+    except TestRunnerError as e:
+        logger.error(f"Connection test error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/tests/data-flow", response_model=DataFlowTestResponse)
+async def run_data_flow_tests(
+    request: DataFlowTestRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Run data flow tests.
+    
+    Args:
+        request: Data flow test request
+    
+    Returns:
+        Data flow test result
+    """
+    start_time = datetime.utcnow()
+    
+    try:
+        test_runner = get_test_runner()
+        result = test_runner.run_data_flow_tests(vm_id=request.vm_id)
+        execution_time = (datetime.utcnow() - start_time).total_seconds()
+        
+        return DataFlowTestResponse(
+            success=result.get('success', False),
+            test_type=result.get('test_type', 'data_flow'),
+            vm_id=result.get('vm_id', request.vm_id),
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat()),
+            status=result.get('status', 'unknown'),
+            passed=result.get('passed', 0),
+            failed=result.get('failed', 0),
+            warnings=result.get('warnings', 0),
+            execution_time=execution_time,
+            result_file=result.get('result_file')
+        )
+    except TestRunnerError as e:
+        logger.error(f"Data flow test error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/tests/history", response_model=TestHistoryResponse)
+async def get_test_history(
+    test_type: Optional[str] = None,
+    vm_id: Optional[str] = None,
+    limit: Optional[int] = None,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get test history.
+    
+    Args:
+        test_type: Filter by test type
+        vm_id: Filter by VM ID
+        limit: Maximum number of results
+    
+    Returns:
+        Test history
+    """
+    try:
+        test_runner = get_test_runner()
+        tests = test_runner.get_test_history(
+            test_type=test_type,
+            vm_id=vm_id,
+            limit=limit
+        )
+        
+        return TestHistoryResponse(
+            success=True,
+            tests=tests,
+            total=len(tests),
+            filters={
+                'test_type': test_type,
+                'vm_id': vm_id,
+                'limit': limit
+            } if test_type or vm_id or limit else None
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/tests/export", response_model=ExportResultsResponse)
+async def export_test_results(
+    request: ExportResultsRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Export test results to file.
+    
+    Args:
+        request: Export request
+    
+    Returns:
+        Export result
+    """
+    try:
+        import csv
+        
+        # Validate format first
+        format_ext = request.format.lower()
+        if format_ext not in ['json', 'csv']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Format must be 'json' or 'csv'"
+            )
+        
+        test_runner = get_test_runner()
+        
+        # Get test history with filters
+        tests = test_runner.get_test_history(
+            test_type=request.test_type,
+            vm_id=request.vm_id,
+            limit=request.limit
+        )
+        
+        if not tests:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No test results found matching criteria"
+            )
+        
+        # Generate filename
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        
+        filename = f"test_results_export_{timestamp}.{format_ext}"
+        export_path = test_runner.results_dir / filename
+        
+        # Export based on format
+        if format_ext == 'json':
+            with open(export_path, 'w') as f:
+                json.dump({
+                    'export_timestamp': datetime.utcnow().isoformat(),
+                    'filters': {
+                        'test_type': request.test_type,
+                        'vm_id': request.vm_id,
+                        'limit': request.limit
+                    },
+                    'count': len(tests),
+                    'tests': tests
+                }, f, indent=2)
+        else:  # CSV
+            if not tests:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="No test results to export"
+                )
+            
+            # Get all unique keys from test results
+            all_keys = set()
+            for test in tests:
+                all_keys.update(test.keys())
+            
+            fieldnames = sorted(all_keys)
+            
+            with open(export_path, 'w', newline='') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                for test in tests:
+                    # Convert nested dicts to strings for CSV
+                    row = {}
+                    for key in fieldnames:
+                        value = test.get(key, '')
+                        if isinstance(value, (dict, list)):
+                            value = json.dumps(value)
+                        row[key] = value
+                    writer.writerow(row)
+        
+        return ExportResultsResponse(
+            success=True,
+            file_path=str(export_path),
+            format=format_ext,
+            count=len(tests),
+            message=f"Exported {len(tests)} test results to {filename}"
+        )
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(
