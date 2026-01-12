@@ -75,47 +75,47 @@ pytest --cov=automation-scripts --cov-report=html tests/
 
 ## Test Cases Coverage
 
-### TC-0-01-01: Podstawowe wykonanie komendy
+### TC-0-01-01: Basic command execution
 ```bash
 pytest tests/unit/test_remote_executor.py::TestBasicCommandExecution::test_execute_simple_command -v
 ```
 
-### TC-0-01-02: Wykonanie skryptu na zdalnym VM
+### TC-0-01-02: Remote VM script execution
 ```bash
 pytest tests/unit/test_remote_executor.py::TestScriptExecution::test_execute_remote_script -v
 ```
 
-### TC-0-01-03: Upload pliku
+### TC-0-01-03: File upload
 ```bash
 pytest tests/unit/test_remote_executor.py::TestFileUpload::test_upload_file -v
 ```
 
-### TC-0-01-04: Download pliku
+### TC-0-01-04: File download
 ```bash
 pytest tests/unit/test_remote_executor.py::TestFileDownload::test_download_file -v
 ```
 
-### TC-0-01-05: Timeout komendy
+### TC-0-01-05: Command timeout
 ```bash
 pytest tests/unit/test_remote_executor.py::TestCommandTimeout::test_command_timeout -v
 ```
 
-### TC-0-01-06: Błędna komenda
+### TC-0-01-06: Invalid command
 ```bash
 pytest tests/unit/test_remote_executor.py::TestErrorHandling::test_nonexistent_command -v
 ```
 
-### TC-0-01-07: Bezpieczeństwo SSH
+### TC-0-01-07: SSH security
 ```bash
 pytest tests/unit/test_ssh_client.py::TestSSHSecurity -v
 ```
 
-### TS-0-01-01: Wykonanie wielu komend sekwencyjnie
+### TS-0-01-01: Sequential execution of multiple commands
 ```bash
 pytest tests/integration/test_remote_execution_integration.py::TestSequentialCommandExecution -v
 ```
 
-### TS-0-01-02: Wykonanie komend równolegle
+### TS-0-01-02: Parallel command execution
 ```bash
 pytest tests/integration/test_remote_execution_integration.py::TestParallelCommandExecution -v
 ```

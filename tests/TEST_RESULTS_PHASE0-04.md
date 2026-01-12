@@ -21,7 +21,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ## Test Cases Coverage
 
-### TC-0-04-01: Sprawdzenie zdrowia pojedynczego VM ✅
+### TC-0-04-01: Single VM health check ✅
 
 **Status**: PASSED
 
@@ -42,7 +42,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TC-0-04-02: Sprawdzenie zdrowia wszystkich VM ✅
+### TC-0-04-02: All VMs health check ✅
 
 **Status**: PASSED
 
@@ -63,7 +63,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TC-0-04-03: Zbieranie metryk ✅
+### TC-0-04-03: Metrics collection ✅
 
 **Status**: PASSED
 
@@ -84,7 +84,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TC-0-04-04: Zaplanowane health checks ✅
+### TC-0-04-04: Scheduled health checks ✅
 
 **Status**: PASSED
 
@@ -105,7 +105,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TC-0-04-05: Alert przy problemie ✅
+### TC-0-04-05: Alert on problem ✅
 
 **Status**: PASSED
 
@@ -126,7 +126,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TC-0-04-06: Status serwisów ✅
+### TC-0-04-06: Service status ✅
 
 **Status**: PASSED
 
@@ -149,7 +149,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ## Test Scenarios Coverage
 
-### TS-0-04-01: Monitoring przez dłuższy czas ✅
+### TS-0-04-01: Long-term monitoring ✅
 
 **Status**: PASSED
 
@@ -173,7 +173,7 @@ Complete test suite for Health Monitoring Service has been implemented and execu
 
 ---
 
-### TS-0-04-02: Obsługa awarii ✅
+### TS-0-04-02: Failure handling ✅
 
 **Status**: PASSED
 

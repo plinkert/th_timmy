@@ -20,7 +20,7 @@ All test cases for PHASE1-04: n8n Hunt Selection Form have been implemented and 
 
 ## Test Cases
 
-### TC-1-04-01: Wybór huntów (checkboxy) ✅
+### TC-1-04-01: Hunt selection (checkboxes) ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -46,7 +46,7 @@ All test cases for PHASE1-04: n8n Hunt Selection Form have been implemented and 
 
 ---
 
-### TC-1-04-02: Wybór źródła danych ✅
+### TC-1-04-02: Data source selection ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -71,7 +71,7 @@ All test cases for PHASE1-04: n8n Hunt Selection Form have been implemented and 
 
 ---
 
-### TC-1-04-03: Wybór narzędzi ✅
+### TC-1-04-03: Tool selection ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -97,7 +97,7 @@ All test cases for PHASE1-04: n8n Hunt Selection Form have been implemented and 
 
 ---
 
-### TC-1-04-04: Generowanie zapytań w formularzu ✅
+### TC-1-04-04: Query generation in form ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 

@@ -20,7 +20,7 @@ All test cases for PHASE1-02: Query Generator have been implemented and are pass
 
 ## Test Cases
 
-### TC-1-02-01: Generowanie zapytań dla pojedynczego huntu ✅
+### TC-1-02-01: Query generation for single hunt ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -47,7 +47,7 @@ All test cases for PHASE1-02: Query Generator have been implemented and are pass
 
 ---
 
-### TC-1-02-02: Generowanie zapytań dla wielu huntów ✅
+### TC-1-02-02: Query generation for multiple hunts ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -73,7 +73,7 @@ All test cases for PHASE1-02: Query Generator have been implemented and are pass
 
 ---
 
-### TC-1-02-03: Formatowanie zapytań dla różnych narzędzi ✅
+### TC-1-02-03: Query formatting for different tools ✅
 
 **Status**: ✅ **PASSED** (4/4 tests)
 

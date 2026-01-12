@@ -16,17 +16,17 @@
 ### Test Categories
 
 #### Unit Tests (13 tests)
-- ✅ **TC-0-01-01**: Podstawowe wykonanie komendy (2 tests)
-- ✅ **TC-0-01-02**: Wykonanie skryptu na zdalnym VM (1 test)
-- ✅ **TC-0-01-03**: Upload pliku (1 test)
-- ✅ **TC-0-01-04**: Download pliku (1 test)
-- ✅ **TC-0-01-05**: Timeout komendy (1 test)
-- ✅ **TC-0-01-06**: Błędna komenda (3 tests)
-- ✅ **TC-0-01-07**: Bezpieczeństwo SSH (4 tests)
+- ✅ **TC-0-01-01**: Basic command execution (2 tests)
+- ✅ **TC-0-01-02**: Remote VM script execution (1 test)
+- ✅ **TC-0-01-03**: File upload (1 test)
+- ✅ **TC-0-01-04**: File download (1 test)
+- ✅ **TC-0-01-05**: Command timeout (1 test)
+- ✅ **TC-0-01-06**: Invalid command (3 tests)
+- ✅ **TC-0-01-07**: SSH security (4 tests)
 
 #### Integration Tests (4 tests)
-- ✅ **TS-0-01-01**: Wykonanie wielu komend sekwencyjnie (1 test)
-- ✅ **TS-0-01-02**: Wykonanie komend równolegle (2 tests)
+- ✅ **TS-0-01-01**: Sequential execution of multiple commands (1 test)
+- ✅ **TS-0-01-02**: Parallel command execution (2 tests)
 - ✅ Connection reuse test (1 test)
 
 ## Detailed Test Results

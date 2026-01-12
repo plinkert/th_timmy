@@ -21,7 +21,7 @@ Complete test suite for Hardening Management Interface has been implemented and 
 
 ## Test Cases Coverage
 
-### TC-0-08-01: Status hardeningu ✅
+### TC-0-08-01: Hardening status ✅
 
 **Status**: PASSED (2 tests)  
 **Execution Time**: ~4 seconds
@@ -44,7 +44,7 @@ Complete test suite for Hardening Management Interface has been implemented and 
 
 ---
 
-### TC-0-08-02: Uruchomienie hardeningu z dashboardu ✅
+### TC-0-08-02: Run hardening from dashboard ✅
 
 **Status**: PASSED (2 tests)  
 **Execution Time**: Variable (depends on hardening time)
@@ -70,7 +70,7 @@ Complete test suite for Hardening Management Interface has been implemented and 
 
 ---
 
-### TC-0-08-03: Porównanie przed/po hardeningu ✅
+### TC-0-08-03: Before/after hardening comparison ✅
 
 **Status**: PASSED
 

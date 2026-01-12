@@ -21,7 +21,7 @@ Complete test suite for Management Dashboard has been implemented and executed. 
 
 ## Test Cases Coverage
 
-### TC-0-05-01: Wyświetlanie System Overview ✅
+### TC-0-05-01: Displaying System Overview ✅
 
 **Status**: PASSED
 
@@ -42,7 +42,7 @@ Complete test suite for Management Dashboard has been implemented and executed. 
 
 ---
 
-### TC-0-05-02: Automatyczne odświeżanie statusu ✅
+### TC-0-05-02: Automatic status refresh ✅
 
 **Status**: PASSED
 
@@ -63,7 +63,7 @@ Complete test suite for Management Dashboard has been implemented and executed. 
 
 ---
 
-### TC-0-05-03: Synchronizacja repozytorium z dashboardu ✅
+### TC-0-05-03: Repository synchronization from dashboard ✅
 
 **Status**: PASSED
 
@@ -84,7 +84,7 @@ Complete test suite for Management Dashboard has been implemented and executed. 
 
 ---
 
-### TC-0-05-04: Edycja konfiguracji z dashboardu ✅
+### TC-0-05-04: Configuration editing from dashboard ✅
 
 **Status**: PASSED
 

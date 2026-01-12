@@ -20,7 +20,7 @@ All test cases for PHASE1-06: Playbook Validator have been implemented and are p
 
 ## Test Cases
 
-### TC-1-06-01: Walidacja struktury katalogów ✅
+### TC-1-06-01: Directory structure validation ✅
 
 **Status**: ✅ **PASSED** (4/4 tests)
 
@@ -62,7 +62,7 @@ All test cases for PHASE1-06: Playbook Validator have been implemented and are p
 
 ---
 
-### TC-1-06-02: Walidacja metadata.yml ✅
+### TC-1-06-02: metadata.yml validation ✅
 
 **Status**: ✅ **PASSED** (5/5 tests)
 
@@ -111,7 +111,7 @@ All test cases for PHASE1-06: Playbook Validator have been implemented and are p
 
 ---
 
-### TC-1-06-03: Weryfikacja wymaganych plików ✅
+### TC-1-06-03: Required files verification ✅
 
 **Status**: ✅ **PASSED** (6/6 tests)
 

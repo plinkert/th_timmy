@@ -16,17 +16,17 @@
 ## Test Categories
 
 ### Unit Tests (10 tests)
-- ✅ **TC-0-02-01**: Synchronizacja do pojedynczego VM (1 test)
-- ✅ **TC-0-02-02**: Synchronizacja do wszystkich VM (1 test)
-- ✅ **TC-0-02-03**: Weryfikacja synchronizacji (1 test)
-- ✅ **TC-0-02-04**: Synchronizacja konkretnej gałęzi (1 test)
-- ✅ **TC-0-02-05**: Obsługa konfliktów (1 test)
-- ✅ **TC-0-02-06**: Automatyczna synchronizacja (1 test)
+- ✅ **TC-0-02-01**: Sync to single VM (1 test)
+- ✅ **TC-0-02-02**: Sync to all VMs (1 test)
+- ✅ **TC-0-02-03**: Sync verification (1 test)
+- ✅ **TC-0-02-04**: Sync specific branch (1 test)
+- ✅ **TC-0-02-05**: Conflict handling (1 test)
+- ✅ **TC-0-02-06**: Automatic synchronization (1 test)
 - ✅ Additional repository status tests (4 tests)
 
 ### Integration Tests (2 tests)
-- ✅ **TS-0-02-01**: Pełny cykl synchronizacji (1 test)
-- ✅ **TS-0-02-02**: Synchronizacja przy braku połączenia (1 test)
+- ✅ **TS-0-02-01**: Full sync cycle (1 test)
+- ✅ **TS-0-02-02**: Sync with connection loss (1 test)
 - ✅ Performance tests (1 test)
 - ✅ Detailed verification tests (1 test)
 

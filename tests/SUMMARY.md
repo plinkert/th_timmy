@@ -10,20 +10,20 @@ Complete test suite for **Phase 0-01: Remote Execution Service** has been implem
 
 | Test Case | Status | File | Description |
 |-----------|--------|------|-------------|
-| TC-0-01-01 | ✅ | `test_remote_executor.py` | Podstawowe wykonanie komendy |
-| TC-0-01-02 | ✅ | `test_remote_executor.py` | Wykonanie skryptu na zdalnym VM |
-| TC-0-01-03 | ✅ | `test_remote_executor.py` | Upload pliku |
-| TC-0-01-04 | ✅ | `test_remote_executor.py` | Download pliku |
-| TC-0-01-05 | ✅ | `test_remote_executor.py` | Timeout komendy |
-| TC-0-01-06 | ✅ | `test_remote_executor.py` | Błędna komenda |
-| TC-0-01-07 | ✅ | `test_ssh_client.py` | Bezpieczeństwo SSH |
+| TC-0-01-01 | ✅ | `test_remote_executor.py` | Basic command execution |
+| TC-0-01-02 | ✅ | `test_remote_executor.py` | Remote VM script execution |
+| TC-0-01-03 | ✅ | `test_remote_executor.py` | File upload |
+| TC-0-01-04 | ✅ | `test_remote_executor.py` | File download |
+| TC-0-01-05 | ✅ | `test_remote_executor.py` | Command timeout |
+| TC-0-01-06 | ✅ | `test_remote_executor.py` | Invalid command |
+| TC-0-01-07 | ✅ | `test_ssh_client.py` | SSH security |
 
 ### ✅ Integration Tests (2 Test Scenarios)
 
 | Test Scenario | Status | File | Description |
 |---------------|--------|------|-------------|
-| TS-0-01-01 | ✅ | `test_remote_execution_integration.py` | Wykonanie wielu komend sekwencyjnie |
-| TS-0-01-02 | ✅ | `test_remote_execution_integration.py` | Wykonanie komend równolegle |
+| TS-0-01-01 | ✅ | `test_remote_execution_integration.py` | Sequential execution of multiple commands |
+| TS-0-01-02 | ✅ | `test_remote_execution_integration.py` | Parallel command execution |
 
 ### ✅ API Tests
 

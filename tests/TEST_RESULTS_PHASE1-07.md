@@ -20,7 +20,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ## Test Cases
 
-### TC-1-07-01: Lista wszystkich playbooków z dashboardu ✅
+### TC-1-07-01: List all playbooks from dashboard ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -44,7 +44,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ---
 
-### TC-1-07-02: Tworzenie nowego playbooka przez formularz ✅
+### TC-1-07-02: Create new playbook from form ✅
 
 **Status**: ✅ **PASSED** (3/3 tests)
 
@@ -77,7 +77,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ---
 
-### TC-1-07-03: Edycja playbooka z dashboardu ✅
+### TC-1-07-03: Edit playbook from dashboard ✅
 
 **Status**: ✅ **PASSED** (3/3 tests)
 
@@ -108,7 +108,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ---
 
-### TC-1-07-04: Walidacja playbooka z dashboardu ✅
+### TC-1-07-04: Playbook validation from dashboard ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -134,7 +134,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ---
 
-### TC-1-07-05: Testowanie playbooka z dashboardu ✅
+### TC-1-07-05: Playbook testing from dashboard ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 
@@ -160,7 +160,7 @@ All test cases for PHASE1-07: Playbook Management Interface have been implemente
 
 ---
 
-### TC-1-07-06: Usuwanie playbooka ✅
+### TC-1-07-06: Delete playbook ✅
 
 **Status**: ✅ **PASSED** (2/2 tests)
 

@@ -20,7 +20,7 @@ All test cases for PHASE1-01: Playbook Structure validation have been implemente
 
 ## Test Cases
 
-### TC-1-01-01: Walidacja struktury playbooka ✅
+### TC-1-01-01: Playbook structure validation ✅
 
 **Status**: ✅ **PASSED** (3/3 tests)
 
@@ -46,7 +46,7 @@ All test cases for PHASE1-01: Playbook Structure validation have been implemente
 
 ---
 
-### TC-1-01-02: Walidacja metadata.yml z zapytaniami ✅
+### TC-1-01-02: metadata.yml validation with queries ✅
 
 **Status**: ✅ **PASSED** (3/3 tests)
 
@@ -75,7 +75,7 @@ All test cases for PHASE1-01: Playbook Structure validation have been implemente
 
 ---
 
-### TC-1-01-03: Format zapytań manual ✅
+### TC-1-01-03: Manual query format ✅
 
 **Status**: ✅ **PASSED** (4/4 tests)
 
@@ -114,7 +114,7 @@ All test cases for PHASE1-01: Playbook Structure validation have been implemente
 
 ---
 
-### TC-1-01-04: Format zapytań API ✅
+### TC-1-01-04: API query format ✅
 
 **Status**: ✅ **PASSED** (4/4 tests)
 

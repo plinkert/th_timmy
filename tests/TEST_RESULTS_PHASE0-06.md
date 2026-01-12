@@ -12,7 +12,7 @@ Complete test suite for Testing Management Interface has been implemented and ex
 
 ## Test Cases Coverage
 
-### TC-0-06-01: Uruchomienie Connection Tests z dashboardu ✅
+### TC-0-06-01: Run Connection Tests from dashboard ✅
 
 **Status**: PASSED  
 **Execution Time**: ~5-6 seconds
@@ -36,7 +36,7 @@ Complete test suite for Testing Management Interface has been implemented and ex
 
 ---
 
-### TC-0-06-02: Uruchomienie Data Flow Tests z dashboardu ✅
+### TC-0-06-02: Run Data Flow Tests from dashboard ✅
 
 **Status**: PASSED  
 **Execution Time**: ~5-6 seconds
@@ -58,7 +58,7 @@ Complete test suite for Testing Management Interface has been implemented and ex
 
 ---
 
-### TC-0-06-03: Historia testów ✅
+### TC-0-06-03: Test history ✅
 
 **Status**: PASSED (2 tests)
 
@@ -80,7 +80,7 @@ Complete test suite for Testing Management Interface has been implemented and ex
 
 ---
 
-### TC-0-06-04: Eksport wyników testów ✅
+### TC-0-06-04: Export test results ✅
 
 **Status**: PASSED (2 tests: JSON and CSV)
 
@@ -107,7 +107,7 @@ Complete test suite for Testing Management Interface has been implemented and ex
 
 ## Test Scenarios Coverage
 
-### TS-0-06-01: Pełny cykl testowania ✅
+### TS-0-06-01: Full testing cycle ✅
 
 **Status**: PASSED
 

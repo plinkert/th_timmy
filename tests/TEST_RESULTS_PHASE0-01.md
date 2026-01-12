@@ -21,7 +21,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ## Test Cases Coverage
 
-### TC-0-01-01: Podstawowe wykonanie komendy ✅
+### TC-0-01-01: Basic command execution ✅
 
 **Status**: PASSED (2 tests)  
 **Execution Time**: ~1.1-1.9 seconds
@@ -43,7 +43,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-02: Wykonanie skryptu na zdalnym VM ✅
+### TC-0-01-02: Remote VM script execution ✅
 
 **Status**: PASSED  
 **Execution Time**: ~1.1 seconds
@@ -63,7 +63,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-03: Upload pliku ✅
+### TC-0-01-03: File upload ✅
 
 **Status**: PASSED  
 **Execution Time**: ~1.0 seconds
@@ -83,7 +83,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-04: Download pliku ✅
+### TC-0-01-04: File download ✅
 
 **Status**: PASSED  
 **Execution Time**: ~0.7 seconds
@@ -103,7 +103,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-05: Timeout komendy ✅
+### TC-0-01-05: Command timeout ✅
 
 **Status**: PASSED  
 **Execution Time**: ~5.6 seconds
@@ -123,7 +123,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-06: Błędna komenda ✅
+### TC-0-01-06: Invalid command ✅
 
 **Status**: PASSED (3 tests)
 
@@ -145,7 +145,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TC-0-01-07: Bezpieczeństwo SSH ✅
+### TC-0-01-07: SSH security ✅
 
 **Status**: PASSED (4 tests)
 
@@ -171,7 +171,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ## Test Scenarios Coverage
 
-### TS-0-01-01: Wykonanie wielu komend sekwencyjnie ✅
+### TS-0-01-01: Sequential execution of multiple commands ✅
 
 **Status**: PASSED  
 **Execution Time**: ~3.2 seconds
@@ -193,7 +193,7 @@ Complete test suite for Remote Execution Service has been implemented and execut
 
 ---
 
-### TS-0-01-02: Wykonanie komend równolegle ✅
+### TS-0-01-02: Parallel command execution ✅
 
 **Status**: PASSED (2 tests)  
 **Execution Time**: ~0.7-0.9 seconds

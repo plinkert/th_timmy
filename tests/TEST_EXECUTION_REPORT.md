@@ -50,17 +50,17 @@ Complete test suite has been implemented and committed to repository. Tests are 
 ## Test Coverage
 
 ### Unit Tests (7 Test Cases)
-- ✅ TC-0-01-01: Podstawowe wykonanie komendy
-- ✅ TC-0-01-02: Wykonanie skryptu na zdalnym VM
-- ✅ TC-0-01-03: Upload pliku
-- ✅ TC-0-01-04: Download pliku
-- ✅ TC-0-01-05: Timeout komendy
-- ✅ TC-0-01-06: Błędna komenda
-- ✅ TC-0-01-07: Bezpieczeństwo SSH
+- ✅ TC-0-01-01: Basic command execution
+- ✅ TC-0-01-02: Remote VM script execution
+- ✅ TC-0-01-03: File upload
+- ✅ TC-0-01-04: File download
+- ✅ TC-0-01-05: Command timeout
+- ✅ TC-0-01-06: Invalid command
+- ✅ TC-0-01-07: SSH security
 
 ### Integration Tests (2 Scenarios)
-- ✅ TS-0-01-01: Wykonanie wielu komend sekwencyjnie
-- ✅ TS-0-01-02: Wykonanie komend równolegle
+- ✅ TS-0-01-01: Sequential execution of multiple commands
+- ✅ TS-0-01-02: Parallel command execution
 
 ### API Tests
 - ✅ Health endpoint

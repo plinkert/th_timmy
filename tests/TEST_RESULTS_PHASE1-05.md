@@ -20,7 +20,7 @@ All test cases for PHASE1-05: Data Package have been implemented and are passing
 
 ## Test Cases
 
-### TC-1-05-01: Tworzenie Data Package ✅
+### TC-1-05-01: Data Package creation ✅
 
 **Status**: ✅ **PASSED** (4/4 tests)
 
@@ -61,7 +61,7 @@ All test cases for PHASE1-05: Data Package have been implemented and are passing
 
 ---
 
-### TC-1-05-02: Walidacja Data Package ✅
+### TC-1-05-02: Data Package validation ✅
 
 **Status**: ✅ **PASSED** (6/6 tests)
 
@@ -115,7 +115,7 @@ All test cases for PHASE1-05: Data Package have been implemented and are passing
 
 ---
 
-### TC-1-05-03: Odrzucanie nieprawidłowych formatów ✅
+### TC-1-05-03: Reject invalid formats ✅
 
 **Status**: ✅ **PASSED** (7/7 tests)
 
