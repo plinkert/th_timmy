@@ -67,6 +67,7 @@ th_timmy/
 - [x] Deterministic anonymization with mapping table (PHASE1-03)
 - [x] n8n UI - formularz wyboru huntów i narzędzi (PHASE1-04)
 - [x] Data Package - struktura i walidacja (PHASE1-05)
+- [x] Playbook Validator - walidacja playbooków (PHASE1-06)
 - [ ] Playbook engine
 
 **Phase 2: AI Integration** - Planned

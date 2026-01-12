@@ -1,0 +1,343 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://threat-hunting-lab/schemas/playbook.json",
+  "title": "Playbook Schema",
+  "description": "Schema for validating threat hunting playbook metadata.yml files",
+  "type": "object",
+  "required": [
+    "playbook",
+    "mitre",
+    "hypothesis",
+    "data_sources"
+  ],
+  "properties": {
+    "playbook": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "version",
+        "author",
+        "created",
+        "updated",
+        "description"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique playbook identifier",
+          "pattern": "^[A-Z0-9]+(-[a-z0-9-]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Playbook name",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "Playbook version",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "author": {
+          "type": "string",
+          "description": "Playbook author",
+          "minLength": 1
+        },
+        "created": {
+          "type": "string",
+          "description": "Creation date (YYYY-MM-DD)",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "updated": {
+          "type": "string",
+          "description": "Last update date (YYYY-MM-DD)",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
+        },
+        "description": {
+          "type": "string",
+          "description": "Playbook description",
+          "minLength": 1
+        }
+      }
+    },
+    "mitre": {
+      "type": "object",
+      "required": [
+        "technique_id",
+        "technique_name",
+        "tactic"
+      ],
+      "properties": {
+        "technique_id": {
+          "type": "string",
+          "description": "MITRE ATT&CK technique ID",
+          "pattern": "^T\\d{4}(\\.\\d{3})?$"
+        },
+        "technique_name": {
+          "type": "string",
+          "description": "MITRE ATT&CK technique name",
+          "minLength": 1
+        },
+        "tactic": {
+          "type": "string",
+          "description": "MITRE ATT&CK tactic",
+          "minLength": 1
+        },
+        "sub_techniques": {
+          "type": "array",
+          "description": "List of sub-technique IDs",
+          "items": {
+            "type": "string",
+            "pattern": "^T\\d{4}\\.\\d{3}$"
+          }
+        }
+      }
+    },
+    "hypothesis": {
+      "type": "string",
+      "description": "Threat hunting hypothesis",
+      "minLength": 1
+    },
+    "data_sources": {
+      "type": "array",
+      "description": "List of data sources with queries",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "type",
+          "queries"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Data source name",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "EDR",
+              "SIEM",
+              "Cloud",
+              "OS",
+              "Network",
+              "Application"
+            ],
+            "description": "Data source type"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this data source is required",
+            "default": false
+          },
+          "description": {
+            "type": "string",
+            "description": "Data source description"
+          },
+          "queries": {
+            "type": "object",
+            "description": "Queries for manual and API execution",
+            "properties": {
+              "manual": {
+                "type": "array",
+                "description": "Queries for manual execution",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "file"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Query name",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Query description"
+                    },
+                    "file": {
+                      "type": "string",
+                      "description": "Path to query file relative to playbook root",
+                      "pattern": "^queries/.*"
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "description": "Query parameters",
+                      "additionalProperties": true
+                    },
+                    "expected_fields": {
+                      "type": "array",
+                      "description": "Expected fields in query results",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "instructions": {
+                      "type": "string",
+                      "description": "Step-by-step instructions for manual execution"
+                    }
+                  }
+                }
+              },
+              "api": {
+                "type": "array",
+                "description": "Queries for API execution",
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "file",
+                    "api_endpoint",
+                    "api_method",
+                    "api_authentication"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "Query name",
+                      "minLength": 1
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Query description"
+                    },
+                    "file": {
+                      "type": "string",
+                      "description": "Path to query file relative to playbook root",
+                      "pattern": "^queries/.*"
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "description": "Query parameters",
+                      "additionalProperties": true
+                    },
+                    "api_endpoint": {
+                      "type": "string",
+                      "description": "API endpoint URL",
+                      "format": "uri"
+                    },
+                    "api_method": {
+                      "type": "string",
+                      "enum": [
+                        "GET",
+                        "POST",
+                        "PUT",
+                        "DELETE"
+                      ],
+                      "description": "HTTP method for API call"
+                    },
+                    "api_authentication": {
+                      "type": "string",
+                      "description": "Authentication method (e.g., 'OAuth2', 'Basic Auth', 'API Key')"
+                    },
+                    "expected_fields": {
+                      "type": "array",
+                      "description": "Expected fields in query results",
+                      "items": {
+                        "type": "string"
+                      }
+                    },
+                    "instructions": {
+                      "type": "string",
+                      "description": "Instructions for API execution"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "inputs": {
+      "type": "array",
+      "description": "Input parameters for the playbook",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Parameter name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "string",
+              "integer",
+              "float",
+              "boolean",
+              "date",
+              "datetime"
+            ],
+            "description": "Parameter type"
+          },
+          "default": {
+            "description": "Default value"
+          },
+          "description": {
+            "type": "string",
+            "description": "Parameter description"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether parameter is required",
+            "default": false
+          }
+        }
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "description": "Output definitions",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "type"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Output name"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "json",
+              "csv",
+              "html",
+              "text"
+            ],
+            "description": "Output type"
+          },
+          "description": {
+            "type": "string",
+            "description": "Output description"
+          }
+        }
+      }
+    },
+    "dependencies": {
+      "type": "object",
+      "description": "Playbook dependencies",
+      "properties": {
+        "python": {
+          "type": "array",
+          "description": "Python package dependencies",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
+
