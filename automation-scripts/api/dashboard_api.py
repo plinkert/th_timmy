@@ -1917,6 +1917,86 @@ async def get_playbook_summary(
         )
 
 
+# Pipeline Orchestrator Models
+class ExecutePipelineRequest(BaseModel):
+    """Request model for pipeline execution."""
+    technique_ids: List[str] = Field(..., description="List of MITRE technique IDs")
+    tool_names: List[str] = Field(..., description="List of tool names")
+    ingest_mode: str = Field("manual", description="Ingest mode: 'manual' or 'api'")
+    anonymize: bool = Field(True, description="Whether to anonymize data")
+    playbook_ids: Optional[List[str]] = Field(None, description="Optional list of specific playbook IDs")
+    data_package: Optional[Dict[str, Any]] = Field(None, description="Optional pre-created DataPackage (for manual mode)")
+
+
+class ExecutePipelineResponse(BaseModel):
+    """Response model for pipeline execution."""
+    success: bool
+    pipeline_id: str
+    status: str
+    total_findings: int
+    stages: Dict[str, Any]
+    started_at: str
+    completed_at: Optional[str] = None
+    error: Optional[str] = None
+
+
+# Pipeline Orchestrator Endpoints
+@app.post("/pipeline/execute", response_model=ExecutePipelineResponse)
+async def execute_pipeline(
+    request: ExecutePipelineRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Execute end-to-end data pipeline.
+    
+    Args:
+        request: Pipeline execution request
+    
+    Returns:
+        Pipeline execution results
+    """
+    try:
+        orchestrator = get_pipeline_orchestrator()
+        
+        # Convert data_package dict to DataPackage if provided
+        data_package = None
+        if request.data_package:
+            from automation_scripts.utils.data_package import DataPackage
+            data_package = DataPackage.from_dict(request.data_package)
+        
+        result = orchestrator.execute_pipeline(
+            technique_ids=request.technique_ids,
+            tool_names=request.tool_names,
+            ingest_mode=request.ingest_mode,
+            data_package=data_package,
+            anonymize=request.anonymize,
+            playbook_ids=request.playbook_ids
+        )
+        
+        return ExecutePipelineResponse(
+            success=result.get('status') == 'success',
+            pipeline_id=result.get('pipeline_id', ''),
+            status=result.get('status', 'unknown'),
+            total_findings=result.get('total_findings', 0),
+            stages=result.get('stages', {}),
+            started_at=result.get('started_at', ''),
+            completed_at=result.get('completed_at'),
+            error=result.get('error')
+        )
+    except PipelineExecutionError as e:
+        logger.error(f"Pipeline execution error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
 # Router for inclusion in main app
 router = app
 
