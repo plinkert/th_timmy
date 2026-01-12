@@ -1,23 +1,21 @@
 """
-Configuration Management Service - Central configuration management.
+Configuration Management Service - Centralized configuration management.
 
-This module provides services for managing configuration files across all VMs,
+This module provides services for managing configurations across all VMs,
 including reading, updating, validating, backing up, and synchronizing configurations.
 """
 
 import os
 import logging
-import shutil
-import hashlib
+import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List, Tuple
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 import yaml
-import json
 
 from .remote_executor import RemoteExecutor, RemoteExecutorError
-from ..utils.config_validator import ConfigValidator
-from ..utils.config_backup import ConfigBackup
+from ..utils.config_validator import ConfigValidator, ConfigValidatorError
+from ..utils.config_backup import ConfigBackup, ConfigBackupError
 
 
 class ConfigManagerError(Exception):
@@ -27,10 +25,10 @@ class ConfigManagerError(Exception):
 
 class ConfigManager:
     """
-    Configuration management service.
+    Configuration Management Service.
     
     Provides functionality for:
-    - Reading configuration from VMs
+    - Reading configuration from VM
     - Updating configuration
     - Validating configuration
     - Backing up and restoring configuration
@@ -44,7 +42,7 @@ class ConfigManager:
         config: Optional[Dict[str, Any]] = None,
         remote_executor: Optional[RemoteExecutor] = None,
         backup_dir: Optional[str] = None,
-        history_dir: Optional[str] = None,
+        history_file: Optional[str] = None,
         logger: Optional[logging.Logger] = None
     ):
         """
@@ -55,7 +53,7 @@ class ConfigManager:
             config: Configuration dict (alternative to config_path)
             remote_executor: Optional RemoteExecutor instance
             backup_dir: Directory for configuration backups
-            history_dir: Directory for configuration change history
+            history_file: Path to configuration change history file
             logger: Optional logger instance
         """
         self.logger = logger or logging.getLogger(__name__)
@@ -75,8 +73,13 @@ class ConfigManager:
                     "No configuration provided. Specify config_path or config parameter."
                 )
         
-        # Get configuration management settings
-        self.config_mgmt = self.config.get('configuration_management', {})
+        # Get configuration paths
+        self.config_paths = self.config.get('config_management', {}).get('paths', {})
+        self.central_config_path = self.config_paths.get(
+            'central',
+            'configs/config.yml'
+        )
+        self.vm_config_paths = self.config_paths.get('vm', {})
         
         # Initialize remote executor
         if remote_executor:
@@ -87,58 +90,23 @@ class ConfigManager:
                 logger=self.logger
             )
         
-        # Setup directories
-        self.backup_dir = Path(backup_dir or self.config_mgmt.get('backup_dir', 'configs/backups'))
-        self.history_dir = Path(history_dir or self.config_mgmt.get('history_dir', 'configs/history'))
-        
-        # Create directories if they don't exist
-        self.backup_dir.mkdir(parents=True, exist_ok=True)
-        self.history_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Initialize validator and backup manager
+        # Initialize validator
         self.validator = ConfigValidator(logger=self.logger)
-        self.backup_manager = ConfigBackup(backup_dir=str(self.backup_dir), logger=self.logger)
         
-        # Main config path (on VM04 - orchestrator)
-        project_root = Path(__file__).parent.parent.parent
-        self.main_config_path = self.config_mgmt.get(
-            'main_config_path',
-            str(project_root / "configs" / "config.yml")
+        # Initialize backup manager
+        backup_dir = backup_dir or self.config.get('config_management', {}).get(
+            'backup_dir',
+            'configs/backups'
         )
+        self.backup_manager = ConfigBackup(backup_dir=backup_dir, logger=self.logger)
         
-        # VM config paths - central config
-        self.vm_config_paths = self.config_mgmt.get('vm_config_paths', {})
-        if not self.vm_config_paths:
-            # Default paths
-            default_path = '/home/user/th_timmy/configs/config.yml'
-            self.vm_config_paths = {
-                'vm01': default_path,
-                'vm02': default_path,
-                'vm03': default_path,
-                'vm04': default_path,
-            }
-        
-        # VM-specific config paths (hosts/vmXX-*/config.yml)
-        self.vm_specific_config_paths = self.config_mgmt.get('vm_specific_config_paths', {})
-        if not self.vm_specific_config_paths:
-            base_path = '/home/user/th_timmy/hosts'
-            self.vm_specific_config_paths = {
-                'vm01': f'{base_path}/vm01-ingest/config.yml',
-                'vm02': f'{base_path}/vm02-database/config.yml',
-                'vm03': f'{base_path}/vm03-analysis/config.yml',
-                'vm04': f'{base_path}/vm04-orchestrator/config.yml',
-            }
-        
-        # Environment file paths
-        self.env_file_paths = self.config_mgmt.get('env_file_paths', {})
-        if not self.env_file_paths:
-            base_path = '/home/user/th_timmy'
-            self.env_file_paths = {
-                'vm01': f'{base_path}/.env',
-                'vm02': f'{base_path}/.env',
-                'vm03': f'{base_path}/.env',
-                'vm04': f'{base_path}/.env',
-            }
+        # Initialize change history
+        history_file = history_file or self.config.get('config_management', {}).get(
+            'history_file',
+            'configs/config_history.json'
+        )
+        self.history_file = Path(history_file)
+        self._ensure_history_file()
         
         self.logger.info("ConfigManager initialized")
     
@@ -152,64 +120,49 @@ class ConfigManager:
         except Exception as e:
             raise ConfigManagerError(f"Failed to load configuration from {config_path}: {e}")
     
-    def _save_config(self, config: Dict[str, Any], config_path: str) -> None:
-        """Save configuration to YAML file."""
-        try:
-            # Ensure directory exists
-            Path(config_path).parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(config_path, 'w') as f:
-                yaml.dump(config, f, default_flow_style=False, sort_keys=False)
-            self.logger.debug(f"Configuration saved to {config_path}")
-        except Exception as e:
-            raise ConfigManagerError(f"Failed to save configuration to {config_path}: {e}")
+    def _ensure_history_file(self) -> None:
+        """Ensure history file exists."""
+        self.history_file.parent.mkdir(parents=True, exist_ok=True)
+        if not self.history_file.exists():
+            with open(self.history_file, 'w') as f:
+                json.dump({'changes': []}, f, indent=2)
     
-    def _get_vm_config_path(self, vm_id: str, config_type: str = "central") -> str:
-        """
-        Get configuration file path for VM.
-        
-        Args:
-            vm_id: VM identifier
-            config_type: Type of configuration ('central', 'vm', 'env')
-        
-        Returns:
-            Configuration file path
-        """
-        if config_type == "central":
-            return self.vm_config_paths.get(vm_id, f'/home/user/th_timmy/configs/config.yml')
-        elif config_type == "vm":
-            return self.vm_specific_config_paths.get(
-                vm_id,
-                f'/home/user/th_timmy/hosts/vm{vm_id[-1]}-*/config.yml'
-            )
-        elif config_type == "env":
-            return self.env_file_paths.get(vm_id, f'/home/user/th_timmy/.env')
-        else:
-            raise ConfigManagerError(f"Unknown config type: {config_type}")
-    
-    def _validate_config(
+    def _add_to_history(
         self,
-        config: Dict[str, Any],
-        config_type: str = "central"
-    ) -> Tuple[bool, List[str]]:
-        """
-        Validate configuration structure.
-        
-        Args:
-            config: Configuration dictionary
-            config_type: Type of configuration ('central', 'vm', 'env')
-        
-        Returns:
-            Tuple of (is_valid, list_of_errors)
-        """
-        return self.validator.validate_config(config, config_type)
+        operation: str,
+        config_path: str,
+        details: Dict[str, Any]
+    ) -> None:
+        """Add entry to configuration change history."""
+        try:
+            # Load existing history
+            if self.history_file.exists():
+                with open(self.history_file, 'r') as f:
+                    history = json.load(f)
+            else:
+                history = {'changes': []}
+            
+            # Add new entry
+            entry = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'operation': operation,
+                'config_path': config_path,
+                'details': details
+            }
+            history['changes'].append(entry)
+            
+            # Keep only last 1000 entries
+            if len(history['changes']) > 1000:
+                history['changes'] = history['changes'][-1000:]
+            
+            # Save history
+            with open(self.history_file, 'w') as f:
+                json.dump(history, f, indent=2)
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to add entry to history: {e}")
     
-    def _calculate_config_hash(self, config: Dict[str, Any]) -> str:
-        """Calculate hash of configuration for change tracking."""
-        config_str = yaml.dump(config, sort_keys=True)
-        return hashlib.sha256(config_str.encode()).hexdigest()[:16]
-    
-    def get_config(
+    def get_config_from_vm(
         self,
         vm_id: str,
         config_type: str = "central"
@@ -219,466 +172,321 @@ class ConfigManager:
         
         Args:
             vm_id: VM identifier
-            config_type: Type of configuration ('central', 'vm', 'env')
-        
-        Returns:
-            Configuration dictionary or string (for env files)
-        
-        Raises:
-            ConfigManagerError: If configuration cannot be retrieved
-        """
-        try:
-            config_path = self._get_vm_config_path(vm_id, config_type)
-            
-            self.logger.info(f"Retrieving {config_type} configuration from {vm_id}: {config_path}")
-            
-            # Download config file to temporary location
-            import tempfile
-            suffix = '.env' if config_type == 'env' else '.yml'
-            with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as tmp_file:
-                tmp_path = tmp_file.name
-            
-            try:
-                self.remote_executor.download_file(
-                    vm_id=vm_id,
-                    remote_path=config_path,
-                    local_path=tmp_path
-                )
-                
-                # Load and return config
-                if config_type == 'env':
-                    # Read as text for env files
-                    with open(tmp_path, 'r') as f:
-                        return f.read()
-                else:
-                    # Read as YAML
-                    return self._load_config(tmp_path)
-                
-            finally:
-                # Cleanup
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-                    
-        except RemoteExecutorError as e:
-            raise ConfigManagerError(f"Failed to retrieve configuration from {vm_id}: {e}")
-        except Exception as e:
-            raise ConfigManagerError(f"Unexpected error retrieving configuration from {vm_id}: {e}")
-    
-    def get_config_from_vm(self, vm_id: str = 'vm04') -> Dict[str, Any]:
-        """
-        Get configuration from VM.
-        
-        Args:
-            vm_id: VM identifier (default: vm04 - orchestrator)
+            config_type: Type of config ('central' or 'vm')
         
         Returns:
             Configuration dictionary
         
         Raises:
-            ConfigManagerError: If configuration cannot be retrieved
+            ConfigManagerError: If retrieval fails
         """
         try:
-            config_path = self._get_vm_config_path(vm_id)
-            
-            self.logger.info(f"Retrieving configuration from {vm_id}: {config_path}")
+            # Determine config path on VM
+            if config_type == "central":
+                config_path = self.central_config_path
+            else:
+                config_path = self.vm_config_paths.get(vm_id)
+                if not config_path:
+                    raise ConfigManagerError(f"No config path configured for {vm_id}")
             
             # Download config file to temporary location
             import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as tmp_file:
-                tmp_path = tmp_file.name
+            temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False)
+            temp_path = temp_file.name
+            temp_file.close()
             
             try:
+                # Download config from VM
                 self.remote_executor.download_file(
                     vm_id=vm_id,
                     remote_path=config_path,
-                    local_path=tmp_path
+                    local_path=temp_path
                 )
                 
                 # Load and return config
-                config = self._load_config(tmp_path)
+                with open(temp_path, 'r') as f:
+                    config = yaml.safe_load(f)
+                
                 return config
                 
             finally:
-                # Cleanup
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
+                # Cleanup temp file
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
                     
         except RemoteExecutorError as e:
-            raise ConfigManagerError(f"Failed to retrieve configuration from {vm_id}: {e}")
+            raise ConfigManagerError(f"Failed to get config from {vm_id}: {e}")
         except Exception as e:
-            raise ConfigManagerError(f"Unexpected error retrieving configuration from {vm_id}: {e}")
+            raise ConfigManagerError(f"Unexpected error getting config from {vm_id}: {e}")
     
     def update_config(
         self,
-        vm_id: Optional[str],
-        config_type: str,
-        config_data: Any,
-        validate: bool = True
+        config_data: Dict[str, Any],
+        config_path: Optional[str] = None,
+        validate: bool = True,
+        create_backup: bool = True
     ) -> Dict[str, Any]:
         """
-        Update configuration.
+        Update configuration file.
         
         Args:
-            vm_id: VM identifier (None for main/local config)
-            config_type: Type of configuration ('central', 'vm', 'env')
-            config_data: Configuration data (dict for YAML, str for env)
+            config_data: New configuration data
+            config_path: Path to config file (default: central config path)
             validate: Whether to validate before saving
+            create_backup: Whether to create backup before update
         
         Returns:
             Dictionary with update result
         
         Raises:
-            ConfigManagerError: If validation fails
+            ConfigManagerError: If update fails
         """
         try:
-            # Validate if requested
+            if not config_path:
+                config_path = self.central_config_path
+            
+            config_path = Path(config_path)
+            
+            # Validate configuration
             if validate:
-                if config_type == 'env':
-                    is_valid, errors = self.validator.validate_config(config_data, 'env')
-                else:
-                    is_valid, errors = self.validator.validate_config(config_data, config_type)
-                
+                is_valid, errors = self.validator.validate_config(config_data, "central")
                 if not is_valid:
                     raise ConfigManagerError(
                         f"Configuration validation failed: {', '.join(errors)}"
                     )
             
-            # Determine target path
-            if vm_id:
-                target_path = self._get_vm_config_path(vm_id, config_type)
-            else:
-                # Local update
-                project_root = Path(__file__).parent.parent.parent
-                if config_type == 'central':
-                    target_path = str(project_root / "configs" / "config.yml")
-                elif config_type == 'vm':
-                    raise ConfigManagerError("VM-specific config requires vm_id")
-                elif config_type == 'env':
-                    target_path = str(project_root / ".env")
-                else:
-                    raise ConfigManagerError(f"Unknown config type: {config_type}")
+            # Create backup if requested
+            backup_info = None
+            if create_backup and config_path.exists():
+                backup_info = self.backup_manager.create_backup(
+                    str(config_path),
+                    metadata={'operation': 'update', 'timestamp': datetime.utcnow().isoformat()}
+                )
             
-            # Calculate hash for change tracking
-            if config_type == 'env':
-                config_hash = hashlib.sha256(str(config_data).encode()).hexdigest()[:16]
-            else:
-                config_hash = self._calculate_config_hash(config_data)
+            # Ensure directory exists
+            config_path.parent.mkdir(parents=True, exist_ok=True)
             
-            if vm_id:
-                # Save to temporary file and upload to VM
-                import tempfile
-                suffix = '.env' if config_type == 'env' else '.yml'
-                with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as tmp_file:
-                    tmp_path = tmp_file.name
-                
-                try:
-                    if config_type == 'env':
-                        # Write env file
-                        with open(tmp_path, 'w') as f:
-                            f.write(config_data if isinstance(config_data, str) else str(config_data))
-                    else:
-                        # Write YAML
-                        self._save_config(config_data, tmp_path)
-                    
-                    # Upload to VM
-                    self.remote_executor.upload_file(
-                        vm_id=vm_id,
-                        local_path=tmp_path,
-                        remote_path=target_path
-                    )
-                    
-                finally:
-                    if os.path.exists(tmp_path):
-                        os.remove(tmp_path)
-            else:
-                # Local save
-                if config_type == 'env':
-                    with open(target_path, 'w') as f:
-                        f.write(config_data if isinstance(config_data, str) else str(config_data))
-                else:
-                    self._save_config(config_data, target_path)
-                
-                # Update local config if central
-                if config_type == 'central':
-                    self.config = config_data
+            # Save configuration
+            with open(config_path, 'w') as f:
+                yaml.dump(config_data, f, default_flow_style=False, sort_keys=False)
             
-            # Record in history
-            if config_type != 'env':
-                self._record_config_change(config_data, config_hash, 'update')
+            # Add to history
+            self._add_to_history(
+                operation='update',
+                config_path=str(config_path),
+                details={
+                    'backup_created': backup_info is not None,
+                    'backup_name': backup_info.get('backup_name') if backup_info else None
+                }
+            )
             
-            self.logger.info(f"Configuration updated (type: {config_type}, hash: {config_hash})")
+            self.logger.info(f"Configuration updated: {config_path}")
             
             return {
                 'success': True,
-                'config_hash': config_hash,
-                'config_type': config_type,
-                'vm_id': vm_id,
-                'timestamp': datetime.utcnow().isoformat(),
-                'message': 'Configuration updated successfully'
+                'config_path': str(config_path),
+                'backup': backup_info,
+                'timestamp': datetime.utcnow().isoformat()
             }
             
-        except ConfigManagerError:
-            raise
+        except ConfigValidatorError as e:
+            raise ConfigManagerError(f"Configuration validation error: {e}")
         except Exception as e:
             raise ConfigManagerError(f"Failed to update configuration: {e}")
     
     def validate_config(
         self,
-        config_data: Optional[Any] = None,
+        config_data: Optional[Dict[str, Any]] = None,
+        config_path: Optional[str] = None,
         config_type: str = "central"
     ) -> Dict[str, Any]:
         """
         Validate configuration.
         
         Args:
-            config_data: Configuration to validate (default: current config)
-            config_type: Type of configuration ('central', 'vm', 'env')
+            config_data: Configuration data to validate (if None, loads from config_path)
+            config_path: Path to config file
+            config_type: Type of configuration
         
         Returns:
             Dictionary with validation result
         """
-        if config_data is None:
-            if config_type == 'central':
-                config_data = self.config
+        try:
+            if config_data is None:
+                if not config_path:
+                    config_path = self.central_config_path
+                is_valid, errors = self.validator.validate_config_file(
+                    str(config_path),
+                    config_type
+                )
             else:
-                return {
-                    'valid': False,
-                    'errors': ['No configuration data provided'],
-                    'timestamp': datetime.utcnow().isoformat()
-                }
-        
-        is_valid, errors = self.validator.validate_config(config_data, config_type)
-        
-        return {
-            'valid': is_valid,
-            'errors': errors,
-            'config_type': config_type,
-            'timestamp': datetime.utcnow().isoformat()
-        }
+                is_valid, errors = self.validator.validate_config(config_data, config_type)
+            
+            return {
+                'valid': is_valid,
+                'errors': errors,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+            
+        except Exception as e:
+            return {
+                'valid': False,
+                'errors': [str(e)],
+                'timestamp': datetime.utcnow().isoformat()
+            }
     
     def backup_config(
         self,
-        vm_id: Optional[str] = None,
-        config_type: str = "central",
+        config_path: Optional[str] = None,
         backup_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Backup configuration.
+        Create backup of configuration.
         
         Args:
-            vm_id: VM identifier (None for main/local config)
-            config_type: Type of configuration ('central', 'vm', 'env')
-            backup_name: Custom backup name (default: auto-generated)
+            config_path: Path to config file (default: central config path)
+            backup_name: Custom backup name
         
         Returns:
-            Dictionary with backup result
+            Dictionary with backup information
         """
         try:
-            if vm_id:
-                # Backup VM config - download first
-                config_data = self.get_config(vm_id, config_type)
-                source_path = self._get_vm_config_path(vm_id, config_type)
-                
-                # Save to temporary file for backup
-                import tempfile
-                suffix = '.env' if config_type == 'env' else '.yml'
-                with tempfile.NamedTemporaryFile(mode='w', suffix=suffix, delete=False) as tmp_file:
-                    tmp_path = tmp_file.name
-                
-                try:
-                    if config_type == 'env':
-                        with open(tmp_path, 'w') as f:
-                            f.write(config_data if isinstance(config_data, str) else str(config_data))
-                    else:
-                        self._save_config(config_data, tmp_path)
-                    
-                    # Use backup manager
-                    result = self.backup_manager.create_backup(
-                        tmp_path,
-                        backup_name,
-                        metadata={
-                            'vm_id': vm_id,
-                            'config_type': config_type,
-                            'source_path': source_path
-                        }
-                    )
-                    
-                    return result
-                    
-                finally:
-                    if os.path.exists(tmp_path):
-                        os.remove(tmp_path)
-            else:
-                # Backup local config
-                project_root = Path(__file__).parent.parent.parent
-                if config_type == 'central':
-                    source_path = str(project_root / "configs" / "config.yml")
-                elif config_type == 'env':
-                    source_path = str(project_root / ".env")
-                else:
-                    raise ConfigManagerError(f"Cannot backup {config_type} config locally without vm_id")
-                
-                if not os.path.exists(source_path):
-                    raise ConfigManagerError(f"Configuration file not found: {source_path}")
-                
-                # Use backup manager
-                return self.backup_manager.create_backup(
-                    source_path,
-                    backup_name,
-                    metadata={
-                        'config_type': config_type,
-                        'source_path': source_path
-                    }
-                )
+            if not config_path:
+                config_path = self.central_config_path
             
-        except Exception as e:
-            self.logger.error(f"Failed to backup configuration: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            backup_info = self.backup_manager.create_backup(
+                str(config_path),
+                backup_name=backup_name,
+                metadata={'operation': 'manual_backup', 'timestamp': datetime.utcnow().isoformat()}
+            )
+            
+            # Add to history
+            self._add_to_history(
+                operation='backup',
+                config_path=str(config_path),
+                details={'backup_name': backup_info['backup_name']}
+            )
+            
+            return backup_info
+            
+        except ConfigBackupError as e:
+            raise ConfigManagerError(f"Backup failed: {e}")
     
     def restore_config(
         self,
-        backup_id: str,
-        vm_id: Optional[str] = None,
-        config_type: str = "central"
+        backup_name: str,
+        config_path: Optional[str] = None,
+        verify: bool = True
     ) -> Dict[str, Any]:
         """
         Restore configuration from backup.
         
         Args:
-            backup_id: Backup name or ID
-            vm_id: VM identifier (None for main/local config)
-            config_type: Type of configuration ('central', 'vm', 'env')
+            backup_name: Name of backup to restore
+            config_path: Target path (default: original path from backup)
+            verify: Whether to verify backup integrity
         
         Returns:
             Dictionary with restore result
         """
         try:
-            # Determine target path
-            if vm_id:
-                target_path = self._get_vm_config_path(vm_id, config_type)
-            else:
-                project_root = Path(__file__).parent.parent.parent
-                if config_type == 'central':
-                    target_path = str(project_root / "configs" / "config.yml")
-                elif config_type == 'env':
-                    target_path = str(project_root / ".env")
-                else:
-                    raise ConfigManagerError(f"Cannot restore {config_type} config locally without vm_id")
+            if not config_path:
+                config_path = self.central_config_path
             
-            # Use backup manager to restore
-            result = self.backup_manager.restore_backup(backup_id, target_path, verify=True)
+            restore_info = self.backup_manager.restore_backup(
+                backup_name,
+                target_path=str(config_path),
+                verify=verify
+            )
             
-            if result.get('success'):
-                # If restoring to VM, upload the restored file
-                if vm_id:
-                    # File was restored locally, now upload to VM
-                    self.remote_executor.upload_file(
-                        vm_id=vm_id,
-                        local_path=target_path,
-                        remote_path=self._get_vm_config_path(vm_id, config_type)
-                    )
-                elif config_type == 'central':
-                    # Reload local config
-                    self.config = self._load_config(target_path)
+            # Add to history
+            self._add_to_history(
+                operation='restore',
+                config_path=str(config_path),
+                details={'backup_name': backup_name}
+            )
             
-            self.logger.info(f"Configuration restored from backup: {backup_id}")
+            return restore_info
             
-            return {
-                'success': True,
-                'backup_id': backup_id,
-                'vm_id': vm_id,
-                'config_type': config_type,
-                'target_path': target_path,
-                'timestamp': datetime.utcnow().isoformat()
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Failed to restore configuration: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+        except ConfigBackupError as e:
+            raise ConfigManagerError(f"Restore failed: {e}")
     
-    def sync_config_to_vm(self, vm_id: str, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def sync_config_to_vm(
+        self,
+        vm_id: str,
+        config_path: Optional[str] = None,
+        remote_config_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
-        Synchronize configuration to VM.
+        Synchronize configuration to remote VM.
         
         Args:
             vm_id: VM identifier
-            config: Configuration to sync (default: current config)
+            config_path: Local config path (default: central config path)
+            remote_config_path: Remote config path (default: same as local)
         
         Returns:
             Dictionary with sync result
         """
         try:
-            if config is None:
-                config = self.config
+            if not config_path:
+                config_path = self.central_config_path
             
-            remote_path = self._get_vm_config_path(vm_id)
+            if not remote_config_path:
+                remote_config_path = config_path
             
-            # Save config to temporary file
-            import tempfile
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.yml', delete=False) as tmp_file:
-                tmp_path = tmp_file.name
-            
-            try:
-                # Save config to temp file
-                self._save_config(config, tmp_path)
-                
-                # Upload to VM
-                self.remote_executor.upload_file(
-                    vm_id=vm_id,
-                    local_path=tmp_path,
-                    remote_path=remote_path
+            # Validate before sync
+            is_valid, errors = self.validator.validate_config_file(str(config_path), "central")
+            if not is_valid:
+                raise ConfigManagerError(
+                    f"Configuration validation failed before sync: {', '.join(errors)}"
                 )
-                
-                # Verify upload
-                exit_code, stdout, stderr = self.remote_executor.execute_remote_command(
-                    vm_id=vm_id,
-                    command=f"test -f {remote_path} && echo 'exists' || echo 'not_found'"
-                )
-                
-                if 'exists' not in stdout:
-                    raise ConfigManagerError(f"Configuration file not found on {vm_id} after upload")
-                
-                self.logger.info(f"Configuration synchronized to {vm_id}: {remote_path}")
-                
-                return {
-                    'success': True,
-                    'vm_id': vm_id,
-                    'remote_path': remote_path,
-                    'timestamp': datetime.utcnow().isoformat()
-                }
-                
-            finally:
-                # Cleanup
-                if os.path.exists(tmp_path):
-                    os.remove(tmp_path)
-                    
-        except Exception as e:
-            self.logger.error(f"Failed to sync configuration to {vm_id}: {e}")
+            
+            # Upload config to VM
+            self.remote_executor.upload_file(
+                vm_id=vm_id,
+                local_path=str(config_path),
+                remote_path=remote_config_path
+            )
+            
+            # Add to history
+            self._add_to_history(
+                operation='sync_to_vm',
+                config_path=str(config_path),
+                details={'vm_id': vm_id, 'remote_path': remote_config_path}
+            )
+            
+            self.logger.info(f"Configuration synced to {vm_id}: {remote_config_path}")
+            
             return {
-                'success': False,
+                'success': True,
                 'vm_id': vm_id,
-                'error': str(e)
+                'local_path': str(config_path),
+                'remote_path': remote_config_path,
+                'timestamp': datetime.utcnow().isoformat()
             }
+            
+        except RemoteExecutorError as e:
+            raise ConfigManagerError(f"Failed to sync config to {vm_id}: {e}")
+        except Exception as e:
+            raise ConfigManagerError(f"Unexpected error syncing config to {vm_id}: {e}")
     
-    def sync_config_to_all_vms(self, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def sync_config_to_all_vms(
+        self,
+        config_path: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Synchronize configuration to all enabled VMs.
         
         Args:
-            config: Configuration to sync (default: current config)
+            config_path: Local config path (default: central config path)
         
         Returns:
-            Dictionary with sync results
+            Dictionary with sync results for all VMs
         """
         try:
-            if config is None:
-                config = self.config
+            if not config_path:
+                config_path = self.central_config_path
             
             # Get all enabled VMs
             vms = self.config.get('vms', {})
@@ -692,12 +500,15 @@ class ConfigManager:
             failed = 0
             
             for vm_id in enabled_vms:
-                result = self.sync_config_to_vm(vm_id, config)
-                results[vm_id] = result
-                
-                if result.get('success', False):
+                try:
+                    result = self.sync_config_to_vm(vm_id, config_path)
+                    results[vm_id] = result
                     successful += 1
-                else:
+                except Exception as e:
+                    results[vm_id] = {
+                        'success': False,
+                        'error': str(e)
+                    }
                     failed += 1
             
             return {
@@ -707,114 +518,48 @@ class ConfigManager:
                     'total': len(enabled_vms),
                     'successful': successful,
                     'failed': failed
-                },
-                'timestamp': datetime.utcnow().isoformat()
+                }
             }
             
         except Exception as e:
-            self.logger.error(f"Failed to sync configuration to all VMs: {e}")
-            return {
-                'success': False,
-                'error': str(e)
-            }
+            raise ConfigManagerError(f"Failed to sync config to all VMs: {e}")
     
-    def _record_config_change(
+    def get_config_history(
         self,
-        config: Dict[str, Any],
-        config_hash: str,
-        action: str,
-        backup_name: Optional[str] = None
-    ) -> None:
-        """
-        Record configuration change in history.
-        
-        Args:
-            config: Configuration dictionary
-            config_hash: Configuration hash
-            action: Action type (update, restore, etc.)
-            backup_name: Backup name if restore
-        """
-        try:
-            history_entry = {
-                'timestamp': datetime.utcnow().isoformat(),
-                'action': action,
-                'config_hash': config_hash,
-                'backup_name': backup_name
-            }
-            
-            # Save history entry
-            timestamp_str = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-            history_file = self.history_dir / f"config_history_{timestamp_str}.json"
-            
-            with open(history_file, 'w') as f:
-                json.dump(history_entry, f, indent=2)
-            
-            # Also append to main history log
-            history_log = self.history_dir / "config_history.log"
-            with open(history_log, 'a') as f:
-                f.write(json.dumps(history_entry) + '\n')
-                
-        except Exception as e:
-            self.logger.warning(f"Failed to record config change in history: {e}")
-    
-    def get_config_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        limit: Optional[int] = None,
+        operation: Optional[str] = None
+    ) -> List[Dict[str, Any]]:
         """
         Get configuration change history.
         
         Args:
-            limit: Maximum number of history entries to return
+            limit: Maximum number of entries to return
+            operation: Filter by operation type
         
         Returns:
             List of history entries
         """
         try:
-            history_log = self.history_dir / "config_history.log"
-            
-            if not history_log.exists():
+            if not self.history_file.exists():
                 return []
             
-            history_entries = []
-            with open(history_log, 'r') as f:
-                for line in f:
-                    if line.strip():
-                        try:
-                            entry = json.loads(line.strip())
-                            history_entries.append(entry)
-                        except json.JSONDecodeError:
-                            continue
+            with open(self.history_file, 'r') as f:
+                history = json.load(f)
             
-            # Return most recent entries
-            return history_entries[-limit:]
+            changes = history.get('changes', [])
+            
+            # Filter by operation if specified
+            if operation:
+                changes = [c for c in changes if c.get('operation') == operation]
+            
+            # Apply limit
+            if limit:
+                changes = changes[-limit:]
+            
+            return changes
             
         except Exception as e:
             self.logger.error(f"Failed to get config history: {e}")
-            return []
-    
-    def list_backups(self) -> List[Dict[str, Any]]:
-        """
-        List all configuration backups.
-        
-        Returns:
-            List of backup metadata
-        """
-        try:
-            backups = []
-            
-            for backup_file in self.backup_dir.glob("*.meta.json"):
-                try:
-                    with open(backup_file, 'r') as f:
-                        metadata = json.load(f)
-                    backups.append(metadata)
-                except Exception:
-                    continue
-            
-            # Sort by timestamp (newest first)
-            backups.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
-            
-            return backups
-            
-        except Exception as e:
-            self.logger.error(f"Failed to list backups: {e}")
             return []
     
     def close(self) -> None:

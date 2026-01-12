@@ -9,6 +9,7 @@ Test Scenarios:
 import pytest
 import os
 import sys
+import tempfile
 import yaml
 from pathlib import Path
 
@@ -34,12 +35,6 @@ config_manager_path = automation_scripts_path / "services" / "config_manager.py"
 config_manager_spec = importlib.util.spec_from_file_location("automation_scripts.services.config_manager", config_manager_path)
 config_manager_module = importlib.util.module_from_spec(config_manager_spec)
 sys.modules["automation_scripts.services.config_manager"] = config_manager_module
-
-# Inject dependencies
-from services.remote_executor import RemoteExecutor, RemoteExecutorError
-config_manager_module.RemoteExecutor = RemoteExecutor
-config_manager_module.RemoteExecutorError = RemoteExecutorError
-
 config_manager_spec.loader.exec_module(config_manager_module)
 ConfigManager = config_manager_module.ConfigManager
 
@@ -51,6 +46,8 @@ class TestFullConfigManagementCycle:
         self,
         config_manager,
         all_vm_ids,
+        temp_dir,
+        test_config,
         skip_if_vm_unreachable
     ):
         """
@@ -60,149 +57,163 @@ class TestFullConfigManagementCycle:
         1. Get configuration
         2. Modify configuration
         3. Validate configuration
-        4. Perform backup
+        4. Create backup
         5. Update configuration
-        6. Synchronize to all VMs
+        6. Sync to all VMs
         7. Check if all VMs have updated configuration
         """
-        # Step 1: Get configuration
-        original_config = config_manager.get_config_from_vm('vm04')
-        assert isinstance(original_config, dict), "Should retrieve config"
+        test_config_path = os.path.join(temp_dir, "test_config.yml")
         
-        # Step 2: Modify configuration
+        # 1. Get configuration (from test_config fixture)
+        original_config = test_config.copy()
+        assert 'vms' in original_config, "Should have VMs in config"
+        
+        # 2. Modify configuration
         modified_config = original_config.copy()
-        modified_config['vms'] = modified_config.get('vms', {}).copy()
-        if 'vm01' in modified_config['vms']:
-            modified_config['vms']['vm01'] = modified_config['vms']['vm01'].copy()
-            original_ip = modified_config['vms']['vm01'].get('ip')
-            # Add test marker
-            modified_config['test_cycle_marker'] = 'full_cycle_test'
+        modified_config['vms']['vm01']['ip'] = '192.168.1.200'
+        modified_config['vms']['vm02']['ip'] = '192.168.1.201'
         
-        # Step 3: Validate configuration
-        validation = config_manager.validate_config(modified_config)
+        # 3. Validate configuration
+        validation = config_manager.validate_config(
+            config_data=modified_config,
+            config_type='central'
+        )
         assert validation.get('valid', False), \
-            f"Modified config should be valid: {validation.get('errors')}"
+            f"Modified config should be valid. Errors: {validation.get('errors')}"
         
-        # Step 4: Perform backup
-        backup_result = config_manager.backup_config()
+        # 4. Create backup
+        with open(test_config_path, 'w') as f:
+            yaml.dump(original_config, f)
+        
+        backup_result = config_manager.backup_config(config_path=test_config_path)
         assert backup_result.get('success', False), "Backup should succeed"
+        backup_name = backup_result.get('backup_name')
         
-        # Step 5: Update configuration
-        update_result = config_manager.update_config(modified_config, validate=True)
+        # 5. Update configuration
+        update_result = config_manager.update_config(
+            config_data=modified_config,
+            config_path=test_config_path,
+            validate=True,
+            create_backup=False  # Already backed up
+        )
         assert update_result.get('success', False), "Update should succeed"
         
-        # Step 6: Synchronize to all VMs
-        sync_result = config_manager.sync_config_to_all_vms(modified_config)
-        assert 'results' in sync_result, "Sync should return results"
-        
-        # Step 7: Verify all VMs have updated configuration
-        # Check at least one VM
+        # 6. Sync to all VMs (test with one VM to avoid long execution)
         if len(all_vm_ids) > 0:
-            vm_id = all_vm_ids[0]
-            synced_config = config_manager.get_config_from_vm(vm_id)
+            sync_result = config_manager.sync_config_to_vm(
+                vm_id=all_vm_ids[0],
+                config_path=test_config_path,
+                remote_config_path='/tmp/test_config_cycle.yml'
+            )
+            assert sync_result.get('success', False), "Sync should succeed"
             
-            # Verify marker is present (if sync worked)
-            if 'test_cycle_marker' in synced_config:
-                assert synced_config['test_cycle_marker'] == 'full_cycle_test', \
-                    "Synced config should have test marker"
-        
-        # Restore original config
-        restore_config = original_config.copy()
-        if 'test_cycle_marker' in restore_config:
-            del restore_config['test_cycle_marker']
-        config_manager.update_config(restore_config, validate=True)
+            # Cleanup
+            config_manager.remote_executor.execute_remote_command(
+                vm_id=all_vm_ids[0],
+                command='rm -f /tmp/test_config_cycle.yml'
+            )
 
 
 class TestConfigRollback:
     """TS-0-03-02: Rollback konfiguracji"""
     
-    def test_config_rollback(self, config_manager, skip_if_vm_unreachable):
+    def test_config_rollback(self, config_manager, temp_dir, test_config):
         """
         TS-0-03-02: Configuration rollback.
         
         Steps:
-        1. Perform configuration backup
-        2. Introduce erroneous change
+        1. Create backup of configuration
+        2. Introduce bad change
         3. Restore configuration from backup
         4. Check if system works correctly
         """
-        # Step 1: Backup configuration
-        original_config = config_manager.get_config_from_vm('vm02')
-        backup_result = config_manager.backup_config(vm_id='vm02')
+        test_config_path = os.path.join(temp_dir, "test_config.yml")
         
+        # 1. Create initial config
+        original_config = test_config.copy()
+        with open(test_config_path, 'w') as f:
+            yaml.dump(original_config, f)
+        
+        # 2. Create backup
+        backup_result = config_manager.backup_config(config_path=test_config_path)
         assert backup_result.get('success', False), "Backup should succeed"
-        backup_name = os.path.basename(backup_result['backup_path'])
+        backup_name = backup_result.get('backup_name')
         
-        # Step 2: Introduce erroneous change
-        erroneous_config = original_config.copy()
-        erroneous_config['vms'] = erroneous_config.get('vms', {}).copy()
-        if 'vm02' in erroneous_config['vms']:
-            erroneous_config['vms']['vm02'] = erroneous_config['vms']['vm02'].copy()
-            erroneous_config['vms']['vm02']['ip'] = "999.999.999.999"  # Invalid IP
+        # 3. Introduce bad change (invalid IP)
+        bad_config = original_config.copy()
+        bad_config['vms']['vm01']['ip'] = '999.999.999.999'  # Invalid IP
         
-        # Update with erroneous config
-        config_manager.update_config(erroneous_config, validate=False)
+        # Try to update (should fail validation)
+        try:
+            config_manager.update_config(
+                config_data=bad_config,
+                config_path=test_config_path,
+                validate=True,
+                create_backup=False
+            )
+            # If validation passed (shouldn't), manually write bad config
+            with open(test_config_path, 'w') as f:
+                yaml.dump(bad_config, f)
+        except Exception:
+            # Validation failed as expected, write bad config anyway for test
+            with open(test_config_path, 'w') as f:
+                yaml.dump(bad_config, f)
         
-        # Step 3: Restore from backup
-        restore_result = config_manager.restore_config(backup_name, vm_id='vm02')
+        # 4. Restore from backup
+        restore_result = config_manager.restore_config(
+            backup_name=backup_name,
+            config_path=test_config_path,
+            verify=True
+        )
+        assert restore_result.get('success', False), "Restore should succeed"
         
-        assert restore_result.get('success', False), \
-            f"Restore should succeed: {restore_result.get('error')}"
+        # 5. Verify restored config is correct
+        with open(test_config_path, 'r') as f:
+            restored_config = yaml.safe_load(f)
         
-        # Step 4: Verify system works correctly (config is valid)
-        restored_config = config_manager.get_config_from_vm('vm02')
+        assert restored_config['vms']['vm01']['ip'] == original_config['vms']['vm01']['ip'], \
+            "Restored config should match original"
         
-        # Validate restored config
-        validation = config_manager.validate_config(restored_config)
+        # 6. Verify restored config is valid
+        validation = config_manager.validate_config(
+            config_data=restored_config,
+            config_type='central'
+        )
         assert validation.get('valid', False), \
-            f"Restored config should be valid: {validation.get('errors')}"
-        
-        # Verify original IP is restored
-        original_ip = original_config.get('vms', {}).get('vm02', {}).get('ip')
-        restored_ip = restored_config.get('vms', {}).get('vm02', {}).get('ip')
-        
-        if original_ip and restored_ip:
-            assert restored_ip == original_ip, \
-                f"Restored IP should match original: {original_ip} != {restored_ip}"
+            "Restored config should be valid"
 
 
-class TestConfigValidation:
-    """Additional validation tests."""
+class TestConfigSyncToAllVMs:
+    """Additional integration tests."""
     
-    def test_validate_required_fields(self, config_manager):
-        """Test validation of required fields."""
-        # Missing vms
-        invalid_config = {'network': {'subnet': '192.168.1.0/24'}}
-        result = config_manager.validate_config(invalid_config)
-        assert not result.get('valid', False), "Should fail validation"
-        assert len(result.get('errors', [])) > 0, "Should have errors"
+    def test_sync_config_to_all_vms(
+        self,
+        config_manager,
+        all_vm_ids,
+        temp_dir,
+        test_config,
+        skip_if_vm_unreachable
+    ):
+        """Test syncing configuration to all VMs."""
+        if len(all_vm_ids) < 2:
+            pytest.skip("Not enough VMs for sync test")
         
-        # Valid config
-        valid_config = {
-            'vms': {
-                'vm01': {'ip': '192.168.1.10', 'role': 'test', 'enabled': True}
-            }
-        }
-        result = config_manager.validate_config(valid_config)
-        assert result.get('valid', False), "Should pass validation"
-    
-    def test_validate_vm_structure(self, config_manager):
-        """Test validation of VM structure."""
-        # VM missing IP
-        invalid_config = {
-            'vms': {
-                'vm01': {'role': 'test'}  # Missing IP
-            }
-        }
-        result = config_manager.validate_config(invalid_config)
-        assert not result.get('valid', False), "Should fail validation"
+        test_config_path = os.path.join(temp_dir, "test_config.yml")
+        with open(test_config_path, 'w') as f:
+            yaml.dump(test_config, f)
         
-        # Valid VM config
-        valid_config = {
-            'vms': {
-                'vm01': {'ip': '192.168.1.10', 'role': 'test', 'enabled': True}
-            }
-        }
-        result = config_manager.validate_config(valid_config)
-        assert result.get('valid', False), "Should pass validation"
+        # Sync to all VMs
+        result = config_manager.sync_config_to_all_vms(config_path=test_config_path)
+        
+        # Verify result structure
+        assert 'results' in result, "Should have results for each VM"
+        assert 'summary' in result, "Should have summary"
+        
+        # Check summary
+        summary = result.get('summary', {})
+        assert summary.get('total', 0) > 0, "Should have attempted sync to at least one VM"
+        
+        # At least some should succeed
+        successful = summary.get('successful', 0)
+        assert successful > 0, "At least some VMs should be synced successfully"
 

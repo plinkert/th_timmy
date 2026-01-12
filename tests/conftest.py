@@ -246,8 +246,6 @@ def skip_if_vm_unreachable(vm_configs):
     """Skip test if VMs are not reachable (basic connectivity check)."""
     import socket
     
-    unreachable_vms = []
-    
     for vm_id, config in vm_configs.items():
         if not config.get('enabled', True):
             continue
@@ -255,35 +253,13 @@ def skip_if_vm_unreachable(vm_configs):
         ip = config.get('ip')
         port = config.get('ssh_port', 22)
         
-        if not ip:
-            unreachable_vms.append(f"{vm_id} (no IP configured)")
-            continue
-        
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(5)  # Zwiększony timeout z 2 do 5 sekund
+            sock.settimeout(2)
             result = sock.connect_ex((ip, port))
             sock.close()
-            
-            # connect_ex zwraca 0 jeśli sukces, kod błędu jeśli nie
-            # Sprawdzamy wynik zamiast tylko wyjątków
-            if result != 0:
-                unreachable_vms.append(f"{vm_id} ({ip}:{port}) - error code: {result}")
-        except socket.timeout:
-            unreachable_vms.append(f"{vm_id} ({ip}:{port}) - connection timeout")
-        except Exception as e:
-            unreachable_vms.append(f"{vm_id} ({ip}:{port}) - exception: {e}")
-    
-    # Pomijaj test tylko jeśli wszystkie enabled VMs są niedostępne
-    enabled_vms = [vm_id for vm_id, config in vm_configs.items() if config.get('enabled', True)]
-    
-    if unreachable_vms and len(unreachable_vms) == len(enabled_vms):
-        # Wszystkie VMs niedostępne - pomiń test
-        pytest.skip(f"All VMs unreachable: {', '.join(unreachable_vms)}")
-    elif unreachable_vms:
-        # Niektóre VMs niedostępne - loguj ostrzeżenie, ale nie pomijaj testu
-        import warnings
-        warnings.warn(f"Some VMs unreachable (test will continue): {', '.join(unreachable_vms)}")
+        except Exception:
+            pytest.skip(f"VM {vm_id} ({ip}) is not reachable")
 
 
 @pytest.fixture(scope="function")
@@ -371,22 +347,21 @@ def repo_sync_service(test_config, remote_executor, project_root_path):
 
 
 @pytest.fixture(scope="function")
+def temp_dir():
+    """Create temporary directory for tests."""
+    import tempfile
+    import shutil
+    
+    temp_path = tempfile.mkdtemp()
+    yield temp_path
+    
+    # Cleanup
+    shutil.rmtree(temp_path, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
 def config_manager(test_config, remote_executor, project_root_path, temp_dir):
     """Create ConfigManager instance for testing."""
-    # Ensure configuration_management config exists
-    if 'configuration_management' not in test_config:
-        test_config['configuration_management'] = {
-            'main_config_path': str(project_root_path / "configs" / "config.yml"),
-            'vm_config_paths': {
-                'vm01': '/home/thadmin/th_timmy/configs/config.yml',
-                'vm02': '/home/thadmin/th_timmy/configs/config.yml',
-                'vm03': '/home/thadmin/th_timmy/configs/config.yml',
-                'vm04': '/home/thadmin/th_timmy/configs/config.yml',
-            },
-            'backup_dir': str(Path(temp_dir) / "config_backups"),
-            'history_dir': str(Path(temp_dir) / "config_history")
-        }
-    
     # Import ConfigManager
     import importlib.util
     import types
@@ -407,19 +382,61 @@ def config_manager(test_config, remote_executor, project_root_path, temp_dir):
     config_manager_module.RemoteExecutor = RemoteExecutor
     config_manager_module.RemoteExecutorError = RemoteExecutorError
     
+    # Load utils modules
+    try:
+        # Load config_validator
+        validator_path = automation_scripts_path / "utils" / "config_validator.py"
+        if validator_path.exists():
+            validator_spec = importlib.util.spec_from_file_location("automation_scripts.utils.config_validator", validator_path)
+            validator_module = importlib.util.module_from_spec(validator_spec)
+            sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+            sys.modules["automation_scripts.utils.config_validator"] = validator_module
+            validator_spec.loader.exec_module(validator_module)
+            config_manager_module.ConfigValidator = validator_module.ConfigValidator
+            config_manager_module.ConfigValidatorError = validator_module.ConfigValidatorError
+        
+        # Load config_backup
+        backup_path = automation_scripts_path / "utils" / "config_backup.py"
+        if backup_path.exists():
+            backup_spec = importlib.util.spec_from_file_location("automation_scripts.utils.config_backup", backup_path)
+            backup_module = importlib.util.module_from_spec(backup_spec)
+            sys.modules["automation_scripts.utils.config_backup"] = backup_module
+            backup_spec.loader.exec_module(backup_module)
+            config_manager_module.ConfigBackup = backup_module.ConfigBackup
+            config_manager_module.ConfigBackupError = backup_module.ConfigBackupError
+    except Exception as e:
+        # Utils might not be available, that's OK for some tests
+        pass
+    
     config_manager_spec.loader.exec_module(config_manager_module)
     ConfigManager = config_manager_module.ConfigManager
     
-    # Create manager instance
-    manager = ConfigManager(
+    # Add config_management section to test_config if not present
+    if 'config_management' not in test_config:
+        test_config['config_management'] = {
+            'paths': {
+                'central': 'configs/config.yml',
+                'vm': {
+                    'vm01': 'configs/config.yml',
+                    'vm02': 'configs/config.yml',
+                    'vm03': 'configs/config.yml',
+                    'vm04': 'configs/config.yml',
+                }
+            },
+            'backup_dir': os.path.join(temp_dir, 'backups'),
+            'history_file': os.path.join(temp_dir, 'config_history.json')
+        }
+    
+    # Create service instance
+    service = ConfigManager(
         config=test_config,
         remote_executor=remote_executor,
-        backup_dir=str(Path(temp_dir) / "config_backups"),
-        history_dir=str(Path(temp_dir) / "config_history")
+        backup_dir=os.path.join(temp_dir, 'backups'),
+        history_file=os.path.join(temp_dir, 'config_history.json')
     )
     
-    yield manager
+    yield service
     
     # Cleanup
-    manager.close()
+    service.close()
 
