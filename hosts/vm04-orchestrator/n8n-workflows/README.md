@@ -397,6 +397,109 @@ curl -X POST http://VM04_IP:5678/webhook/generate-queries \
   }'
 ```
 
+## Playbook Manager Workflow
+
+### Instalacja
+
+1. Importuj workflow `playbook-manager.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/playbook-manager`
+
+### Funkcjonalności
+
+- **Lista Playbooków**: Wyświetlanie wszystkich dostępnych playbooków z statusem walidacji
+- **Tworzenie Playbooka**: Formularz do tworzenia nowego playbooka z template
+- **Edycja Playbooka**: Aktualizacja metadanych playbooka
+- **Walidacja Playbooka**: Walidacja struktury i metadanych playbooka
+- **Testowanie Playbooka**: Testowanie playbooka (walidacja, struktura, query files)
+
+### Webhook Endpoints
+
+- `GET /webhook/playbook-manager` - Dashboard zarządzania playbookami (HTML)
+- `GET /webhook/list-playbooks` - Pobierz listę wszystkich playbooków
+- `GET /webhook/get-playbook` - Pobierz szczegóły playbooka
+- `POST /webhook/create-playbook` - Utwórz nowy playbook
+- `POST /webhook/update-playbook` - Zaktualizuj playbook
+- `POST /webhook/validate-playbook` - Zwaliduj playbook
+- `POST /webhook/test-playbook` - Przetestuj playbook
+
+### Użycie
+
+#### Dostęp do dashboard
+
+1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/playbook-manager`
+2. Dashboard automatycznie załaduje listę playbooków
+
+#### Tworzenie nowego playbooka
+
+1. Wypełnij formularz "Create New Playbook":
+   - Playbook ID (np. `T1566-phishing`)
+   - MITRE Technique ID (np. `T1566`)
+   - Technique Name (np. `Phishing`)
+   - Tactic (np. `Initial Access`)
+   - Author
+   - Description
+   - Hypothesis
+2. Kliknij "Create Playbook"
+3. System utworzy playbook z template i zwaliduje go
+
+#### Walidacja playbooka
+
+1. Kliknij przycisk "Validate" przy playbooku
+2. System wyświetli wyniki walidacji (błędy i ostrzeżenia)
+
+#### Testowanie playbooka
+
+1. Kliknij przycisk "Test" przy playbooku
+2. System wykona testy (walidacja, struktura, query files)
+3. Wyniki testów zostaną wyświetlone
+
+### Integracja
+
+- **PHASE1-06**: Używa Playbook Validator do walidacji
+- **PHASE0-05**: Integracja z Management Dashboard
+- **API Endpoints**: Używa endpointów `/playbooks/*` z dashboard_api.py
+
+### Przykłady użycia
+
+#### Pobranie listy playbooków
+
+```bash
+curl http://VM04_IP:5678/webhook/list-playbooks
+```
+
+#### Utworzenie playbooka
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/create-playbook \
+  -H "Content-Type: application/json" \
+  -d '{
+    "playbook_id": "T1566-phishing",
+    "technique_id": "T1566",
+    "technique_name": "Phishing",
+    "tactic": "Initial Access",
+    "author": "Your Name",
+    "description": "Detects phishing attempts",
+    "hypothesis": "Adversaries may send phishing messages"
+  }'
+```
+
+#### Walidacja playbooka
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/validate-playbook \
+  -H "Content-Type: application/json" \
+  -d '{"playbook_id": "T1566-phishing"}'
+```
+
+#### Testowanie playbooka
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/test-playbook \
+  -H "Content-Type: application/json" \
+  -d '{"playbook_id": "T1566-phishing"}'
+```
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów

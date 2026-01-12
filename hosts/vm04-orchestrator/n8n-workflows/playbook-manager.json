@@ -1,0 +1,474 @@
+{
+  "name": "Playbook Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "playbook-manager",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-playbook-manager",
+      "name": "Playbook Manager UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "playbook-manager"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "list-playbooks",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-list-playbooks",
+      "name": "List Playbooks",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "list-playbooks"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "get-playbook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-get-playbook",
+      "name": "Get Playbook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "get-playbook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "create-playbook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-create-playbook",
+      "name": "Create Playbook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "create-playbook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-playbook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-update-playbook",
+      "name": "Update Playbook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 900],
+      "webhookId": "update-playbook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "validate-playbook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-validate-playbook",
+      "name": "Validate Playbook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 1100],
+      "webhookId": "validate-playbook"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "test-playbook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-test-playbook",
+      "name": "Test Playbook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 1300],
+      "webhookId": "test-playbook"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/list",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-list-playbooks",
+      "name": "List Playbooks API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/{{ $json.playbook_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-get-playbook",
+      "name": "Get Playbook API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/create",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "playbook_id",
+              "value": "={{ $json.playbook_id }}"
+            },
+            {
+              "name": "technique_id",
+              "value": "={{ $json.technique_id }}"
+            },
+            {
+              "name": "technique_name",
+              "value": "={{ $json.technique_name }}"
+            },
+            {
+              "name": "tactic",
+              "value": "={{ $json.tactic }}"
+            },
+            {
+              "name": "author",
+              "value": "={{ $json.author }}"
+            },
+            {
+              "name": "description",
+              "value": "={{ $json.description }}"
+            },
+            {
+              "name": "hypothesis",
+              "value": "={{ $json.hypothesis }}"
+            },
+            {
+              "name": "overwrite",
+              "value": "={{ $json.overwrite || false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-create-playbook",
+      "name": "Create Playbook API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/update",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "playbook_id",
+              "value": "={{ $json.playbook_id }}"
+            },
+            {
+              "name": "updates",
+              "value": "={{ $json.updates }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-update-playbook",
+      "name": "Update Playbook API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 900]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/{{ $json.playbook_id }}/validate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "http-validate-playbook",
+      "name": "Validate Playbook API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 1100]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/playbooks/{{ $json.playbook_id }}/test",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "httpMethod": "POST",
+        "options": {}
+      },
+      "id": "http-test-playbook",
+      "name": "Test Playbook API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 1300]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Playbook Manager</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }\n    .header h1 { margin: 0; font-size: 28px; }\n    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #667eea; }\n    .section h2 { margin-top: 0; color: #333; }\n    .btn { padding: 12px 24px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }\n    .btn-primary { background: #667eea; color: white; }\n    .btn-primary:hover { background: #5568d3; }\n    .btn-success { background: #28a745; color: white; }\n    .btn-success:hover { background: #218838; }\n    .btn-danger { background: #dc3545; color: white; }\n    .btn-danger:hover { background: #c82333; }\n    .playbook-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin: 15px 0; }\n    .playbook-card { background: white; padding: 20px; border-radius: 5px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .playbook-card h3 { margin-top: 0; color: #667eea; }\n    .status { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; }\n    .status-valid { background: #d4edda; color: #155724; }\n    .status-invalid { background: #f8d7da; color: #721c24; }\n    .form-group { margin: 20px 0; }\n    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }\n    .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }\n    .results { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }\n    .results.show { display: block; }\n    .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 4px; margin: 10px 0; }\n  </style>\n  <script>\n    function loadPlaybooks() {\n      fetch('/webhook/list-playbooks')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.playbooks) {\n            renderPlaybooks(d.playbooks);\n          }\n        })\n        .catch(e => console.error('Error loading playbooks:', e));\n    }\n    \n    function renderPlaybooks(playbooks) {\n      const container = document.getElementById('playbooks-container');\n      if (!container) return;\n      \n      let html = '<div class=\"playbook-list\">';\n      for (const pb of playbooks) {\n        const statusClass = pb.is_valid ? 'status-valid' : 'status-invalid';\n        const statusText = pb.is_valid ? 'Valid' : 'Invalid';\n        html += `\n          <div class=\"playbook-card\">\n            <h3>${pb.name || pb.id}</h3>\n            <p><strong>ID:</strong> ${pb.id}</p>\n            <p><strong>Technique:</strong> ${pb.technique_id} - ${pb.technique_name}</p>\n            <p><strong>Tactic:</strong> ${pb.tactic}</p>\n            <p><strong>Version:</strong> ${pb.version}</p>\n            <span class=\"status ${statusClass}\">${statusText}</span>\n            <div style=\"margin-top: 15px;\">\n              <button class=\"btn btn-primary\" onclick=\"validatePlaybook('${pb.id}')\">Validate</button>\n              <button class=\"btn btn-success\" onclick=\"testPlaybook('${pb.id}')\">Test</button>\n            </div>\n          </div>\n        `;\n      }\n      html += '</div>';\n      container.innerHTML = html;\n    }\n    \n    function createPlaybook() {\n      const data = {\n        playbook_id: document.getElementById('playbook_id').value,\n        technique_id: document.getElementById('technique_id').value,\n        technique_name: document.getElementById('technique_name').value,\n        tactic: document.getElementById('tactic').value,\n        author: document.getElementById('author').value,\n        description: document.getElementById('description').value,\n        hypothesis: document.getElementById('hypothesis').value,\n        overwrite: document.getElementById('overwrite').checked\n      };\n      \n      fetch('/webhook/create-playbook', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify(data)\n      })\n        .then(r => r.json())\n        .then(d => {\n          const resultsDiv = document.getElementById('results');\n          resultsDiv.classList.add('show');\n          if (d.success) {\n            resultsDiv.innerHTML = `<div class=\"success\">Playbook created successfully! ID: ${d.playbook_id}</div>`;\n            loadPlaybooks();\n          } else {\n            resultsDiv.innerHTML = `<div class=\"error\">Error: ${d.message || 'Failed to create playbook'}</div>`;\n          }\n        })\n        .catch(e => {\n          const resultsDiv = document.getElementById('results');\n          resultsDiv.classList.add('show');\n          resultsDiv.innerHTML = `<div class=\"error\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function validatePlaybook(playbookId) {\n      fetch(`/webhook/validate-playbook`, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ playbook_id: playbookId })\n      })\n        .then(r => r.json())\n        .then(d => {\n          const resultsDiv = document.getElementById('results');\n          resultsDiv.classList.add('show');\n          if (d.success) {\n            let html = `<div class=\"${d.is_valid ? 'success' : 'error'}\">Validation ${d.is_valid ? 'passed' : 'failed'}</div>`;\n            if (d.errors && d.errors.length > 0) {\n              html += '<div class=\"error\"><strong>Errors:</strong><ul>';\n              for (const err of d.errors) {\n                html += `<li>${err}</li>`;\n              }\n              html += '</ul></div>';\n            }\n            if (d.warnings && d.warnings.length > 0) {\n              html += '<div><strong>Warnings:</strong><ul>';\n              for (const warn of d.warnings) {\n                html += `<li>${warn}</li>`;\n              }\n              html += '</ul></div>';\n            }\n            resultsDiv.innerHTML = html;\n          }\n        })\n        .catch(e => console.error('Error:', e));\n    }\n    \n    function testPlaybook(playbookId) {\n      fetch(`/webhook/test-playbook`, {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ playbook_id: playbookId })\n      })\n        .then(r => r.json())\n        .then(d => {\n          const resultsDiv = document.getElementById('results');\n          resultsDiv.classList.add('show');\n          if (d.success) {\n            let html = `<div class=\"${d.all_tests_passed ? 'success' : 'error'}\">Tests ${d.all_tests_passed ? 'passed' : 'failed'}</div>`;\n            html += '<pre>' + JSON.stringify(d.tests, null, 2) + '</pre>';\n            resultsDiv.innerHTML = html;\n          }\n        })\n        .catch(e => console.error('Error:', e));\n    }\n    \n    window.addEventListener('DOMContentLoaded', function() {\n      loadPlaybooks();\n    });\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📚 Playbook Manager</h1>\n      <p>Manage threat hunting playbooks</p>\n    </div>\n    \n    <div class=\"section\">\n      <h2>All Playbooks</h2>\n      <button class=\"btn btn-primary\" onclick=\"loadPlaybooks()\">Refresh</button>\n      <div id=\"playbooks-container\">Loading playbooks...</div>\n    </div>\n    \n    <div class=\"section\">\n      <h2>Create New Playbook</h2>\n      <form id=\"create-form\">\n        <div class=\"form-group\">\n          <label for=\"playbook_id\">Playbook ID:</label>\n          <input type=\"text\" id=\"playbook_id\" placeholder=\"T1566-phishing\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"technique_id\">MITRE Technique ID:</label>\n          <input type=\"text\" id=\"technique_id\" placeholder=\"T1566\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"technique_name\">Technique Name:</label>\n          <input type=\"text\" id=\"technique_name\" placeholder=\"Phishing\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"tactic\">Tactic:</label>\n          <input type=\"text\" id=\"tactic\" placeholder=\"Initial Access\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"author\">Author:</label>\n          <input type=\"text\" id=\"author\" placeholder=\"Your Name\" required>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"description\">Description:</label>\n          <textarea id=\"description\" rows=\"3\" required></textarea>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"hypothesis\">Hypothesis:</label>\n          <textarea id=\"hypothesis\" rows=\"3\" required></textarea>\n        </div>\n        <div class=\"form-group\">\n          <label><input type=\"checkbox\" id=\"overwrite\"> Overwrite existing playbook</label>\n        </div>\n        <button type=\"button\" class=\"btn btn-success\" onclick=\"createPlaybook()\">Create Playbook</button>\n      </form>\n    </div>\n    \n    <div id=\"results\" class=\"results\"></div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-playbook-manager",
+      "name": "Respond Playbook Manager",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbooks\": $json.playbooks, \"total\": $json.total, \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-list-playbooks",
+      "name": "Respond List Playbooks",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbook\": $json.playbook, \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-get-playbook",
+      "name": "Respond Get Playbook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbook_id\": $json.playbook_id, \"path\": $json.path, \"is_valid\": $json.is_valid, \"validation_errors\": $json.validation_errors || [], \"validation_warnings\": $json.validation_warnings || [] } }}",
+        "options": {}
+      },
+      "id": "respond-create-playbook",
+      "name": "Respond Create Playbook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbook_id\": $json.playbook_id, \"is_valid\": $json.is_valid, \"validation_errors\": $json.validation_errors || [], \"validation_warnings\": $json.validation_warnings || [] } }}",
+        "options": {}
+      },
+      "id": "respond-update-playbook",
+      "name": "Respond Update Playbook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 900]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbook_id\": $json.playbook_id, \"is_valid\": $json.is_valid, \"errors\": $json.errors || [], \"warnings\": $json.warnings || [], \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-validate-playbook",
+      "name": "Respond Validate Playbook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 1100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"playbook_id\": $json.playbook_id, \"all_tests_passed\": $json.all_tests_passed, \"tests\": $json.tests, \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-test-playbook",
+      "name": "Respond Test Playbook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 1300]
+    }
+  ],
+  "connections": {
+    "Playbook Manager UI": {
+      "main": [
+        [
+          {
+            "node": "Respond Playbook Manager",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Playbooks": {
+      "main": [
+        [
+          {
+            "node": "List Playbooks API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Playbooks API": {
+      "main": [
+        [
+          {
+            "node": "Respond List Playbooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Playbook": {
+      "main": [
+        [
+          {
+            "node": "Get Playbook API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Playbook API": {
+      "main": [
+        [
+          {
+            "node": "Respond Get Playbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Playbook": {
+      "main": [
+        [
+          {
+            "node": "Create Playbook API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Playbook API": {
+      "main": [
+        [
+          {
+            "node": "Respond Create Playbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Playbook": {
+      "main": [
+        [
+          {
+            "node": "Update Playbook API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Playbook API": {
+      "main": [
+        [
+          {
+            "node": "Respond Update Playbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Playbook": {
+      "main": [
+        [
+          {
+            "node": "Validate Playbook API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Playbook API": {
+      "main": [
+        [
+          {
+            "node": "Respond Validate Playbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Playbook": {
+      "main": [
+        [
+          {
+            "node": "Test Playbook API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Test Playbook API": {
+      "main": [
+        [
+          {
+            "node": "Respond Test Playbook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

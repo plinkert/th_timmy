@@ -28,6 +28,7 @@ from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
 from ..services.test_runner import TestRunner, TestRunnerError
 from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
 from ..services.hardening_manager import HardeningManager, HardeningManagerError
+from ..services.playbook_manager import PlaybookManager, PlaybookManagerError
 from ..utils.query_generator import QueryGenerator, QueryGeneratorError
 
 
@@ -112,6 +113,7 @@ _test_runner: Optional[TestRunner] = None
 _deployment_manager: Optional[DeploymentManager] = None
 _hardening_manager: Optional[HardeningManager] = None
 _query_generator: Optional[QueryGenerator] = None
+_playbook_manager: Optional[PlaybookManager] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -243,6 +245,16 @@ def get_query_generator() -> QueryGenerator:
         _query_generator = QueryGenerator(logger=logger)
     
     return _query_generator
+
+
+def get_playbook_manager() -> PlaybookManager:
+    """Get or create PlaybookManager instance."""
+    global _playbook_manager
+    
+    if _playbook_manager is None:
+        _playbook_manager = PlaybookManager(logger=logger)
+    
+    return _playbook_manager
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -1532,6 +1544,354 @@ async def get_query_summary(
         )
         
         return GetQuerySummaryResponse(
+            success=True,
+            summary=summary,
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# Playbook Management Models
+class CreatePlaybookRequest(BaseModel):
+    """Request model for creating a playbook."""
+    playbook_id: str = Field(..., description="Unique playbook identifier (e.g., 'T1566-phishing')")
+    technique_id: str = Field(..., description="MITRE technique ID (e.g., 'T1566')")
+    technique_name: str = Field(..., description="MITRE technique name")
+    tactic: str = Field(..., description="MITRE tactic name")
+    author: str = Field(..., description="Playbook author")
+    description: str = Field(..., description="Playbook description")
+    hypothesis: str = Field(..., description="Threat hunting hypothesis")
+    overwrite: bool = Field(False, description="Overwrite existing playbook")
+
+
+class CreatePlaybookResponse(BaseModel):
+    """Response model for playbook creation."""
+    success: bool
+    playbook_id: str
+    path: str
+    is_valid: bool
+    validation_errors: List[str]
+    validation_warnings: List[str]
+
+
+class UpdatePlaybookRequest(BaseModel):
+    """Request model for updating playbook metadata."""
+    playbook_id: str = Field(..., description="Playbook ID")
+    updates: Dict[str, Any] = Field(..., description="Metadata updates")
+
+
+class UpdatePlaybookResponse(BaseModel):
+    """Response model for playbook update."""
+    success: bool
+    playbook_id: str
+    is_valid: bool
+    validation_errors: List[str]
+    validation_warnings: List[str]
+
+
+class ListPlaybooksResponse(BaseModel):
+    """Response model for listing playbooks."""
+    success: bool
+    playbooks: List[Dict[str, Any]]
+    total: int
+    timestamp: str
+
+
+class GetPlaybookResponse(BaseModel):
+    """Response model for getting a playbook."""
+    success: bool
+    playbook: Optional[Dict[str, Any]]
+    timestamp: str
+
+
+class ValidatePlaybookResponse(BaseModel):
+    """Response model for playbook validation."""
+    success: bool
+    playbook_id: str
+    is_valid: bool
+    errors: List[str]
+    warnings: List[str]
+    timestamp: str
+
+
+class TestPlaybookResponse(BaseModel):
+    """Response model for playbook testing."""
+    success: bool
+    playbook_id: str
+    all_tests_passed: bool
+    tests: Dict[str, Any]
+    timestamp: str
+
+
+class PlaybookSummaryResponse(BaseModel):
+    """Response model for playbook summary."""
+    success: bool
+    summary: Dict[str, Any]
+    timestamp: str
+
+
+# Playbook Management Endpoints
+@app.get("/playbooks/list", response_model=ListPlaybooksResponse)
+async def list_playbooks(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    List all available playbooks.
+    
+    Returns:
+        List of playbooks with validation status
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        playbooks = playbook_manager.list_playbooks()
+        
+        return ListPlaybooksResponse(
+            success=True,
+            playbooks=playbooks,
+            total=len(playbooks),
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/playbooks/{playbook_id}", response_model=GetPlaybookResponse)
+async def get_playbook(
+    playbook_id: str,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get playbook by ID.
+    
+    Args:
+        playbook_id: Playbook ID
+    
+    Returns:
+        Playbook information
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        playbook = playbook_manager.get_playbook(playbook_id)
+        
+        return GetPlaybookResponse(
+            success=playbook is not None,
+            playbook=playbook,
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/playbooks/create", response_model=CreatePlaybookResponse)
+async def create_playbook(
+    request: CreatePlaybookRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Create a new playbook from template.
+    
+    Args:
+        request: Playbook creation request
+    
+    Returns:
+        Creation result with validation status
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        result = playbook_manager.create_playbook(
+            playbook_id=request.playbook_id,
+            technique_id=request.technique_id,
+            technique_name=request.technique_name,
+            tactic=request.tactic,
+            author=request.author,
+            description=request.description,
+            hypothesis=request.hypothesis,
+            overwrite=request.overwrite
+        )
+        
+        return CreatePlaybookResponse(
+            success=result['success'],
+            playbook_id=result['playbook_id'],
+            path=result['path'],
+            is_valid=result['is_valid'],
+            validation_errors=result.get('validation_errors', []),
+            validation_warnings=result.get('validation_warnings', [])
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/playbooks/update", response_model=UpdatePlaybookResponse)
+async def update_playbook(
+    request: UpdatePlaybookRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Update playbook metadata.
+    
+    Args:
+        request: Playbook update request
+    
+    Returns:
+        Update result with validation status
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        result = playbook_manager.update_playbook_metadata(
+            playbook_id=request.playbook_id,
+            updates=request.updates
+        )
+        
+        return UpdatePlaybookResponse(
+            success=result['success'],
+            playbook_id=result['playbook_id'],
+            is_valid=result['is_valid'],
+            validation_errors=result.get('validation_errors', []),
+            validation_warnings=result.get('validation_warnings', [])
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/playbooks/{playbook_id}/validate", response_model=ValidatePlaybookResponse)
+async def validate_playbook_endpoint(
+    playbook_id: str,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Validate a playbook.
+    
+    Args:
+        playbook_id: Playbook ID
+    
+    Returns:
+        Validation results
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        result = playbook_manager.validate_playbook(playbook_id)
+        
+        return ValidatePlaybookResponse(
+            success=True,
+            playbook_id=result['playbook_id'],
+            is_valid=result['is_valid'],
+            errors=result['errors'],
+            warnings=result['warnings'],
+            timestamp=result['timestamp']
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/playbooks/{playbook_id}/test", response_model=TestPlaybookResponse)
+async def test_playbook_endpoint(
+    playbook_id: str,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Test a playbook.
+    
+    Args:
+        playbook_id: Playbook ID
+    
+    Returns:
+        Test results
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        result = playbook_manager.test_playbook(playbook_id)
+        
+        return TestPlaybookResponse(
+            success=True,
+            playbook_id=result['playbook_id'],
+            all_tests_passed=result['all_tests_passed'],
+            tests=result['tests'],
+            timestamp=result['timestamp']
+        )
+    except PlaybookManagerError as e:
+        logger.error(f"Playbook manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/playbooks/summary", response_model=PlaybookSummaryResponse)
+async def get_playbook_summary(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get summary of all playbooks.
+    
+    Returns:
+        Summary statistics
+    """
+    try:
+        playbook_manager = get_playbook_manager()
+        summary = playbook_manager.get_playbook_summary()
+        
+        return PlaybookSummaryResponse(
             success=True,
             summary=summary,
             timestamp=datetime.utcnow().isoformat()
