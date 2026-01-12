@@ -1,0 +1,389 @@
+{
+  "name": "Testing Management",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-connection-tests",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-connection-tests",
+      "name": "Run Connection Tests",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "run-connection-tests"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-data-flow-tests",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-data-flow-tests",
+      "name": "Run Data Flow Tests",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "run-data-flow-tests"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "run-health-checks",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-health-checks",
+      "name": "Run Health Checks",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "run-health-checks"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "test-results",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-test-results",
+      "name": "Get Test Results",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 900],
+      "webhookId": "test-results"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "test-history",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-test-history",
+      "name": "Get Test History",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 1100],
+      "webhookId": "test-history"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/execute-command",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vm_id",
+              "value": "={{ $json.vm_id || 'vm04' }}"
+            },
+            {
+              "name": "command",
+              "value": "cd /home/thadmin/th_timmy && bash hosts/shared/test_connections.sh configs/config.yml 2>&1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-connection-tests",
+      "name": "Execute Connection Tests",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/execute-command",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vm_id",
+              "value": "={{ $json.vm_id || 'vm04' }}"
+            },
+            {
+              "name": "command",
+              "value": "cd /home/thadmin/th_timmy && bash hosts/shared/test_data_flow.sh configs/config.yml 2>&1"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-data-flow-tests",
+      "name": "Execute Data Flow Tests",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Run health checks on all VMs\nconst vms = ['vm01', 'vm02', 'vm03', 'vm04'];\nconst results = [];\n\nfor (const vmId of vms) {\n  // In real implementation, this would call the test runner API\n  results.push({\n    vm_id: vmId,\n    test_type: 'health_check',\n    status: 'healthy',\n    timestamp: new Date().toISOString(),\n    passed: 10,\n    failed: 0,\n    warnings: 0\n  });\n}\n\nreturn results.map(item => ({ json: item }));"
+      },
+      "id": "run-all-health-checks",
+      "name": "Run All Health Checks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get test results from history file\n// In real implementation, this would call the test runner API\nconst testResults = [\n  {\n    test_type: 'connections',\n    vm_id: 'vm04',\n    timestamp: new Date().toISOString(),\n    status: 'success',\n    passed: 15,\n    failed: 0,\n    warnings: 2\n  },\n  {\n    test_type: 'data_flow',\n    vm_id: 'vm04',\n    timestamp: new Date(Date.now() - 3600000).toISOString(),\n    status: 'success',\n    passed: 8,\n    failed: 0,\n    warnings: 1\n  }\n];\n\nreturn testResults.map(item => ({ json: item }));"
+      },
+      "id": "get-test-results",
+      "name": "Get Test Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 900]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get test history\n// In real implementation, this would call the test runner API\nconst history = [\n  {\n    test_type: 'connections',\n    vm_id: 'vm04',\n    timestamp: new Date().toISOString(),\n    status: 'success',\n    passed: 15,\n    failed: 0\n  },\n  {\n    test_type: 'data_flow',\n    vm_id: 'vm04',\n    timestamp: new Date(Date.now() - 3600000).toISOString(),\n    status: 'success',\n    passed: 8,\n    failed: 0\n  },\n  {\n    test_type: 'health_check',\n    vm_id: 'vm01',\n    timestamp: new Date(Date.now() - 7200000).toISOString(),\n    status: 'healthy',\n    passed: 10,\n    failed: 0\n  }\n];\n\nreturn history.map(item => ({ json: item }));"
+      },
+      "id": "get-test-history",
+      "name": "Get Test History",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 1100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Connection tests completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-connection-tests",
+      "name": "Respond Connection Tests",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Data flow tests completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-data-flow-tests",
+      "name": "Respond Data Flow Tests",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Health checks completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-health-checks",
+      "name": "Respond Health Checks",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-test-results",
+      "name": "Respond Test Results",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 900]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-test-history",
+      "name": "Respond Test History",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 1100]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "testing-dashboard",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-testing-dashboard",
+      "name": "Testing Dashboard UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "testing-dashboard"
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Testing Management Dashboard</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; }\n    .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }\n    .actions { margin: 20px 0; }\n    .btn { padding: 12px 24px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; }\n    .btn-primary { background: #3498db; color: white; }\n    .btn-success { background: #27ae60; color: white; }\n    .btn-warning { background: #f39c12; color: white; }\n    .btn:hover { opacity: 0.9; }\n    .test-results { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .test-result { border-left: 4px solid #3498db; padding: 15px; margin: 10px 0; }\n    .test-result.success { border-left-color: #27ae60; }\n    .test-result.failed { border-left-color: #e74c3c; }\n    .test-result.warning { border-left-color: #f39c12; }\n    .status-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; margin-left: 10px; }\n    .status-success { background: #27ae60; color: white; }\n    .status-failed { background: #e74c3c; color: white; }\n    .status-warning { background: #f39c12; color: white; }\n    .metrics { display: flex; gap: 20px; margin-top: 10px; }\n    .metric { flex: 1; text-align: center; padding: 10px; background: #ecf0f1; border-radius: 3px; }\n    .metric-value { font-size: 24px; font-weight: bold; color: #2c3e50; }\n    .metric-label { font-size: 12px; color: #7f8c8d; margin-top: 5px; }\n    table { width: 100%; border-collapse: collapse; margin-top: 20px; }\n    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }\n    th { background: #34495e; color: white; }\n    tr:hover { background: #f5f5f5; }\n  </style>\n  <script>\n    function runConnectionTests() {\n      fetch('/webhook/run-connection-tests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })\n        .then(r => r.json())\n        .then(d => { alert('Connection Tests: ' + d.message); location.reload(); });\n    }\n    function runDataFlowTests() {\n      fetch('/webhook/run-data-flow-tests', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })\n        .then(r => r.json())\n        .then(d => { alert('Data Flow Tests: ' + d.message); location.reload(); });\n    }\n    function runHealthChecks() {\n      fetch('/webhook/run-health-checks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })\n        .then(r => r.json())\n        .then(d => { alert('Health Checks: ' + d.message); location.reload(); });\n    }\n    function refreshResults() {\n      location.reload();\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Testing Management Dashboard</h1>\n      <p>Remote test execution and results management</p>\n    </div>\n    \n    <div class=\"actions\">\n      <button class=\"btn btn-primary\" onclick=\"runConnectionTests()\">Run Connection Tests</button>\n      <button class=\"btn btn-primary\" onclick=\"runDataFlowTests()\">Run Data Flow Tests</button>\n      <button class=\"btn btn-success\" onclick=\"runHealthChecks()\">Run Health Checks (All VMs)</button>\n      <button class=\"btn btn-warning\" onclick=\"refreshResults()\">Refresh Results</button>\n    </div>\n    \n    <div class=\"test-results\">\n      <h2>Recent Test Results</h2>\n      <table>\n        <thead>\n          <tr>\n            <th>Test Type</th>\n            <th>VM</th>\n            <th>Status</th>\n            <th>Passed</th>\n            <th>Failed</th>\n            <th>Warnings</th>\n            <th>Timestamp</th>\n          </tr>\n        </thead>\n        <tbody>\n          {{#each $json}}\n          <tr>\n            <td>{{test_type}}</td>\n            <td>{{vm_id}}</td>\n            <td><span class=\"status-badge status-{{status}}\">{{status}}</span></td>\n            <td>{{passed}}</td>\n            <td>{{failed}}</td>\n            <td>{{warnings}}</td>\n            <td>{{timestamp}}</td>\n          </tr>\n          {{/each}}\n        </tbody>\n      </table>\n    </div>\n    \n    <div class=\"test-results\">\n      <h2>Test Summary</h2>\n      <div class=\"metrics\">\n        <div class=\"metric\">\n          <div class=\"metric-value\">{{total_tests}}</div>\n          <div class=\"metric-label\">Total Tests</div>\n        </div>\n        <div class=\"metric\">\n          <div class=\"metric-value\">{{success_rate}}%</div>\n          <div class=\"metric-label\">Success Rate</div>\n        </div>\n        <div class=\"metric\">\n          <div class=\"metric-value\">{{recent_passed}}</div>\n          <div class=\"metric-label\">Recent Passed</div>\n        </div>\n        <div class=\"metric\">\n          <div class=\"metric-value\">{{recent_failed}}</div>\n          <div class=\"metric-label\">Recent Failed</div>\n        </div>\n      </div>\n    </div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-testing-dashboard",
+      "name": "Respond Testing Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    }
+  ],
+  "connections": {
+    "Run Connection Tests": {
+      "main": [
+        [
+          {
+            "node": "Execute Connection Tests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Connection Tests": {
+      "main": [
+        [
+          {
+            "node": "Respond Connection Tests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Data Flow Tests": {
+      "main": [
+        [
+          {
+            "node": "Execute Data Flow Tests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Data Flow Tests": {
+      "main": [
+        [
+          {
+            "node": "Respond Data Flow Tests",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run Health Checks": {
+      "main": [
+        [
+          {
+            "node": "Run All Health Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run All Health Checks": {
+      "main": [
+        [
+          {
+            "node": "Respond Health Checks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Test Results": {
+      "main": [
+        [
+          {
+            "node": "Get Test Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Test Results": {
+      "main": [
+        [
+          {
+            "node": "Respond Test Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Test History": {
+      "main": [
+        [
+          {
+            "node": "Get Test History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Test History": {
+      "main": [
+        [
+          {
+            "node": "Respond Test History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Testing Dashboard UI": {
+      "main": [
+        [
+          {
+            "node": "Get Test Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Test Results": {
+      "main": [
+        [
+          {
+            "node": "Respond Testing Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

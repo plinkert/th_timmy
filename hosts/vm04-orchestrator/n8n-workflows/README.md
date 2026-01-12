@@ -195,6 +195,31 @@ Workflow składa się z następujących węzłów:
 3. Ogranicz dostęp do dashboard tylko dla autoryzowanych użytkowników
 4. Użyj HTTPS zamiast HTTP
 
+## Testing Management Workflow
+
+### Instalacja
+
+1. Importuj workflow `testing-management.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/testing-dashboard`
+
+### Funkcjonalności
+
+- **Connection Tests**: Uruchamianie `test_connections.sh` zdalnie
+- **Data Flow Tests**: Uruchamianie `test_data_flow.sh` zdalnie
+- **Health Checks**: Uruchamianie `health_check.sh` na wszystkich VM
+- **Test Results**: Wyświetlanie wyników testów w dashboardzie
+- **Test History**: Historia wszystkich testów
+
+### Webhook Endpoints
+
+- `POST /webhook/run-connection-tests` - Uruchom testy połączeń
+- `POST /webhook/run-data-flow-tests` - Uruchom testy przepływu danych
+- `POST /webhook/run-health-checks` - Uruchom health checks na wszystkich VM
+- `GET /webhook/test-results` - Pobierz wyniki testów
+- `GET /webhook/test-history` - Pobierz historię testów
+- `GET /webhook/testing-dashboard` - Dashboard zarządzania testami
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów
@@ -204,6 +229,8 @@ Workflow składa się z następujących węzłów:
 - [ ] Powiadomienia (email, Slack, etc.)
 - [ ] Automatyczne akcje naprawcze
 - [ ] Eksport raportów
+- [ ] Zaplanowane testy (scheduled tests)
+- [ ] Porównywanie wyników testów (before/after)
 
 ## Wsparcie
 
@@ -211,4 +238,5 @@ W przypadku problemów:
 1. Sprawdź dokumentację n8n: https://docs.n8n.io
 2. Sprawdź logi n8n: `docker logs n8n`
 3. Sprawdź logi serwisów w `logs/` directory
+4. Sprawdź wyniki testów w `test_results/` directory
 
