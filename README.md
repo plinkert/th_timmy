@@ -113,6 +113,8 @@ For detailed installation instructions, see the VM-specific README files in `hos
 ## Documentation
 
 ### Core Documentation
+- [**Deployment Guide**](docs/DEPLOYMENT_GUIDE.md) - ⭐ **START HERE** - Complete step-by-step deployment guide for non-technical users
+- [**Tools Guide**](docs/TOOLS_GUIDE.md) - ⭐ Complete guide to all available tools and how to use them
 - [Quick Start Guide](docs/QUICK_START.md) - Get up and running quickly
 - [Architecture Documentation](docs/ARCHITECTURE.md) - System architecture and design
 - [Configuration Guide](docs/CONFIGURATION.md) - System configuration and setup
