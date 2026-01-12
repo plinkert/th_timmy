@@ -592,7 +592,47 @@ def deployment_manager(test_config, remote_executor, project_root_path, temp_dir
 
 
 @pytest.fixture(scope="function")
-def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, test_runner, deployment_manager, project_root_path, temp_dir):
+def hardening_manager(test_config, remote_executor, test_runner, project_root_path, temp_dir):
+    """Create HardeningManager instance for testing."""
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load hardening_manager
+    hardening_manager_path = automation_scripts_path / "services" / "hardening_manager.py"
+    hardening_manager_spec = importlib.util.spec_from_file_location("automation_scripts.services.hardening_manager", hardening_manager_path)
+    hardening_manager_module = importlib.util.module_from_spec(hardening_manager_spec)
+    sys.modules["automation_scripts.services.hardening_manager"] = hardening_manager_module
+    
+    # Inject dependencies
+    hardening_manager_module.RemoteExecutor = RemoteExecutor
+    hardening_manager_module.RemoteExecutorError = RemoteExecutorError
+    
+    hardening_manager_spec.loader.exec_module(hardening_manager_module)
+    HardeningManager = hardening_manager_module.HardeningManager
+    
+    # Create service instance with temp directories
+    service = HardeningManager(
+        config=test_config,
+        remote_executor=remote_executor,
+        test_runner=test_runner,
+        reports_dir=os.path.join(temp_dir, 'hardening_reports'),
+        history_file=os.path.join(temp_dir, 'hardening_history.json')
+    )
+    
+    yield service
+    
+    # Cleanup
+    service.close()
+
+
+@pytest.fixture(scope="function")
+def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, test_runner, deployment_manager, hardening_manager, project_root_path, temp_dir):
     """Create TestClient for Dashboard API."""
     from fastapi.testclient import TestClient
     import importlib.util
@@ -622,6 +662,7 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     dashboard_api_module.get_remote_executor = lambda: remote_executor
     dashboard_api_module.get_test_runner = lambda: test_runner
     dashboard_api_module.get_deployment_manager = lambda: deployment_manager
+    dashboard_api_module.get_hardening_manager = lambda: hardening_manager
     
     app = dashboard_api_module.app
     client = TestClient(app)
