@@ -246,6 +246,8 @@ def skip_if_vm_unreachable(vm_configs):
     """Skip test if VMs are not reachable (basic connectivity check)."""
     import socket
     
+    unreachable_vms = []
+    
     for vm_id, config in vm_configs.items():
         if not config.get('enabled', True):
             continue
@@ -253,13 +255,35 @@ def skip_if_vm_unreachable(vm_configs):
         ip = config.get('ip')
         port = config.get('ssh_port', 22)
         
+        if not ip:
+            unreachable_vms.append(f"{vm_id} (no IP configured)")
+            continue
+        
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)
+            sock.settimeout(5)  # Zwiększony timeout z 2 do 5 sekund
             result = sock.connect_ex((ip, port))
             sock.close()
-        except Exception:
-            pytest.skip(f"VM {vm_id} ({ip}) is not reachable")
+            
+            # connect_ex zwraca 0 jeśli sukces, kod błędu jeśli nie
+            # Sprawdzamy wynik zamiast tylko wyjątków
+            if result != 0:
+                unreachable_vms.append(f"{vm_id} ({ip}:{port}) - error code: {result}")
+        except socket.timeout:
+            unreachable_vms.append(f"{vm_id} ({ip}:{port}) - connection timeout")
+        except Exception as e:
+            unreachable_vms.append(f"{vm_id} ({ip}:{port}) - exception: {e}")
+    
+    # Pomijaj test tylko jeśli wszystkie enabled VMs są niedostępne
+    enabled_vms = [vm_id for vm_id, config in vm_configs.items() if config.get('enabled', True)]
+    
+    if unreachable_vms and len(unreachable_vms) == len(enabled_vms):
+        # Wszystkie VMs niedostępne - pomiń test
+        pytest.skip(f"All VMs unreachable: {', '.join(unreachable_vms)}")
+    elif unreachable_vms:
+        # Niektóre VMs niedostępne - loguj ostrzeżenie, ale nie pomijaj testu
+        import warnings
+        warnings.warn(f"Some VMs unreachable (test will continue): {', '.join(unreachable_vms)}")
 
 
 @pytest.fixture(scope="function")
