@@ -106,7 +106,7 @@ Complete test suite has been implemented and committed to repository. Tests are 
 2. **Verify SSH access:**
    ```bash
    # Test SSH connection
-   ssh thadmin@192.168.244.143
+   ssh thadmin@10.0.0.10
    ```
 
 3. **Run tests:**
