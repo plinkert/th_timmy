@@ -30,6 +30,7 @@ from ..services.deployment_manager import DeploymentManager, DeploymentManagerEr
 from ..services.hardening_manager import HardeningManager, HardeningManagerError
 from ..services.playbook_manager import PlaybookManager, PlaybookManagerError
 from ..utils.query_generator import QueryGenerator, QueryGeneratorError
+from ..orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
 
 
 # Security
@@ -114,6 +115,7 @@ _deployment_manager: Optional[DeploymentManager] = None
 _hardening_manager: Optional[HardeningManager] = None
 _query_generator: Optional[QueryGenerator] = None
 _playbook_manager: Optional[PlaybookManager] = None
+_pipeline_orchestrator: Optional[PipelineOrchestrator] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -255,6 +257,17 @@ def get_playbook_manager() -> PlaybookManager:
         _playbook_manager = PlaybookManager(logger=logger)
     
     return _playbook_manager
+
+
+def get_pipeline_orchestrator() -> PipelineOrchestrator:
+    """Get or create PipelineOrchestrator instance."""
+    global _pipeline_orchestrator
+    
+    if _pipeline_orchestrator is None:
+        config_path = os.getenv('CONFIG_PATH', 'configs/config.yml')
+        _pipeline_orchestrator = PipelineOrchestrator(config_path=config_path, logger=logger)
+    
+    return _pipeline_orchestrator
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:

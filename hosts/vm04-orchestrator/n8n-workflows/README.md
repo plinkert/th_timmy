@@ -500,6 +500,115 @@ curl -X POST http://VM04_IP:5678/webhook/test-playbook \
   -d '{"playbook_id": "T1566-phishing"}'
 ```
 
+## Data Ingest Pipeline Workflow
+
+### Instalacja
+
+1. Importuj workflow `data-ingest-pipeline.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do pipeline: `http://VM04_IP:5678/webhook/data-pipeline`
+
+### Funkcjonalności
+
+- **End-to-End Pipeline**: Automatyczny przepływ danych przez wszystkie VM
+- **Query Generation**: Generowanie zapytań dla wybranych huntów
+- **Data Ingestion**: Ingest danych (manual lub API)
+- **Data Storage**: Zapis danych do bazy danych na VM02
+- **Playbook Execution**: Wykonanie playbooków na VM03
+- **Results Aggregation**: Agregacja wyników w n8n
+
+### Pipeline Flow
+
+```
+n8n (VM04) → Query Generation
+    ↓
+VM01 → Data Ingestion (optional)
+    ↓
+VM02 → Data Storage (with anonymization)
+    ↓
+VM03 → Playbook Execution
+    ↓
+n8n (VM04) → Results Aggregation
+```
+
+### Webhook Endpoints
+
+- `GET /webhook/data-pipeline` - Dashboard pipeline (HTML)
+- `POST /webhook/execute-pipeline` - Uruchom pipeline
+
+### Użycie
+
+#### Dostęp do pipeline
+
+1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/data-pipeline`
+2. Dashboard automatycznie załaduje dostępne playbooki i narzędzia
+
+#### Wykonanie pipeline
+
+1. **Wybierz techniki MITRE ATT&CK**: Zaznacz checkboxy dla technik
+2. **Wybierz narzędzia**: Zaznacz checkboxy dla narzędzi
+3. **Wybierz tryb ingestu**: 
+   - **Manual**: Przesyłanie DataPackage ręcznie
+   - **API**: Automatyczne pobieranie danych przez API
+4. **Ustaw opcje**: Zaznacz "Anonymize data before analysis" jeśli potrzebne
+5. **Kliknij "Execute Pipeline"**: System wykona pełny pipeline
+
+#### Wyświetlanie wyników
+
+- Status każdego etapu pipeline
+- Liczba znalezionych findings
+- Rozkład ważności findings
+- Szczegóły wykonania każdego etapu
+
+### Integracja
+
+- **PHASE1-04**: Używa Hunt Selection Form do wyboru huntów
+- **PHASE1-05**: Używa DataPackage do standaryzacji danych
+- **PHASE2-01**: Używa Playbook Engine do analizy
+- **PHASE0-01**: Używa Remote Execution Service do komunikacji z VM
+- **PHASE1-03**: Używa DeterministicAnonymizer do anonimizacji
+
+### Przykłady użycia
+
+#### Wykonanie pipeline
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/execute-pipeline \
+  -H "Content-Type: application/json" \
+  -d '{
+    "technique_ids": ["T1566", "T1059"],
+    "tool_names": ["Microsoft Defender for Endpoint", "Splunk"],
+    "ingest_mode": "manual",
+    "anonymize": true
+  }'
+```
+
+### Pipeline Stages
+
+1. **Stage 1: Query Generation** (VM04)
+   - Generowanie zapytań dla wybranych technik i narzędzi
+   - Przygotowanie zapytań do wykonania
+
+2. **Stage 2: Data Ingestion** (VM01 - optional)
+   - Wykonanie zapytań przez API
+   - Parsing i normalizacja danych
+   - Tworzenie DataPackage
+
+3. **Stage 3: Data Storage** (VM02)
+   - Anonimizacja danych (jeśli wymagana)
+   - Zapis do bazy danych PostgreSQL
+   - Walidacja DataPackage
+
+4. **Stage 4: Playbook Execution** (VM03)
+   - Wykonanie playbooków przez Playbook Engine
+   - Analiza danych z deterministyczną logiką
+   - Generowanie findings
+
+5. **Stage 5: Results Aggregation** (VM04)
+   - Agregacja wyników z wszystkich playbooków
+   - Podsumowanie findings
+   - Przygotowanie raportu
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów

@@ -1,0 +1,145 @@
+{
+  "name": "Data Ingest Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "data-pipeline",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-data-pipeline",
+      "name": "Data Pipeline UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "data-pipeline"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "execute-pipeline",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-execute-pipeline",
+      "name": "Execute Pipeline",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "execute-pipeline"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/pipeline/execute",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "technique_ids",
+              "value": "={{ $json.technique_ids || [] }}"
+            },
+            {
+              "name": "tool_names",
+              "value": "={{ $json.tool_names || [] }}"
+            },
+            {
+              "name": "ingest_mode",
+              "value": "={{ $json.ingest_mode || 'manual' }}"
+            },
+            {
+              "name": "anonymize",
+              "value": "={{ $json.anonymize !== false }}"
+            },
+            {
+              "name": "playbook_ids",
+              "value": "={{ $json.playbook_ids || null }}"
+            },
+            {
+              "name": "data_package",
+              "value": "={{ $json.data_package || null }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-execute-pipeline",
+      "name": "Execute Pipeline API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Data Ingest Pipeline</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }\n    .header h1 { margin: 0; font-size: 28px; }\n    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #667eea; }\n    .section h2 { margin-top: 0; color: #333; }\n    .btn { padding: 12px 24px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }\n    .btn-primary { background: #667eea; color: white; }\n    .btn-primary:hover { background: #5568d3; }\n    .btn-success { background: #28a745; color: white; }\n    .btn-success:hover { background: #218838; }\n    .form-group { margin: 20px 0; }\n    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }\n    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }\n    .checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin: 15px 0; }\n    .checkbox-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 4px; border: 1px solid #ddd; }\n    .checkbox-item input[type=\"checkbox\"] { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }\n    .checkbox-item label { cursor: pointer; flex: 1; }\n    .results { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }\n    .results.show { display: block; }\n    .stage { margin: 15px 0; padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #667eea; }\n    .stage.success { border-left-color: #28a745; }\n    .stage.error { border-left-color: #dc3545; }\n    .stage.skipped { border-left-color: #ffc107; }\n    .stage h3 { margin-top: 0; }\n    .loading { text-align: center; padding: 20px; color: #667eea; }\n    .success-msg { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .error-msg { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .pipeline-flow { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 20px; background: white; border-radius: 5px; }\n    .flow-step { flex: 1; text-align: center; padding: 15px; }\n    .flow-step.active { background: #667eea; color: white; border-radius: 4px; }\n    .flow-arrow { font-size: 24px; color: #667eea; }\n  </style>\n  <script>\n    let playbooksData = [];\n    let toolsData = [];\n    \n    window.addEventListener('DOMContentLoaded', function() {\n      loadPlaybooks();\n      loadTools();\n    });\n    \n    function loadPlaybooks() {\n      fetch('/webhook/available-playbooks')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.playbooks) {\n            playbooksData = d.playbooks;\n            renderPlaybooks();\n          }\n        })\n        .catch(e => console.error('Error loading playbooks:', e));\n    }\n    \n    function loadTools() {\n      fetch('/webhook/available-tools')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.tools) {\n            toolsData = d.tools;\n            renderTools();\n          }\n        })\n        .catch(e => console.error('Error loading tools:', e));\n    }\n    \n    function renderPlaybooks() {\n      const container = document.getElementById('playbooks-container');\n      if (!container || playbooksData.length === 0) return;\n      \n      const byTactic = {};\n      for (const pb of playbooksData) {\n        const tactic = pb.tactic || 'Other';\n        if (!byTactic[tactic]) byTactic[tactic] = [];\n        byTactic[tactic].push(pb);\n      }\n      \n      let html = '';\n      for (const [tactic, playbooks] of Object.entries(byTactic)) {\n        html += `<div style=\"margin: 15px 0;\"><strong>${tactic}</strong></div><div class=\"checkbox-group\">`;\n        for (const pb of playbooks) {\n          html += `\n            <div class=\"checkbox-item\">\n              <input type=\"checkbox\" id=\"tech_${pb.technique_id}\" name=\"techniques\" value=\"${pb.technique_id}\">\n              <label for=\"tech_${pb.technique_id}\">${pb.technique_id}: ${pb.technique_name || pb.name}</label>\n            </div>\n          `;\n        }\n        html += '</div>';\n      }\n      container.innerHTML = html;\n    }\n    \n    function renderTools() {\n      const container = document.getElementById('tools-container');\n      if (!container || toolsData.length === 0) return;\n      \n      let html = '<div class=\"checkbox-group\">';\n      for (const tool of toolsData) {\n        html += `\n          <div class=\"checkbox-item\">\n            <input type=\"checkbox\" id=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\" name=\"tools\" value=\"${tool}\">\n            <label for=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\">${tool}</label>\n          </div>\n        `;\n      }\n      html += '</div>';\n      container.innerHTML = html;\n    }\n    \n    function executePipeline() {\n      const techniques = Array.from(document.querySelectorAll('input[name=\"techniques\"]:checked')).map(cb => cb.value);\n      const tools = Array.from(document.querySelectorAll('input[name=\"tools\"]:checked')).map(cb => cb.value);\n      const ingestMode = document.querySelector('input[name=\"ingest_mode\"]:checked')?.value || 'manual';\n      const anonymize = document.getElementById('anonymize').checked;\n      \n      if (techniques.length === 0) {\n        alert('Please select at least one MITRE ATT&CK technique');\n        return;\n      }\n      \n      if (tools.length === 0) {\n        alert('Please select at least one tool');\n        return;\n      }\n      \n      const resultsDiv = document.getElementById('results');\n      resultsDiv.classList.add('show');\n      resultsDiv.innerHTML = '<div class=\"loading\">Executing pipeline... This may take several minutes.</div>';\n      \n      fetch('/webhook/execute-pipeline', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          technique_ids: techniques,\n          tool_names: tools,\n          ingest_mode: ingestMode,\n          anonymize: anonymize\n        })\n      })\n        .then(r => r.json())\n        .then(d => {\n          if (d.success) {\n            displayResults(d);\n          } else {\n            resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${d.error || 'Pipeline execution failed'}</div>`;\n          }\n        })\n        .catch(e => {\n          resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function displayResults(data) {\n      const resultsDiv = document.getElementById('results');\n      let html = '<h2>Pipeline Execution Results</h2>';\n      \n      html += `<div class=\"success-msg\">Pipeline ${data.pipeline_id} completed successfully!</div>`;\n      html += `<p><strong>Total Findings:</strong> ${data.total_findings}</p>`;\n      \n      const stages = data.stages || {};\n      \n      // Stage 1: Query Generation\n      if (stages.query_generation) {\n        const stage = stages.query_generation;\n        html += `<div class=\"stage ${stage.status}\"><h3>Stage 1: Query Generation</h3><p>Status: ${stage.status}</p></div>`;\n      }\n      \n      // Stage 2: Data Ingestion\n      if (stages.data_ingestion) {\n        const stage = stages.data_ingestion;\n        html += `<div class=\"stage ${stage.status}\"><h3>Stage 2: Data Ingestion</h3><p>Status: ${stage.status}</p></div>`;\n      }\n      \n      // Stage 3: Data Storage\n      if (stages.data_storage) {\n        const stage = stages.data_storage;\n        html += `<div class=\"stage ${stage.status}\"><h3>Stage 3: Data Storage</h3><p>Status: ${stage.status}</p><p>Records Stored: ${stage.records_stored || 0}</p></div>`;\n      }\n      \n      // Stage 4: Playbook Execution\n      if (stages.playbook_execution) {\n        const stage = stages.playbook_execution;\n        html += `<div class=\"stage ${stage.status}\"><h3>Stage 4: Playbook Execution</h3><p>Status: ${stage.status}</p></div>`;\n      }\n      \n      // Stage 5: Results Aggregation\n      if (stages.results_aggregation) {\n        const stage = stages.results_aggregation;\n        html += `<div class=\"stage ${stage.status}\"><h3>Stage 5: Results Aggregation</h3><p>Status: ${stage.status}</p>`;\n        if (stage.severity_distribution) {\n          html += `<p><strong>Severity Distribution:</strong> ${JSON.stringify(stage.severity_distribution)}</p>`;\n        }\n        html += '</div>';\n      }\n      \n      resultsDiv.innerHTML = html;\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🔄 Data Ingest Pipeline</h1>\n      <p>End-to-end data pipeline: n8n → VM01 → VM02 → VM03</p>\n    </div>\n    \n    <div class=\"pipeline-flow\">\n      <div class=\"flow-step\">n8n (VM04)<br>Query Generation</div>\n      <div class=\"flow-arrow\">→</div>\n      <div class=\"flow-step\">VM01<br>Data Ingestion</div>\n      <div class=\"flow-arrow\">→</div>\n      <div class=\"flow-step\">VM02<br>Data Storage</div>\n      <div class=\"flow-arrow\">→</div>\n      <div class=\"flow-step\">VM03<br>Analysis</div>\n      <div class=\"flow-arrow\">→</div>\n      <div class=\"flow-step\">n8n (VM04)<br>Results</div>\n    </div>\n    \n    <form id=\"pipeline-form\">\n      <div class=\"section\">\n        <h2>1. Select MITRE ATT&CK Techniques</h2>\n        <div id=\"playbooks-container\">Loading playbooks...</div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>2. Select Available Tools</h2>\n        <div id=\"tools-container\">Loading tools...</div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>3. Select Ingest Mode</h2>\n        <div class=\"form-group\">\n          <label><input type=\"radio\" name=\"ingest_mode\" value=\"manual\" checked> Manual (Upload Data Package)</label>\n          <label><input type=\"radio\" name=\"ingest_mode\" value=\"api\"> API (Automated)</label>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>4. Pipeline Options</h2>\n        <div class=\"form-group\">\n          <label><input type=\"checkbox\" id=\"anonymize\" checked> Anonymize data before analysis</label>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <button type=\"button\" class=\"btn btn-success\" onclick=\"executePipeline()\">🚀 Execute Pipeline</button>\n      </div>\n    </form>\n    \n    <div id=\"results\" class=\"results\"></div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-data-pipeline",
+      "name": "Respond Data Pipeline",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"pipeline_id\": $json.pipeline_id, \"status\": $json.status, \"total_findings\": $json.total_findings, \"stages\": $json.stages, \"started_at\": $json.started_at, \"completed_at\": $json.completed_at, \"error\": $json.error } }}",
+        "options": {}
+      },
+      "id": "respond-execute-pipeline",
+      "name": "Respond Execute Pipeline",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    }
+  ],
+  "connections": {
+    "Data Pipeline UI": {
+      "main": [
+        [
+          {
+            "node": "Respond Data Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Pipeline": {
+      "main": [
+        [
+          {
+            "node": "Execute Pipeline API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Pipeline API": {
+      "main": [
+        [
+          {
+            "node": "Respond Execute Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

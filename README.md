@@ -72,6 +72,7 @@ th_timmy/
 
 **Phase 2: Playbook Engine and Analysis** - In Progress
 - [x] Playbook Engine - deterministyczna analiza (PHASE2-01)
+- [x] Integracja pipeline: n8n → VM01 → VM02 → VM03 (PHASE2-02)
 
 **Phase 3: AI Integration** - Planned
 - [ ] AI service integration
