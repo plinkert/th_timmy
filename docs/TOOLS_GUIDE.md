@@ -1,736 +1,736 @@
-# Przewodnik po Narzędziach - Threat Hunting Automation Lab
+# Tools Guide - Threat Hunting Automation Lab
 
-**Wersja**: 1.0  
-**Dla**: Użytkowników nietechnicznych
+**Version**: 1.0  
+**For**: Non-technical users
 
-Ten przewodnik opisuje wszystkie dostępne narzędzia w systemie, do czego służą i jak ich używać krok po kroku.
-
----
-
-## Spis Treści
-
-1. [Narzędzia zarządzania (n8n)](#narzędzia-zarządzania-n8n)
-2. [Narzędzia analizy (JupyterLab)](#narzędzia-analizy-jupyterlab)
-3. [Narzędzia wiersza poleceń](#narzędzia-wiersza-poleceń)
-4. [Narzędzia serwisowe (API)](#narzędzia-serwisowe-api)
-5. [Kiedy używać którego narzędzia?](#kiedy-używać-którego-narzędzia)
+This guide describes all available tools in the system, what they're for and how to use them step by step.
 
 ---
 
-## Narzędzia zarządzania (n8n)
+## Table of Contents
 
-Wszystkie narzędzia zarządzania są dostępne przez n8n - platformę automatyzacji workflow. Dostęp do n8n: `http://<VM-04_IP>:5678`
+1. [Management tools (n8n)](#management-tools-n8n)
+2. [Analysis tools (JupyterLab)](#analysis-tools-jupyterlab)
+3. [Command line tools](#command-line-tools)
+4. [Service tools (API)](#service-tools-api)
+5. [When to use which tool?](#when-to-use-which-tool)
+
+---
+
+## Management tools (n8n)
+
+All management tools are available through n8n - a workflow automation platform. Access to n8n: `http://<VM-04_IP>:5678`
 
 ### 1. Management Dashboard
 
-**Co to jest:** Główny panel kontrolny całego systemu.
+**What it is:** Main control panel for the entire system.
 
-**Gdzie:** n8n → Workflow "Management Dashboard" → Webhook "Dashboard UI"
+**Where:** n8n → Workflow "Management Dashboard" → Webhook "Dashboard UI"
 
-**Do czego służy:**
-- Monitorowanie statusu wszystkich maszyn w czasie rzeczywistym
-- Wyświetlanie metryk systemowych (CPU, RAM, dysk)
-- Szybkie akcje (synchronizacja, health checks)
-- Zarządzanie konfiguracją
+**What it's for:**
+- Monitoring status of all machines in real-time
+- Displaying system metrics (CPU, RAM, disk)
+- Quick actions (synchronization, health checks)
+- Configuration management
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Zaloguj się do n8n:**
+1. **Log into n8n:**
    ```
-   Otwórz przeglądarkę → http://<VM-04_IP>:5678
-   Wpisz nazwę użytkownika i hasło
-   Kliknij "Sign In"
-   ```
-
-2. **Znajdź Management Dashboard:**
-   ```
-   W menu po lewej kliknij "Workflows"
-   Znajdź "Management Dashboard" na liście
-   Kliknij na niego, aby otworzyć
+   Open browser → http://<VM-04_IP>:5678
+   Enter username and password
+   Click "Sign In"
    ```
 
-3. **Aktywuj workflow (jeśli nie jest aktywny):**
+2. **Find Management Dashboard:**
    ```
-   W prawym górnym rogu znajdź przełącznik "Active"
-   Kliknij, aby go włączyć (powinien być zielony)
-   ```
-
-4. **Otwórz dashboard:**
-   ```
-   W workflow znajdź węzeł "Dashboard UI" (zwykle na końcu)
-   Kliknij na niego
-   W sekcji "Webhook URL" skopiuj adres URL
-   Otwórz ten URL w nowej karcie przeglądarki
+   In left menu click "Workflows"
+   Find "Management Dashboard" on list
+   Click on it to open
    ```
 
-5. **Używanie dashboardu:**
+3. **Activate workflow (if not active):**
+   ```
+   In top right corner find "Active" toggle
+   Click to turn it on (should be green)
+   ```
+
+4. **Open dashboard:**
+   ```
+   In workflow find node "Dashboard UI" (usually at the end)
+   Click on it
+   In "Webhook URL" section copy the URL
+   Open this URL in new browser tab
+   ```
+
+5. **Using dashboard:**
    - **System Overview:**
-     - Widzisz 4 karty - po jednej dla każdej maszyny
-     - Kolor karty oznacza status:
-       - 🟢 Zielony = wszystko działa prawidłowo
-       - 🟡 Żółty = są problemy, ale maszyna działa
-       - 🔴 Czerwony = maszyna nie działa
-   - **Metryki:**
-     - Pod każdą kartą widzisz:
-       - CPU Usage: użycie procesora (w %)
-       - Memory Usage: użycie pamięci (w %)
-       - Disk Usage: użycie dysku (w %)
-   - **Przyciski akcji:**
-     - "Sync Repository" - synchronizuje kod na wszystkich maszynach
-     - "Refresh Status" - odświeża status wszystkich maszyn
-     - "Run Health Check" - uruchamia szczegółowe sprawdzenie wybranej maszyny
+     - You see 4 cards - one for each machine
+     - Card color indicates status:
+       - 🟢 Green = everything works correctly
+       - 🟡 Yellow = there are problems but machine works
+       - 🔴 Red = machine doesn't work
+   - **Metrics:**
+     - Under each card you see:
+       - CPU Usage: processor usage (in %)
+       - Memory Usage: memory usage (in %)
+       - Disk Usage: disk usage (in %)
+   - **Action buttons:**
+     - "Sync Repository" - synchronizes code on all machines
+     - "Refresh Status" - refreshes status of all machines
+     - "Run Health Check" - runs detailed check of selected machine
 
-**Przykład użycia:**
+**Example usage:**
 
 ```
-Scenariusz: Chcesz sprawdzić, czy wszystkie maszyny działają prawidłowo
+Scenario: You want to check if all machines work correctly
 
-1. Otwórz Management Dashboard
-2. Sprawdź kolory kart - wszystkie powinny być zielone
-3. Jeśli któraś karta jest żółta lub czerwona:
-   a. Kliknij na nią
-   b. Sprawdź metryki - może być problem z pamięcią lub dyskiem
-   c. Kliknij "Run Health Check"
-   d. Poczekaj na wyniki (1-2 minuty)
-   e. Przeczytaj raport - pokaże, co jest nie tak
+1. Open Management Dashboard
+2. Check card colors - all should be green
+3. If any card is yellow or red:
+   a. Click on it
+   b. Check metrics - there may be problem with memory or disk
+   c. Click "Run Health Check"
+   d. Wait for results (1-2 minutes)
+   e. Read report - it will show what's wrong
 ```
 
-**Częstotliwość użycia:** Codziennie lub kilka razy dziennie, aby monitorować system.
+**Usage frequency:** Daily or several times a day to monitor system.
 
 ---
 
 ### 2. Testing Management Interface
 
-**Co to jest:** Interfejs do uruchamiania i zarządzania testami systemu.
+**What it is:** Interface for running and managing system tests.
 
-**Gdzie:** n8n → Workflow "Testing Management" → Webhook "Testing Dashboard"
+**Where:** n8n → Workflow "Testing Management" → Webhook "Testing Dashboard"
 
-**Do czego służy:**
-- Testowanie połączeń między maszynami
-- Testowanie przepływu danych
-- Sprawdzanie zdrowia maszyn
-- Przeglądanie historii testów
+**What it's for:**
+- Testing connections between machines
+- Testing data flow
+- Checking machine health
+- Reviewing test history
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Otwórz Testing Management:**
+1. **Open Testing Management:**
    ```
-   W n8n → Workflows → "Testing Management"
-   Upewnij się, że workflow jest aktywny
-   ```
-
-2. **Otwórz dashboard testów:**
-   ```
-   Znajdź węzeł "Testing Dashboard"
-   Skopiuj URL webhooka
-   Otwórz w przeglądarce
+   In n8n → Workflows → "Testing Management"
+   Make sure workflow is active
    ```
 
-3. **Uruchom testy połączeń:**
+2. **Open test dashboard:**
    ```
-   Kliknij przycisk "Run Connection Tests"
-   Poczekaj 1-2 minuty
-   Zobaczysz wyniki:
-     ✅ PASS - test przeszedł pomyślnie
-     ❌ FAIL - test nie przeszedł
-     ⚠️ WARN - test przeszedł, ale z ostrzeżeniami
+   Find node "Testing Dashboard"
+   Copy webhook URL
+   Open in browser
    ```
 
-4. **Uruchom testy przepływu danych:**
+3. **Run connection tests:**
    ```
-   PRZED uruchomieniem: Ustaw hasło do bazy danych
-   W terminalu (na maszynie, z której uruchamiasz):
-     export POSTGRES_PASSWORD="TwojeHaslo"
+   Click button "Run Connection Tests"
+   Wait 1-2 minutes
+   You'll see results:
+     ✅ PASS - test passed successfully
+     ❌ FAIL - test failed
+     ⚠️ WARN - test passed but with warnings
+   ```
+
+4. **Run data flow tests:**
+   ```
+   BEFORE running: Set database password
+   In terminal (on machine from which you run):
+     export POSTGRES_PASSWORD="YourPassword"
    
-   W dashboardzie kliknij "Run Data Flow Tests"
-   Poczekaj 2-3 minuty
-   Sprawdź wyniki
+   In dashboard click "Run Data Flow Tests"
+   Wait 2-3 minutes
+   Check results
    ```
 
-5. **Uruchom health checks:**
+5. **Run health checks:**
    ```
-   Kliknij "Run Health Checks"
-   Wybierz maszynę (lub "All VMs")
-   Poczekaj 2-5 minut
-   Zobaczysz szczegółowy raport dla każdej maszyny
-   ```
-
-6. **Przeglądaj historię testów:**
-   ```
-   Kliknij "View Test History"
-   Zobaczysz listę wszystkich wykonanych testów
-   Możesz kliknąć na test, aby zobaczyć szczegóły
+   Click "Run Health Checks"
+   Select machine (or "All VMs")
+   Wait 2-5 minutes
+   You'll see detailed report for each machine
    ```
 
-**Kiedy używać:**
-- Po instalacji systemu (weryfikacja, że wszystko działa)
-- Po zmianach w konfiguracji
-- Gdy coś nie działa (diagnostyka)
-- Regularnie (np. raz w tygodniu) jako kontrola prewencyjna
+6. **Browse test history:**
+   ```
+   Click "View Test History"
+   You'll see list of all executed tests
+   You can click on test to see details
+   ```
 
-**Przykład użycia:**
+**When to use:**
+- After system installation (verification that everything works)
+- After configuration changes
+- When something doesn't work (diagnostics)
+- Regularly (e.g., once a week) as preventive check
+
+**Example usage:**
 
 ```
-Scenariusz: Po instalacji chcesz upewnić się, że wszystko działa
+Scenario: After installation you want to make sure everything works
 
-1. Otwórz Testing Management Dashboard
-2. Kliknij "Run Connection Tests"
-3. Sprawdź wyniki - wszystkie powinny być ✅ PASS
-4. Jeśli są błędy:
-   a. Zapisz, które testy nie przeszły
-   b. Sprawdź konfigurację (adresy IP, porty)
-   c. Sprawdź firewall
-5. Kliknij "Run Data Flow Tests"
-6. Sprawdź wyniki - powinny być ✅ PASS
-7. Jeśli są błędy:
-   a. Sprawdź, czy baza danych działa
-   b. Sprawdź hasło do bazy danych
-   c. Sprawdź logi
+1. Open Testing Management Dashboard
+2. Click "Run Connection Tests"
+3. Check results - all should be ✅ PASS
+4. If there are errors:
+   a. Write down which tests didn't pass
+   b. Check configuration (IP addresses, ports)
+   c. Check firewall
+5. Click "Run Data Flow Tests"
+6. Check results - should be ✅ PASS
+7. If there are errors:
+   a. Check if database is running
+   b. Check database password
+   c. Check logs
 ```
 
 ---
 
 ### 3. Deployment Management Interface
 
-**Co to jest:** Interfejs do zarządzania instalacjami i wdrożeniami.
+**What it is:** Interface for managing installations and deployments.
 
-**Gdzie:** n8n → Workflow "Deployment Management" → Webhook "Deployment Dashboard"
+**Where:** n8n → Workflow "Deployment Management" → Webhook "Deployment Dashboard"
 
-**Do czego służy:**
-- Sprawdzanie statusu instalacji na maszynach
-- Uruchamianie instalacji zdalnie (bez logowania na maszynę)
-- Przeglądanie logów instalacji
-- Weryfikacja wdrożeń
+**What it's for:**
+- Checking installation status on machines
+- Running installations remotely (without logging into machine)
+- Reviewing installation logs
+- Deployment verification
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Otwórz Deployment Management:**
+1. **Open Deployment Management:**
    ```
-   W n8n → Workflows → "Deployment Management"
-   Upewnij się, że workflow jest aktywny
-   ```
-
-2. **Otwórz dashboard:**
-   ```
-   Znajdź węzeł "Deployment Dashboard"
-   Skopiuj URL webhooka
-   Otwórz w przeglądarce
+   In n8n → Workflows → "Deployment Management"
+   Make sure workflow is active
    ```
 
-3. **Sprawdź status instalacji:**
+2. **Open dashboard:**
    ```
-   Kliknij "Get Installation Status"
-   Zobaczysz tabelę z statusem dla każdej maszyny:
-     ✅ Installed - maszyna jest zainstalowana
-     ❌ Not Installed - maszyna nie jest zainstalowana
-     ⚠️ Unknown - nie można sprawdzić
+   Find node "Deployment Dashboard"
+   Copy webhook URL
+   Open in browser
    ```
 
-4. **Uruchom instalację na maszynie:**
+3. **Check installation status:**
    ```
-   Wybierz maszynę z listy (np. "vm01")
-   Kliknij "Run Installation"
-   Wypełnij formularz:
-     - Project Root: /home/twoja_nazwa_uzytkownika/th_timmy
-     - Config File: (zostaw puste, jeśli używasz domyślnego)
-   Kliknij "Start Installation"
-   ```
-
-5. **Monitoruj postęp:**
-   ```
-   Zobaczysz postęp instalacji w czasie rzeczywistym
-   Możesz kliknąć "View Logs", aby zobaczyć szczegółowe logi
-   Poczekaj na zakończenie (może zająć 10-20 minut)
+   Click "Get Installation Status"
+   You'll see table with status for each machine:
+     ✅ Installed - machine is installed
+     ❌ Not Installed - machine is not installed
+     ⚠️ Unknown - cannot check
    ```
 
-6. **Zweryfikuj instalację:**
+4. **Run installation on machine:**
    ```
-   Po zakończeniu kliknij "Verify Deployment"
-   Wybierz maszynę
-   System sprawdzi, czy instalacja się powiodła
-   Zobaczysz raport weryfikacji
+   Select machine from list (e.g., "vm01")
+   Click "Run Installation"
+   Fill form:
+     - Project Root: /home/your_username/th_timmy
+     - Config File: (leave empty if using default)
+   Click "Start Installation"
    ```
 
-**Kiedy używać:**
-- Podczas pierwszej instalacji systemu
-- Gdy musisz ponownie zainstalować maszynę
-- Gdy aktualizujesz oprogramowanie
-- Gdy sprawdzasz, czy wszystko jest zainstalowane
+5. **Monitor progress:**
+   ```
+   You'll see installation progress in real-time
+   You can click "View Logs" to see detailed logs
+   Wait for completion (may take 10-20 minutes)
+   ```
 
-**Przykład użycia:**
+6. **Verify installation:**
+   ```
+   After completion click "Verify Deployment"
+   Select machine
+   System will check if installation succeeded
+   You'll see verification report
+   ```
+
+**When to use:**
+- During first system installation
+- When you need to reinstall machine
+- When updating software
+- When checking if everything is installed
+
+**Example usage:**
 
 ```
-Scenariusz: Musisz ponownie zainstalować VM-01
+Scenario: You need to reinstall VM-01
 
-1. Otwórz Deployment Management Dashboard
-2. Kliknij "Get Installation Status"
-3. Sprawdź status VM-01 - może być "Not Installed" lub "Unknown"
-4. Kliknij "Run Installation"
-5. Wybierz "vm01" z listy
-6. Wypełnij formularz:
+1. Open Deployment Management Dashboard
+2. Click "Get Installation Status"
+3. Check VM-01 status - may be "Not Installed" or "Unknown"
+4. Click "Run Installation"
+5. Select "vm01" from list
+6. Fill form:
    - Project Root: /home/user/th_timmy
-7. Kliknij "Start Installation"
-8. Monitoruj postęp - zobaczysz logi w czasie rzeczywistym
-9. Po zakończeniu kliknij "Verify Deployment"
-10. Sprawdź raport - powinien pokazać ✅ wszystkie testy PASS
+7. Click "Start Installation"
+8. Monitor progress - you'll see logs in real-time
+9. After completion click "Verify Deployment"
+10. Check report - should show ✅ all tests PASS
 ```
 
 ---
 
 ### 4. Hardening Management Interface
 
-**Co to jest:** Interfejs do zarządzania zabezpieczeniami maszyn.
+**What it is:** Interface for managing machine security.
 
-**Gdzie:** n8n → Workflow "Hardening Management" → Webhook "Hardening Dashboard"
+**Where:** n8n → Workflow "Hardening Management" → Webhook "Hardening Dashboard"
 
-**Do czego służy:**
-- Sprawdzanie statusu zabezpieczeń maszyn
-- Uruchamianie procesu zabezpieczania (hardening)
-- Porównywanie stanu przed/po zabezpieczeniu
-- Przeglądanie raportów zabezpieczeń
+**What it's for:**
+- Checking security status of machines
+- Running security process (hardening)
+- Comparing before/after security state
+- Reviewing security reports
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Otwórz Hardening Management:**
+1. **Open Hardening Management:**
    ```
-   W n8n → Workflows → "Hardening Management"
-   Upewnij się, że workflow jest aktywny
-   ```
-
-2. **Otwórz dashboard:**
-   ```
-   Znajdź węzeł "Hardening Dashboard"
-   Skopiuj URL webhooka
-   Otwórz w przeglądarce
+   In n8n → Workflows → "Hardening Management"
+   Make sure workflow is active
    ```
 
-3. **Sprawdź status zabezpieczeń:**
+2. **Open dashboard:**
    ```
-   Kliknij "Get Hardening Status"
-   Zobaczysz status dla każdej maszyny:
-     ✅ Hardened - maszyna jest w pełni zabezpieczona
-     ⚠️ Partial - maszyna jest częściowo zabezpieczona
-     ❌ Not Hardened - maszyna nie jest zabezpieczona
-     ❓ Unknown - nie można sprawdzić statusu
+   Find node "Hardening Dashboard"
+   Copy webhook URL
+   Open in browser
    ```
 
-4. **PRZED uruchomieniem hardeningu - wykonaj testy:**
+3. **Check security status:**
    ```
-   WAŻNE: Zawsze wykonaj testy przed hardeningiem!
+   Click "Get Hardening Status"
+   You'll see status for each machine:
+     ✅ Hardened - machine is fully secured
+     ⚠️ Partial - machine is partially secured
+     ❌ Not Hardened - machine is not secured
+     ❓ Unknown - cannot check status
+   ```
+
+4. **BEFORE running hardening - run tests:**
+   ```
+   IMPORTANT: Always run tests before hardening!
    
-   W Testing Management Dashboard:
-   1. Kliknij "Run Connection Tests"
-   2. Kliknij "Run Data Flow Tests"
-   3. Zapisz wyniki - będą punktem odniesienia
+   In Testing Management Dashboard:
+   1. Click "Run Connection Tests"
+   2. Click "Run Data Flow Tests"
+   3. Save results - they will be reference point
    ```
 
-5. **Uruchom hardening:**
+5. **Run hardening:**
    ```
-   W Hardening Dashboard:
-   1. Wybierz maszynę (np. "vm01")
-   2. Kliknij "Run Hardening"
-   3. WAŻNE: Zaznacz "Capture Before State"
-      (zapisze stan przed zabezpieczeniem)
-   4. Kliknij "Start"
-   5. Poczekaj 5-10 minut (zależy od maszyny)
-   ```
-
-6. **Porównaj przed/po:**
-   ```
-   Po zakończeniu:
-   1. Kliknij "Compare Before/After"
-   2. Wybierz ID zabezpieczenia (zostanie wyświetlone po zakończeniu)
-   3. Wybierz maszynę
-   4. Kliknij "Compare"
-   5. Zobaczysz różnice:
-      - Co zostało zmienione
-      - Jakie porty zostały zamknięte
-      - Jakie ustawienia zostały zmienione
+   In Hardening Dashboard:
+   1. Select machine (e.g., "vm01")
+   2. Click "Run Hardening"
+   3. IMPORTANT: Check "Capture Before State"
+      (will save state before securing)
+   4. Click "Start"
+   5. Wait 5-10 minutes (depends on machine)
    ```
 
-7. **Zweryfikuj, że wszystko działa:**
+6. **Compare before/after:**
    ```
-   Po hardeningu:
-   1. Wróć do Testing Management Dashboard
-   2. Uruchom testy ponownie
-   3. Porównaj wyniki z testami sprzed hardeningu
-   4. Wszystkie testy powinny nadal przechodzić
+   After completion:
+   1. Click "Compare Before/After"
+   2. Select hardening ID (will be displayed after completion)
+   3. Select machine
+   4. Click "Compare"
+   5. You'll see differences:
+      - What was changed
+      - Which ports were closed
+      - Which settings were changed
    ```
 
-**Kiedy używać:**
-- Po instalacji systemu (zabezpieczenie przed użyciem)
-- Gdy chcesz zwiększyć bezpieczeństwo
-- Gdy musisz spełnić wymagania bezpieczeństwa (np. compliance)
-- Regularnie (np. raz na kwartał) jako kontrola
+7. **Verify that everything works:**
+   ```
+   After hardening:
+   1. Go back to Testing Management Dashboard
+   2. Run tests again
+   3. Compare results with tests before hardening
+   4. All tests should still pass
+   ```
 
-**UWAGA:** Po zabezpieczeniu, niektóre porty mogą być zablokowane. Upewnij się, że masz dostęp do maszyn przez SSH!
+**When to use:**
+- After system installation (secure before use)
+- When you want to increase security
+- When you need to meet security requirements (e.g., compliance)
+- Regularly (e.g., once a quarter) as check
 
-**Przykład użycia:**
+**WARNING:** After securing, some ports may be blocked. Make sure you have SSH access to machines!
+
+**Example usage:**
 
 ```
-Scenariusz: Chcesz zabezpieczyć wszystkie maszyny po instalacji
+Scenario: You want to secure all machines after installation
 
-1. PRZED hardeningiem:
-   a. Otwórz Testing Management Dashboard
-   b. Uruchom wszystkie testy
-   c. Zapisz wyniki (zrób screenshot lub zapisz w notatniku)
+1. BEFORE hardening:
+   a. Open Testing Management Dashboard
+   b. Run all tests
+   c. Save results (take screenshot or write in notebook)
 
-2. Otwórz Hardening Management Dashboard
+2. Open Hardening Management Dashboard
 
-3. Dla każdej maszyny (vm01, vm02, vm03, vm04):
-   a. Kliknij "Get Hardening Status"
-   b. Sprawdź status - prawdopodobnie będzie "Not Hardened"
-   c. Kliknij "Run Hardening"
-   d. Zaznacz "Capture Before State"
-   e. Kliknij "Start"
-   f. Poczekaj na zakończenie (5-10 minut)
-   g. Zapisz ID zabezpieczenia
+3. For each machine (vm01, vm02, vm03, vm04):
+   a. Click "Get Hardening Status"
+   b. Check status - probably will be "Not Hardened"
+   c. Click "Run Hardening"
+   d. Check "Capture Before State"
+   e. Click "Start"
+   f. Wait for completion (5-10 minutes)
+   g. Save hardening ID
 
-4. PO hardeningu wszystkich maszyn:
-   a. Wróć do Testing Management Dashboard
-   b. Uruchom wszystkie testy ponownie
-   c. Porównaj wyniki - powinny być takie same jak przed hardeningiem
-   d. Jeśli testy nie przechodzą:
-      - Sprawdź firewall (może być zbyt restrykcyjny)
-      - Sprawdź logi hardeningu
-      - Skontaktuj się z administratorem
+4. AFTER hardening all machines:
+   a. Go back to Testing Management Dashboard
+   b. Run all tests again
+   c. Compare results - should be same as before hardening
+   d. If tests don't pass:
+      - Check firewall (may be too restrictive)
+      - Check hardening logs
+      - Contact administrator
 
-5. Porównaj przed/po:
-   a. W Hardening Dashboard kliknij "Compare Before/After"
-   b. Wybierz ID zabezpieczenia
-   c. Zobacz, co zostało zmienione
+5. Compare before/after:
+   a. In Hardening Dashboard click "Compare Before/After"
+   b. Select hardening ID
+   c. See what was changed
 ```
 
 ---
 
 ### 5. Playbook Manager
 
-**Co to jest:** Interfejs do zarządzania playbookami (skryptami analizy zagrożeń).
+**What it is:** Interface for managing playbooks (threat analysis scripts).
 
-**Gdzie:** n8n → Workflow "Playbook Manager" → Webhook "Playbook Dashboard"
+**Where:** n8n → Workflow "Playbook Manager" → Webhook "Playbook Dashboard"
 
-**Do czego służy:**
-- Przeglądanie dostępnych playbooków
-- Tworzenie nowych playbooków
-- Edycja istniejących playbooków
-- Walidacja playbooków (sprawdzanie, czy są poprawne)
-- Testowanie playbooków
+**What it's for:**
+- Browsing available playbooks
+- Creating new playbooks
+- Editing existing playbooks
+- Validating playbooks (checking if they're correct)
+- Testing playbooks
 
-**Co to jest playbook?**
-Playbook to gotowy skrypt do analizy konkretnego zagrożenia. Zawiera:
-- Opis zagrożenia (np. "Phishing emails")
-- Technikę MITRE ATT&CK (np. T1566)
-- Zapytania dla różnych narzędzi (Splunk, Sentinel, itp.)
-- Logikę analizy
+**What is a playbook?**
+A playbook is a ready script for analyzing specific threat. It contains:
+- Threat description (e.g., "Phishing emails")
+- MITRE ATT&CK technique (e.g., T1566)
+- Queries for different tools (Splunk, Sentinel, etc.)
+- Analysis logic
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Otwórz Playbook Manager:**
+1. **Open Playbook Manager:**
    ```
-   W n8n → Workflows → "Playbook Manager"
-   Upewnij się, że workflow jest aktywny
-   ```
-
-2. **Otwórz dashboard:**
-   ```
-   Znajdź węzeł "Playbook Dashboard"
-   Skopiuj URL webhooka
-   Otwórz w przeglądarce
+   In n8n → Workflows → "Playbook Manager"
+   Make sure workflow is active
    ```
 
-3. **Przeglądaj dostępne playbooki:**
+2. **Open dashboard:**
    ```
-   Kliknij "List Playbooks"
-   Zobaczysz tabelę z wszystkimi playbookami:
-     - Nazwa
-     - Opis
+   Find node "Playbook Dashboard"
+   Copy webhook URL
+   Open in browser
+   ```
+
+3. **Browse available playbooks:**
+   ```
+   Click "List Playbooks"
+   You'll see table with all playbooks:
+     - Name
+     - Description
      - MITRE Technique ID
      - Status (Valid/Invalid)
-     - Data ostatniej modyfikacji
+     - Last modification date
    ```
 
-4. **Zobacz szczegóły playbooka:**
+4. **View playbook details:**
    ```
-   Kliknij na playbook w tabeli
-   Zobaczysz szczegóły:
-     - Pełny opis
-     - Wszystkie zapytania
-     - Konfiguracja
+   Click on playbook in table
+   You'll see details:
+     - Full description
+     - All queries
+     - Configuration
    ```
 
-5. **Utwórz nowy playbook:**
+5. **Create new playbook:**
    ```
-   Kliknij "Create New Playbook"
-   Wypełnij formularz:
+   Click "Create New Playbook"
+   Fill form:
      
-     Nazwa: "Phishing Detection"
-     Opis: "Detects phishing emails and malicious links"
+     Name: "Phishing Detection"
+     Description: "Detects phishing emails and malicious links"
      MITRE Technique ID: "T1566"
      
-     Zapytania:
+     Queries:
        Splunk: "index=security sourcetype=email | search ..."
        Sentinel: "EmailEvents | where ..."
        Defender: "DeviceEvents | where ..."
    
-   Kliknij "Create"
-   System automatycznie zwaliduje playbook
+   Click "Create"
+   System will automatically validate playbook
    ```
 
-6. **Edytuj istniejący playbook:**
+6. **Edit existing playbook:**
    ```
-   Wybierz playbook z listy
-   Kliknij "Edit"
-   Zmień potrzebne pola
-   Kliknij "Save"
-   System zwaliduje zmiany
-   ```
-
-7. **Zweryfikuj playbook:**
-   ```
-   Wybierz playbook
-   Kliknij "Validate"
-   System sprawdzi:
-     - Czy struktura jest poprawna
-     - Czy zapytania są poprawne
-     - Czy wszystkie wymagane pola są wypełnione
-   Zobaczysz raport walidacji
+   Select playbook from list
+   Click "Edit"
+   Change needed fields
+   Click "Save"
+   System will validate changes
    ```
 
-**Kiedy używać:**
-- Gdy chcesz stworzyć nowy playbook do analizy konkretnego zagrożenia
-- Gdy musisz zaktualizować istniejący playbook
-- Gdy chcesz sprawdzić, czy playbook jest poprawny
-- Gdy chcesz zobaczyć, jakie playbooki są dostępne
+7. **Validate playbook:**
+   ```
+   Select playbook
+   Click "Validate"
+   System will check:
+     - If structure is correct
+     - If queries are correct
+     - If all required fields are filled
+   You'll see validation report
+   ```
 
-**Przykład użycia:**
+**When to use:**
+- When you want to create new playbook for specific threat analysis
+- When you need to update existing playbook
+- When you want to check if playbook is correct
+- When you want to see what playbooks are available
+
+**Example usage:**
 
 ```
-Scenariusz: Chcesz stworzyć playbook do wykrywania ransomware
+Scenario: You want to create playbook for detecting ransomware
 
-1. Otwórz Playbook Manager Dashboard
-2. Kliknij "Create New Playbook"
-3. Wypełnij formularz:
-   - Nazwa: "Ransomware Detection"
-   - Opis: "Detects ransomware activity based on file encryption patterns"
+1. Open Playbook Manager Dashboard
+2. Click "Create New Playbook"
+3. Fill form:
+   - Name: "Ransomware Detection"
+   - Description: "Detects ransomware activity based on file encryption patterns"
    - MITRE Technique ID: "T1486" (Data Encrypted for Impact)
-4. Dodaj zapytania dla swoich narzędzi:
-   - Splunk: (zapytanie do Splunka)
-   - Sentinel: (zapytanie do Sentinel)
-   - Defender: (zapytanie do Defender)
-5. Kliknij "Create"
-6. System zwaliduje playbook
-7. Jeśli są błędy, popraw je i zapisz ponownie
-8. Playbook jest teraz gotowy do użycia!
+4. Add queries for your tools:
+   - Splunk: (Splunk query)
+   - Sentinel: (Sentinel query)
+   - Defender: (Defender query)
+5. Click "Create"
+6. System will validate playbook
+7. If there are errors, fix them and save again
+8. Playbook is now ready to use!
 ```
 
 ---
 
 ### 6. Hunt Selection Form
 
-**Co to jest:** Formularz do wyboru huntów (polowań na zagrożenia) i generowania zapytań.
+**What it is:** Form for selecting hunts (threat hunts) and generating queries.
 
-**Gdzie:** n8n → Workflow "Hunt Selection Form" → Webhook "Hunt Selection Form"
+**Where:** n8n → Workflow "Hunt Selection Form" → Webhook "Hunt Selection Form"
 
-**Do czego służy:**
-- Wybór technik MITRE ATT&CK do analizy
-- Wybór dostępnych narzędzi (Splunk, Sentinel, itp.)
-- Automatyczne generowanie zapytań dla wybranych huntów
-- Uruchamianie analizy
+**What it's for:**
+- Selecting MITRE ATT&CK techniques for analysis
+- Selecting available tools (Splunk, Sentinel, etc.)
+- Automatically generating queries for selected hunts
+- Running analysis
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Otwórz Hunt Selection Form:**
+1. **Open Hunt Selection Form:**
    ```
-   W n8n → Workflows → "Hunt Selection Form"
-   Upewnij się, że workflow jest aktywny
-   ```
-
-2. **Otwórz formularz:**
-   ```
-   Znajdź węzeł "Hunt Selection Form"
-   Skopiuj URL webhooka
-   Otwórz w przeglądarce
+   In n8n → Workflows → "Hunt Selection Form"
+   Make sure workflow is active
    ```
 
-3. **Wypełnij formularz:**
+2. **Open form:**
+   ```
+   Find node "Hunt Selection Form"
+   Copy webhook URL
+   Open in browser
+   ```
+
+3. **Fill form:**
    
-   **Krok 3.1: Wybierz techniki MITRE ATT&CK**
+   **Step 3.1: Select MITRE ATT&CK techniques**
    ```
-   Zobaczysz listę technik MITRE ATT&CK
-   Zaznacz checkboxy przy technikach, które chcesz analizować
-   Przykłady:
+   You'll see list of MITRE ATT&CK techniques
+   Check boxes next to techniques you want to analyze
+   Examples:
      ☑ T1566 - Phishing
      ☑ T1059 - Command and Scripting Interpreter
      ☑ T1078 - Valid Accounts
    
-   Możesz wybrać wiele technik
+   You can select multiple techniques
    ```
 
-   **Krok 3.2: Wybierz dostępne narzędzia**
+   **Step 3.2: Select available tools**
    ```
-   Zaznacz narzędzia, które masz dostępne:
+   Check tools you have available:
      ☑ Splunk
      ☑ Microsoft Sentinel
      ☑ Microsoft Defender
      ☑ Generic SIEM
    
-   Wybierz tylko te, które rzeczywiście masz
+   Select only those you actually have
    ```
 
-   **Krok 3.3: Wybierz tryb ingestu**
+   **Step 3.3: Select ingest mode**
    ```
-   Wybierz, jak chcesz wgrać dane:
-     ○ Manual - ręczne wgranie plików CSV/JSON
-     ● API - automatyczne pobieranie przez API
+   Select how you want to upload data:
+     ○ Manual - manual upload of CSV/JSON files
+     ● API - automatic retrieval via API
    
-   Jeśli nie masz API, wybierz "Manual"
+   If you don't have API, select "Manual"
    ```
 
-4. **Wygeneruj zapytania:**
+4. **Generate queries:**
    ```
-   Kliknij "Generate Queries"
-   System automatycznie wygeneruje zapytania dla:
-     - Każdej wybranej techniki
-     - Każdego wybranego narzędzia
+   Click "Generate Queries"
+   System will automatically generate queries for:
+     - Each selected technique
+     - Each selected tool
    
-   Zobaczysz listę zapytań
-   Każde zapytanie ma:
-     - Nazwę (np. "T1566 - Splunk Query")
-     - Zapytanie (gotowe do skopiowania)
-     - Opis
+   You'll see list of queries
+   Each query has:
+     - Name (e.g., "T1566 - Splunk Query")
+     - Query (ready to copy)
+     - Description
    ```
 
-5. **Skopiuj i użyj zapytań:**
+5. **Copy and use queries:**
    ```
-   Dla każdego zapytania:
-   1. Kliknij "Copy" obok zapytania
-   2. Otwórz swoje narzędzie (Splunk, Sentinel, itp.)
-   3. Wklej zapytanie
-   4. Uruchom zapytanie
-   5. Zapisz wyniki (eksportuj do CSV lub JSON)
-   ```
-
-6. **Wgraj wyniki i uruchom analizę:**
-   ```
-   Po wykonaniu wszystkich zapytań:
-   1. W formularzu kliknij "Upload Results"
-   2. Wybierz pliki z wynikami (CSV lub JSON)
-   3. Kliknij "Upload"
-   4. System automatycznie:
-      - Zanonimizuje dane
-      - Przetworzy dane
-      - Zmapuje dane do odpowiednich playbooków
-   5. Kliknij "Start Analysis"
-   6. System uruchomi analizę
-   7. Poczekaj na wyniki (może zająć kilka minut)
+   For each query:
+   1. Click "Copy" next to query
+   2. Open your tool (Splunk, Sentinel, etc.)
+   3. Paste query
+   4. Run query
+   5. Save results (export to CSV or JSON)
    ```
 
-7. **Przeglądaj wyniki:**
+6. **Upload results and run analysis:**
    ```
-   Po zakończeniu analizy:
-   1. Zobaczysz podsumowanie:
-      - Ile znalezisk (findings) zostało znalezionych
-      - Jakie techniki zostały wykryte
-      - Poziom zagrożenia
-   2. Kliknij "View Details", aby zobaczyć szczegóły
-   3. Możesz eksportować wyniki do raportu
+   After executing all queries:
+   1. In form click "Upload Results"
+   2. Select result files (CSV or JSON)
+   3. Click "Upload"
+   4. System will automatically:
+      - Anonymize data
+      - Process data
+      - Map data to appropriate playbooks
+   5. Click "Start Analysis"
+   6. System will run analysis
+   7. Wait for results (may take few minutes)
    ```
 
-**Kiedy używać:**
-- Gdy chcesz przeprowadzić threat hunting
-- Gdy chcesz sprawdzić konkretne techniki MITRE ATT&CK
-- Gdy potrzebujesz gotowych zapytań dla swoich narzędzi SIEM/EDR
-- Gdy chcesz zautomatyzować proces analizy
+7. **Review results:**
+   ```
+   After analysis completes:
+   1. You'll see summary:
+      - How many findings were found
+      - Which techniques were detected
+      - Threat level
+   2. Click "View Details" to see details
+   3. You can export results to report
+   ```
 
-**Przykład użycia:**
+**When to use:**
+- When you want to conduct threat hunting
+- When you want to check specific MITRE ATT&CK techniques
+- When you need ready queries for your SIEM/EDR tools
+- When you want to automate analysis process
+
+**Example usage:**
 
 ```
-Scenariusz: Chcesz sprawdzić, czy w Twojej sieci są aktywności phishingowe
+Scenario: You want to check if there are phishing activities in your network
 
-1. Otwórz Hunt Selection Form
-2. Wypełnij formularz:
-   - Techniki: ☑ T1566 (Phishing)
-   - Narzędzia: ☑ Splunk, ☑ Microsoft Sentinel
-   - Tryb: ○ Manual (nie masz API)
-3. Kliknij "Generate Queries"
-4. Zobaczysz 2 zapytania:
+1. Open Hunt Selection Form
+2. Fill form:
+   - Techniques: ☑ T1566 (Phishing)
+   - Tools: ☑ Splunk, ☑ Microsoft Sentinel
+   - Mode: ○ Manual (you don't have API)
+3. Click "Generate Queries"
+4. You'll see 2 queries:
    - "T1566 - Splunk Query"
    - "T1566 - Sentinel Query"
-5. Skopiuj zapytanie Splunk:
-   a. Otwórz Splunk
-   b. Wklej zapytanie
-   c. Uruchom
-   d. Eksportuj wyniki do CSV
-6. Skopiuj zapytanie Sentinel:
-   a. Otwórz Microsoft Sentinel
-   b. Wklej zapytanie
-   c. Uruchom
-   d. Eksportuj wyniki do CSV
-7. W formularzu kliknij "Upload Results"
-8. Wybierz oba pliki CSV
-9. Kliknij "Upload"
-10. Kliknij "Start Analysis"
-11. Poczekaj na wyniki
-12. Przeglądaj znaleziska - system pokaże, co znalazł
+5. Copy Splunk query:
+   a. Open Splunk
+   b. Paste query
+   c. Run
+   d. Export results to CSV
+6. Copy Sentinel query:
+   a. Open Microsoft Sentinel
+   b. Paste query
+   c. Run
+   d. Export results to CSV
+7. In form click "Upload Results"
+8. Select both CSV files
+9. Click "Upload"
+10. Click "Start Analysis"
+11. Wait for results
+12. Review findings - system will show what it found
 ```
 
 ---
 
-## Narzędzia analizy (JupyterLab)
+## Analysis tools (JupyterLab)
 
 ### JupyterLab
 
-**Co to jest:** Interaktywne środowisko do analizy danych i tworzenia raportów.
+**What it is:** Interactive environment for data analysis and report creation.
 
-**Gdzie:** http://<VM-03_IP>:8888
+**Where:** http://<VM-03_IP>:8888
 
-**Do czego służy:**
-- Analiza danych z bazy danych
-- Tworzenie wizualizacji (wykresy, grafiki)
-- Pisanie i wykonywanie skryptów Python
-- Tworzenie raportów
-- Eksperymentowanie z danymi
+**What it's for:**
+- Data analysis from database
+- Creating visualizations (charts, graphics)
+- Writing and executing Python scripts
+- Creating reports
+- Experimenting with data
 
-**Jak używać - krok po kroku:**
+**How to use - step by step:**
 
-1. **Uruchom JupyterLab:**
+1. **Start JupyterLab:**
    ```
-   Zaloguj się na VM-03 przez SSH
-   W terminalu wpisz:
+   Log into VM-03 via SSH
+   In terminal type:
      cd ~/th_timmy
      source venv/bin/activate
      jupyter lab --ip=0.0.0.0 --port=8888
    ```
 
-2. **Skopiuj token:**
+2. **Copy token:**
    ```
-   W terminalu zobaczysz coś takiego:
+   In terminal you'll see something like:
      [I 2025-01-12 10:00:00.000 LabApp] 
      http://VM-03_IP:8888/lab?token=abc123def456...
    
-   Skopiuj token (część po "token=")
+   Copy token (part after "token=")
    ```
 
-3. **Otwórz JupyterLab w przeglądarce:**
+3. **Open JupyterLab in browser:**
    ```
-   Otwórz przeglądarkę
-   Przejdź do: http://<VM-03_IP>:8888
-   Wklej token, gdy zostaniesz poproszony
-   Kliknij "Log in"
+   Open browser
+   Go to: http://<VM-03_IP>:8888
+   Paste token when prompted
+   Click "Log in"
    ```
 
-4. **Podstawowe operacje:**
+4. **Basic operations:**
    
-   **Utwórz nowy notebook:**
+   **Create new notebook:**
    ```
-   W JupyterLab kliknij "New" (w prawym górnym rogu)
-   Wybierz "Python 3"
-   Zostanie utworzony nowy notebook
+   In JupyterLab click "New" (in top right corner)
+   Select "Python 3"
+   New notebook will be created
    ```
 
-   **Połącz się z bazą danych:**
+   **Connect to database:**
    ```
-   W pierwszej komórce notebooka wpisz:
+   In first notebook cell type:
    
    import psycopg2
    import pandas as pd
@@ -740,62 +740,62 @@ Scenariusz: Chcesz sprawdzić, czy w Twojej sieci są aktywności phishingowe
        port=5432,
        database="threat_hunting",
        user="threat_hunter",
-       password="TwojeHasloDoBazyDanych"
+       password="YourDatabasePassword"
    )
    
-   Naciśnij Shift+Enter, aby wykonać komórkę
+   Press Shift+Enter to execute cell
    ```
 
-   **Wykonaj zapytanie SQL:**
+   **Execute SQL query:**
    ```
-   W nowej komórce wpisz:
+   In new cell type:
    
    query = "SELECT * FROM normalized_logs LIMIT 100"
    df = pd.read_sql(query, conn)
    df.head()
    
-   Naciśnij Shift+Enter
-   Zobaczysz pierwsze 100 wierszy danych w tabeli
+   Press Shift+Enter
+   You'll see first 100 rows of data in table
    ```
 
-   **Stwórz wizualizację:**
+   **Create visualization:**
    ```
-   W nowej komórce wpisz:
+   In new cell type:
    
    import matplotlib.pyplot as plt
    
-   # Przykład: wykres liczby zdarzeń w czasie
+   # Example: chart of number of events over time
    df['timestamp'] = pd.to_datetime(df['timestamp'])
    df.groupby(df['timestamp'].dt.date).size().plot()
-   plt.title('Liczba zdarzeń w czasie')
+   plt.title('Number of events over time')
    plt.show()
    
-   Naciśnij Shift+Enter
-   Zobaczysz wykres
+   Press Shift+Enter
+   You'll see chart
    ```
 
-   **Zapisz notebook:**
+   **Save notebook:**
    ```
-   Kliknij "File" → "Save"
-   Lub naciśnij Ctrl+S
+   Click "File" → "Save"
+   Or press Ctrl+S
    ```
 
-**Kiedy używać:**
-- Gdy chcesz przeanalizować dane ręcznie
-- Gdy chcesz stworzyć własne wizualizacje
-- Gdy chcesz eksperymentować z danymi
-- Gdy chcesz napisać własne skrypty analizy
-- Gdy chcesz stworzyć niestandardowe raporty
+**When to use:**
+- When you want to analyze data manually
+- When you want to create own visualizations
+- When you want to experiment with data
+- When you want to write own analysis scripts
+- When you want to create custom reports
 
-**Przykład użycia:**
+**Example usage:**
 
 ```
-Scenariusz: Chcesz przeanalizować, ile zdarzeń phishingowych było w ostatnim tygodniu
+Scenario: You want to analyze how many phishing events were in last week
 
-1. Uruchom JupyterLab (patrz wyżej)
-2. Utwórz nowy notebook
-3. Połącz się z bazą danych (patrz wyżej)
-4. Wykonaj zapytanie:
+1. Start JupyterLab (see above)
+2. Create new notebook
+3. Connect to database (see above)
+4. Execute query:
    
    query = """
    SELECT 
@@ -811,217 +811,216 @@ Scenariusz: Chcesz przeanalizować, ile zdarzeń phishingowych było w ostatnim 
    df = pd.read_sql(query, conn)
    df
    
-5. Stwórz wykres:
+5. Create chart:
    
    df.plot(x='date', y='count', kind='bar')
-   plt.title('Zdarzenia phishingowe w ostatnim tygodniu')
-   plt.xlabel('Data')
-   plt.ylabel('Liczba zdarzeń')
+   plt.title('Phishing events in last week')
+   plt.xlabel('Date')
+   plt.ylabel('Number of events')
    plt.show()
    
-6. Zapisz notebook
+6. Save notebook
 ```
 
 ---
 
-## Narzędzia wiersza poleceń
+## Command line tools
 
-Te narzędzia są dostępne z terminala (linii poleceń) na każdej maszynie.
+These tools are available from terminal (command line) on each machine.
 
 ### Health Check
 
-**Co to jest:** Skrypt sprawdzający zdrowie maszyny.
+**What it is:** Script checking machine health.
 
-**Gdzie:** Na każdej maszynie: `~/th_timmy/hosts/vmXX-*/health_check.sh`
+**Where:** On each machine: `~/th_timmy/hosts/vmXX-*/health_check.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na VM-01
+# On VM-01
 cd ~/th_timmy/hosts/vm01-ingest
 ./health_check.sh
 
-# Na VM-02
+# On VM-02
 cd ~/th_timmy/hosts/vm02-database
 ./health_check.sh
 
-# Na VM-03
+# On VM-03
 cd ~/th_timmy/hosts/vm03-analysis
 ./health_check.sh
 
-# Na VM-04
+# On VM-04
 cd ~/th_timmy/hosts/vm04-orchestrator
 ./health_check.sh
 ```
 
-**Co sprawdza:**
-- ✅ Czy wszystkie wymagane programy są zainstalowane
-- ✅ Czy serwisy działają (PostgreSQL, JupyterLab, Docker)
-- ✅ Czy konfiguracja jest poprawna
-- ✅ Czy połączenia sieciowe działają
+**What it checks:**
+- ✅ If all required programs are installed
+- ✅ If services are running (PostgreSQL, JupyterLab, Docker)
+- ✅ If configuration is correct
+- ✅ If network connections work
 
-**Kiedy używać:**
-- Po instalacji (weryfikacja)
-- Gdy coś nie działa (diagnostyka)
-- Regularnie (kontrola)
+**When to use:**
+- After installation (verification)
+- When something doesn't work (diagnostics)
+- Regularly (check)
 
 ---
 
 ### Test Connections
 
-**Co to jest:** Skrypt testujący połączenia między maszynami.
+**What it is:** Script testing connections between machines.
 
-**Gdzie:** `~/th_timmy/hosts/shared/test_connections.sh`
+**Where:** `~/th_timmy/hosts/shared/test_connections.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na dowolnej maszynie
+# On any machine
 cd ~/th_timmy
 ./hosts/shared/test_connections.sh
 ```
 
-**Co sprawdza:**
-- ✅ Czy maszyny mogą się pingować
-- ✅ Czy porty są otwarte (SSH, PostgreSQL, JupyterLab, n8n)
-- ✅ Czy można połączyć się z bazą danych
-- ✅ Czy serwisy są dostępne
+**What it checks:**
+- ✅ If machines can ping each other
+- ✅ If ports are open (SSH, PostgreSQL, JupyterLab, n8n)
+- ✅ If can connect to database
+- ✅ If services are available
 
-**Kiedy używać:**
-- Po instalacji (weryfikacja połączeń)
-- Gdy masz problemy z połączeniem
-- Regularnie (kontrola)
+**When to use:**
+- After installation (connection verification)
+- When you have connection problems
+- Regularly (check)
 
 ---
 
 ### Test Data Flow
 
-**Co to jest:** Skrypt testujący przepływ danych przez system.
+**What it is:** Script testing data flow through system.
 
-**Gdzie:** `~/th_timmy/hosts/shared/test_data_flow.sh`
+**Where:** `~/th_timmy/hosts/shared/test_data_flow.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na dowolnej maszynie
+# On any machine
 cd ~/th_timmy
 
-# Ustaw hasło do bazy danych
-export POSTGRES_PASSWORD="TwojeHasloDoBazyDanych"
+# Set database password
+export POSTGRES_PASSWORD="YourDatabasePassword"
 
-# Uruchom test
+# Run test
 ./hosts/shared/test_data_flow.sh
 ```
 
-**Co sprawdza:**
-- ✅ Czy można zapisać dane do bazy danych
-- ✅ Czy można odczytać dane z bazy danych
-- ✅ Czy n8n jest dostępne
-- ✅ Czy przepływ danych działa end-to-end
+**What it checks:**
+- ✅ If can write data to database
+- ✅ If can read data from database
+- ✅ If n8n is available
+- ✅ If data flow works end-to-end
 
-**Kiedy używać:**
-- Po instalacji (weryfikacja przepływu danych)
-- Gdy masz problemy z danymi
-- Regularnie (kontrola)
+**When to use:**
+- After installation (data flow verification)
+- When you have data problems
+- Regularly (check)
 
 ---
 
-## Narzędzia serwisowe (API)
+## Service tools (API)
 
-Te narzędzia są dostępne przez API (interfejs programistyczny). Są używane głównie przez n8n workflows, ale możesz ich też używać bezpośrednio.
+These tools are available through API (programming interface). They're mainly used by n8n workflows, but you can also use them directly.
 
 ### Dashboard API
 
-**Co to jest:** API do zarządzania systemem.
+**What it is:** API for system management.
 
-**Gdzie:** http://<VM-04_IP>:8000 (jeśli uruchomione)
+**Where:** http://<VM-04_IP>:8000 (if running)
 
-**Do czego służy:**
-- Pobieranie statusu systemu
-- Zarządzanie konfiguracją
-- Synchronizacja repozytorium
-- Uruchamianie health checks
+**What it's for:**
+- Getting system status
+- Configuration management
+- Repository synchronization
+- Running health checks
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Przykład: Pobierz status systemu
+# Example: Get system status
 curl http://<VM-04_IP>:8000/api/system/overview
 
-# Przykład: Uruchom health check
+# Example: Run health check
 curl -X POST http://<VM-04_IP>:8000/api/health/check \
   -H "Content-Type: application/json" \
   -d '{"vm_id": "vm01"}'
 ```
 
-**Uwaga:** To narzędzie jest głównie używane przez n8n workflows. Jeśli nie jesteś programistą, prawdopodobnie nie będziesz go używać bezpośrednio.
+**Note:** This tool is mainly used by n8n workflows. If you're not a developer, you probably won't use it directly.
 
 ---
 
-## Kiedy używać którego narzędzia?
+## When to use which tool?
 
-### Codzienne monitorowanie
+### Daily monitoring
 
-**Użyj:** Management Dashboard
-- Sprawdź status wszystkich maszyn
-- Sprawdź metryki (CPU, RAM, dysk)
-- Uruchom synchronizację repozytorium, jeśli potrzebne
+**Use:** Management Dashboard
+- Check status of all machines
+- Check metrics (CPU, RAM, disk)
+- Run repository synchronization if needed
 
-### Weryfikacja po instalacji
+### Verification after installation
 
-**Użyj:**
-1. Testing Management Interface - uruchom wszystkie testy
-2. Management Dashboard - sprawdź status
-3. Health Check (wiersz poleceń) - sprawdź każdą maszynę
+**Use:**
+1. Testing Management Interface - run all tests
+2. Management Dashboard - check status
+3. Health Check (command line) - check each machine
 
-### Zabezpieczanie systemu
+### Securing system
 
-**Użyj:**
-1. Testing Management Interface - wykonaj testy PRZED hardeningiem
-2. Hardening Management Interface - uruchom hardening
-3. Testing Management Interface - wykonaj testy PO hardeningu
-4. Porównaj wyniki
+**Use:**
+1. Testing Management Interface - run tests BEFORE hardening
+2. Hardening Management Interface - run hardening
+3. Testing Management Interface - run tests AFTER hardening
+4. Compare results
 
-### Przeprowadzanie threat huntingu
+### Conducting threat hunting
 
-**Użyj:**
-1. Hunt Selection Form - wybierz techniki i wygeneruj zapytania
-2. Wykonaj zapytania w swoich narzędziach SIEM/EDR
-3. Hunt Selection Form - wgraj wyniki i uruchom analizę
-4. JupyterLab - przeanalizuj wyniki szczegółowo (opcjonalnie)
+**Use:**
+1. Hunt Selection Form - select techniques and generate queries
+2. Execute queries in your SIEM/EDR tools
+3. Hunt Selection Form - upload results and run analysis
+4. JupyterLab - analyze results in detail (optionally)
 
-### Tworzenie nowego playbooka
+### Creating new playbook
 
-**Użyj:**
-1. Playbook Manager - utwórz nowy playbook
-2. Wypełnij formularz
-3. System zwaliduje playbook
-4. Jeśli są błędy, popraw je
+**Use:**
+1. Playbook Manager - create new playbook
+2. Fill form
+3. System will validate playbook
+4. If there are errors, fix them
 
-### Diagnostyka problemów
+### Troubleshooting problems
 
-**Użyj:**
-1. Management Dashboard - sprawdź status maszyn
-2. Testing Management Interface - uruchom testy
-3. Health Check (wiersz poleceń) - sprawdź szczegóły
-4. Sprawdź logi (wiersz poleceń)
+**Use:**
+1. Management Dashboard - check machine status
+2. Testing Management Interface - run tests
+3. Health Check (command line) - check details
+4. Check logs (command line)
 
 ---
 
-## Podsumowanie
+## Summary
 
-Ten przewodnik opisał wszystkie dostępne narzędzia w systemie. Pamiętaj:
+This guide described all available tools in the system. Remember:
 
-- **Management Dashboard** - codzienne monitorowanie
-- **Testing Management** - weryfikacja i diagnostyka
-- **Deployment Management** - instalacje i wdrożenia
-- **Hardening Management** - zabezpieczanie
-- **Playbook Manager** - zarządzanie playbookami
+- **Management Dashboard** - daily monitoring
+- **Testing Management** - verification and diagnostics
+- **Deployment Management** - installations and deployments
+- **Hardening Management** - securing
+- **Playbook Manager** - playbook management
 - **Hunt Selection Form** - threat hunting
-- **JupyterLab** - analiza danych
-- **Narzędzia wiersza poleceń** - zaawansowane operacje
+- **JupyterLab** - data analysis
+- **Command line tools** - advanced operations
 
-Wszystkie narzędzia są zaprojektowane tak, aby były łatwe w użyciu, nawet dla osób nietechnicznych. Jeśli masz pytania, sprawdź dokumentację lub skontaktuj się z administratorem systemu.
+All tools are designed to be easy to use, even for non-technical people. If you have questions, check documentation or contact system administrator.
 
-**Powodzenia!** 🎉
-
+**Good luck!** 🎉

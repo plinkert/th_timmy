@@ -1,115 +1,115 @@
-# Kompleksowy Przewodnik Wdrożenia - Threat Hunting Automation Lab
+# Comprehensive Deployment Guide - Threat Hunting Automation Lab
 
-**Wersja**: 1.0  
-**Data**: 2025-01-12  
-**Dla**: Użytkowników nietechnicznych
+**Version**: 1.0  
+**Date**: 2025-01-12  
+**For**: Non-technical users
 
-> **Uwaga:** Ten przewodnik został napisany z myślą o osobach, które nie mają doświadczenia technicznego. Jeśli jesteś doświadczonym administratorem systemów, możesz przejść do [Quick Start Guide](QUICK_START.md) dla szybszej instalacji.
-
----
-
-## Spis Treści
-
-1. [Wprowadzenie](#wprowadzenie)
-2. [Co to jest ten system?](#co-to-jest-ten-system)
-3. [Czego potrzebujesz?](#czego-potrzebujesz)
-4. [Przygotowanie środowiska](#przygotowanie-środowiska)
-5. [Instalacja krok po kroku](#instalacja-krok-po-kroku)
-6. [Konfiguracja systemu](#konfiguracja-systemu)
-7. [Weryfikacja instalacji](#weryfikacja-instalacji)
-8. [Dostępne narzędzia i ich użycie](#dostępne-narzędzia-i-ich-użycie)
-9. [Rozwiązywanie problemów](#rozwiązywanie-problemów)
-10. [Następne kroki](#następne-kroki)
+> **Note:** This guide was written specifically for people without technical experience. If you're an experienced system administrator, you can jump to the [Quick Start Guide](QUICK_START.md) for faster installation.
 
 ---
 
-## Wprowadzenie
+## Table of Contents
 
-Ten przewodnik został stworzony specjalnie dla osób, które nie mają doświadczenia technicznego. Każdy krok jest opisany szczegółowo, krok po kroku, tak abyś mógł samodzielnie wdrożyć i używać systemu Threat Hunting Automation Lab.
-
-**Nie martw się** - nawet jeśli nie wiesz, co to jest "SSH" lub "PostgreSQL", ten przewodnik poprowadzi Cię przez cały proces.
-
----
-
-## Co to jest ten system?
-
-**Threat Hunting Automation Lab** to system, który pomaga zespołom bezpieczeństwa w automatycznym wyszukiwaniu zagrożeń w infrastrukturze IT. System składa się z 4 maszyn wirtualnych (VM), które współpracują ze sobą:
-
-1. **VM-01 (Ingest/Parser)** - Zbiera i przetwarza dane z różnych źródeł
-2. **VM-02 (Database)** - Przechowuje dane w bazie danych
-3. **VM-03 (Analysis/Jupyter)** - Umożliwia analizę danych i tworzenie raportów
-4. **VM-04 (Orchestrator)** - Centralne zarządzanie całym systemem
-
-**Prosty przykład użycia:**
-Wyobraź sobie, że chcesz sprawdzić, czy w Twojej sieci nie ma podejrzanych działań. Zamiast ręcznie przeglądać tysiące logów, system:
-- Automatycznie zbiera logi z różnych systemów (firewall, serwery, stacje robocze)
-- Analizuje je pod kątem znanych wzorców zagrożeń (np. próby włamania, malware)
-- Generuje czytelne raporty z wynikami
-- Wszystko zarządzane z jednego miejsca (dashboard w przeglądarce)
+1. [Introduction](#introduction)
+2. [What is this system?](#what-is-this-system)
+3. [What do you need?](#what-do-you-need)
+4. [Environment preparation](#environment-preparation)
+5. [Step-by-step installation](#step-by-step-installation)
+6. [System configuration](#system-configuration)
+7. [Installation verification](#installation-verification)
+8. [Available tools and their usage](#available-tools-and-their-usage)
+9. [Troubleshooting](#troubleshooting)
+10. [Next steps](#next-steps)
 
 ---
 
-## Czego potrzebujesz?
+## Introduction
 
-### Wymagania sprzętowe
+This guide was created specifically for people who don't have technical experience. Every step is described in detail, step by step, so you can deploy and use the Threat Hunting Automation Lab system on your own.
 
-Musisz mieć dostęp do **4 maszyn wirtualnych (VM)** z następującymi specyfikacjami:
+**Don't worry** - even if you don't know what "SSH" or "PostgreSQL" is, this guide will walk you through the entire process.
 
-| VM | Procesor | Pamięć RAM | Dysk | Opis |
+---
+
+## What is this system?
+
+**Threat Hunting Automation Lab** is a system that helps security teams automatically search for threats in IT infrastructure. The system consists of 4 virtual machines (VMs) that work together:
+
+1. **VM-01 (Ingest/Parser)** - Collects and processes data from various sources
+2. **VM-02 (Database)** - Stores data in a database
+3. **VM-03 (Analysis/Jupyter)** - Enables data analysis and report creation
+4. **VM-04 (Orchestrator)** - Central management of the entire system
+
+**Simple usage example:**
+Imagine you want to check if there are any suspicious activities in your network. Instead of manually reviewing thousands of logs, the system:
+- Automatically collects logs from various systems (firewall, servers, workstations)
+- Analyzes them for known threat patterns (e.g., intrusion attempts, malware)
+- Generates readable reports with results
+- Everything managed from one place (dashboard in browser)
+
+---
+
+## What do you need?
+
+### Hardware requirements
+
+You need access to **4 virtual machines (VMs)** with the following specifications:
+
+| VM | Processor | RAM | Disk | Description |
 |---|---|---|---|---|
-| VM-01 | 2 rdzenie | 4 GB | 20 GB | Zbieranie danych |
-| VM-02 | 2 rdzenie | 4 GB | 50 GB | Baza danych (więcej miejsca na dane) |
-| VM-03 | 4 rdzenie | 8 GB | 30 GB | Analiza (więcej mocy obliczeniowej) |
-| VM-04 | 2 rdzenie | 4 GB | 20 GB | Zarządzanie |
+| VM-01 | 2 cores | 4 GB | 20 GB | Data collection |
+| VM-02 | 2 cores | 4 GB | 50 GB | Database (more space for data) |
+| VM-03 | 4 cores | 8 GB | 30 GB | Analysis (more computing power) |
+| VM-04 | 2 cores | 4 GB | 20 GB | Management |
 
-**Uwaga:** Jeśli nie masz dostępu do maszyn wirtualnych, możesz je utworzyć w chmurze (np. AWS, Azure, Google Cloud) lub na własnym serwerze. Większość dostawców chmury oferuje darmowe okresy próbne, więc możesz przetestować system bez kosztów.
+**Note:** If you don't have access to virtual machines, you can create them in the cloud (e.g., AWS, Azure, Google Cloud) or on your own server. Most cloud providers offer free trial periods, so you can test the system without costs.
 
-### Wymagania oprogramowania
+### Software requirements
 
-Każda maszyna wirtualna musi mieć zainstalowane:
+Each virtual machine must have installed:
 
-- **Ubuntu Server 22.04 LTS** (lub nowsza wersja)
-- **Dostęp do internetu** (do pobierania oprogramowania)
-- **Dostęp przez SSH** (do zdalnego zarządzania)
+- **Ubuntu Server 22.04 LTS** (or newer version)
+- **Internet access** (for downloading software)
+- **SSH access** (for remote management)
 
-### Wymagania sieciowe
+### Network requirements
 
-- Wszystkie 4 VM muszą być w tej samej sieci (mogą się komunikować)
-- Musisz znać adresy IP każdej maszyny
-- Porty, które muszą być otwarte:
-  - **22** - SSH (dostęp zdalny)
-  - **5432** - PostgreSQL (baza danych)
-  - **8888** - JupyterLab (analiza)
-  - **5678** - n8n (zarządzanie)
+- All 4 VMs must be on the same network (can communicate with each other)
+- You need to know the IP address of each machine
+- Ports that must be open:
+  - **22** - SSH (remote access)
+  - **5432** - PostgreSQL (database)
+  - **8888** - JupyterLab (analysis)
+  - **5678** - n8n (management)
 
-### Wymagania dostępu
+### Access requirements
 
-- **Konto użytkownika** na każdej maszynie z uprawnieniami administratora (sudo)
-- **Hasła** lub **klucze SSH** do logowania na maszyny
-- **Podstawowa znajomość** terminala/linii poleceń (ale nie martw się - wszystko jest opisane)
+- **User account** on each machine with administrator privileges (sudo)
+- **Passwords** or **SSH keys** to log into machines
+- **Basic knowledge** of terminal/command line (but don't worry - everything is described)
 
 ---
 
-## Przygotowanie środowiska
+## Environment preparation
 
-### Krok 1: Sprawdź dostęp do maszyn wirtualnych
+### Step 1: Check access to virtual machines
 
-Zanim zaczniesz, upewnij się, że:
+Before you start, make sure that:
 
-1. **Masz dostęp do wszystkich 4 maszyn wirtualnych**
-   - Możesz się na nie zalogować przez SSH
-   - Masz uprawnienia administratora (sudo)
+1. **You have access to all 4 virtual machines**
+   - You can log into them via SSH
+   - You have administrator privileges (sudo)
 
-2. **Znasz adresy IP każdej maszyny**
-   - Zapisz je w bezpiecznym miejscu
-   - Będziesz ich potrzebował podczas konfiguracji
+2. **You know the IP addresses of each machine**
+   - Write them down in a safe place
+   - You'll need them during configuration
 
-3. **Masz dostęp do internetu** z każdej maszyny
-   - System będzie pobierał oprogramowanie z internetu
+3. **You have internet access** from each machine
+   - The system will download software from the internet
 
-### Krok 2: Przygotuj notatnik
+### Step 2: Prepare a notebook
 
-Zapisz następujące informacje (będziesz ich potrzebował):
+Write down the following information (you'll need it):
 
 ```
 VM-01 IP: ________________
@@ -117,814 +117,814 @@ VM-02 IP: ________________
 VM-03 IP: ________________
 VM-04 IP: ________________
 
-Hasło do bazy danych: ________________
-Hasło do n8n: ________________
-Hasło do JupyterLab: ________________
+Database password: ________________
+n8n password: ________________
+JupyterLab password: ________________
 ```
 
-**Ważne:** Użyj silnych haseł! Nie używaj prostych haseł jak "123456" lub "password".
+**Important:** Use strong passwords! Don't use simple passwords like "123456" or "password".
 
-### Krok 3: Sprawdź połączenie sieciowe
+### Step 3: Check network connectivity
 
-Z każdej maszyny sprawdź, czy możesz połączyć się z innymi:
+From each machine, check if you can connect to others:
 
 ```bash
-# Na VM-01, sprawdź połączenie z VM-02
+# On VM-01, check connection to VM-02
 ping <VM-02_IP>
 
-# Powinieneś zobaczyć odpowiedzi (pings)
-# Jeśli nie widzisz odpowiedzi, sprawdź ustawienia sieci
+# You should see responses (pings)
+# If you don't see responses, check network settings
 ```
 
-**Jak to zrobić:**
-1. Zaloguj się na VM-01 przez SSH
-2. Wpisz: `ping <adres_IP_VM-02>`
-3. Naciśnij Enter
-4. Jeśli widzisz "64 bytes from..." - połączenie działa
-5. Naciśnij Ctrl+C, aby zatrzymać
+**How to do it:**
+1. Log into VM-01 via SSH
+2. Type: `ping <VM-02_IP_address>`
+3. Press Enter
+4. If you see "64 bytes from..." - connection works
+5. Press Ctrl+C to stop
 
-Powtórz to dla wszystkich kombinacji maszyn.
+Repeat this for all machine combinations.
 
 ---
 
-## Instalacja krok po kroku
+## Step-by-step installation
 
-### Etap 1: Pobranie i przygotowanie kodu
+### Stage 1: Download and prepare code
 
-#### Krok 1.1: Zaloguj się na VM-04
+#### Step 1.1: Log into VM-04
 
-VM-04 będzie maszyną zarządzającą, więc zaczynamy od niej.
+VM-04 will be the management machine, so we start with it.
 
 ```bash
-# Zaloguj się przez SSH (zastąp <VM-04_IP> rzeczywistym adresem IP)
-ssh twoja_nazwa_uzytkownika@<VM-04_IP>
+# Log in via SSH (replace <VM-04_IP> with actual IP address)
+ssh your_username@<VM-04_IP>
 ```
 
-**Jeśli nie wiesz, jak się zalogować przez SSH:**
-- W systemie Windows możesz użyć programu **PuTTY** lub **Windows Terminal**
-- W systemie Linux/Mac użyj terminala i komendy `ssh`
-- Potrzebujesz nazwy użytkownika i hasła (lub klucza SSH)
+**If you don't know how to log in via SSH:**
+- On Windows you can use **PuTTY** or **Windows Terminal**
+- On Linux/Mac use terminal and `ssh` command
+- You need username and password (or SSH key)
 
-#### Krok 1.2: Pobierz kod projektu
+#### Step 1.2: Download project code
 
-Po zalogowaniu na VM-04, wykonaj:
+After logging into VM-04, execute:
 
 ```bash
-# Przejdź do katalogu domowego
+# Go to home directory
 cd ~
 
-# Pobierz projekt (zastąp <repository-url> rzeczywistym adresem repozytorium)
+# Download project (replace <repository-url> with actual repository address)
 git clone <repository-url> th_timmy
 
-# Przejdź do katalogu projektu
+# Go to project directory
 cd th_timmy
 ```
 
-**Jeśli nie masz dostępu do repozytorium Git:**
-- Możesz pobrać projekt jako plik ZIP
-- Rozpakuj go w katalogu domowym
-- Zmień nazwę katalogu na `th_timmy`
+**If you don't have access to Git repository:**
+- You can download project as ZIP file
+- Extract it in home directory
+- Rename directory to `th_timmy`
 
-#### Krok 1.3: Skopiuj projekt na pozostałe maszyny
+#### Step 1.3: Copy project to remaining machines
 
-Musisz mieć ten sam kod na wszystkich maszynach. Najprostszy sposób:
+You need the same code on all machines. Simplest way:
 
 ```bash
-# Z VM-04, skopiuj projekt na pozostałe maszyny
-# (zastąp <VM-01_IP>, <VM-02_IP>, <VM-03_IP> rzeczywistymi adresami)
+# From VM-04, copy project to remaining machines
+# (replace <VM-01_IP>, <VM-02_IP>, <VM-03_IP> with actual addresses)
 
-# Skopiuj na VM-01
-scp -r ~/th_timmy twoja_nazwa_uzytkownika@<VM-01_IP>:~/
+# Copy to VM-01
+scp -r ~/th_timmy your_username@<VM-01_IP>:~/
 
-# Skopiuj na VM-02
-scp -r ~/th_timmy twoja_nazwa_uzytkownika@<VM-02_IP>:~/
+# Copy to VM-02
+scp -r ~/th_timmy your_username@<VM-02_IP>:~/
 
-# Skopiuj na VM-03
-scp -r ~/th_timmy twoja_nazwa_uzytkownika@<VM-03_IP>:~/
+# Copy to VM-03
+scp -r ~/th_timmy your_username@<VM-03_IP>:~/
 ```
 
-**Alternatywnie:** Możesz pobrać projekt osobno na każdej maszynie (powtórz Krok 1.2 na każdej maszynie).
+**Alternatively:** You can download project separately on each machine (repeat Step 1.2 on each machine).
 
-### Etap 2: Konfiguracja systemu
+### Stage 2: System configuration
 
-#### Krok 2.1: Utwórz plik konfiguracyjny
+#### Step 2.1: Create configuration file
 
-Na VM-04 (lub na maszynie, z której zarządzasz):
+On VM-04 (or on machine from which you manage):
 
 ```bash
-# Przejdź do katalogu projektu
+# Go to project directory
 cd ~/th_timmy
 
-# Skopiuj przykładowy plik konfiguracyjny
+# Copy example configuration file
 cp configs/config.example.yml configs/config.yml
 ```
 
-#### Krok 2.2: Edytuj plik konfiguracyjny
+#### Step 2.2: Edit configuration file
 
-Otwórz plik `configs/config.yml` w edytorze tekstu:
+Open file `configs/config.yml` in text editor:
 
 ```bash
-# Użyj nano (prosty edytor tekstu)
+# Use nano (simple text editor)
 nano configs/config.yml
 ```
 
-**Jak używać nano:**
-- Aby edytować tekst, po prostu zacznij pisać
-- Aby zapisać: Ctrl+O, potem Enter
-- Aby wyjść: Ctrl+X
+**How to use nano:**
+- To edit text, just start typing
+- To save: Ctrl+O, then Enter
+- To exit: Ctrl+X
 
-**Co musisz zmienić w pliku:**
+**What you need to change in file:**
 
-Znajdź sekcję `vms:` i zmień adresy IP:
+Find `vms:` section and change IP addresses:
 
 ```yaml
 vms:
   vm01:
-    ip: "10.0.0.10"  # ZMIEŃ na rzeczywisty adres IP VM-01
+    ip: "10.0.0.10"  # CHANGE to actual VM-01 IP address
   vm02:
-    ip: "10.0.0.11"  # ZMIEŃ na rzeczywisty adres IP VM-02
+    ip: "10.0.0.11"  # CHANGE to actual VM-02 IP address
   vm03:
-    ip: "10.0.0.12"  # ZMIEŃ na rzeczywisty adres IP VM-03
+    ip: "10.0.0.12"  # CHANGE to actual VM-03 IP address
   vm04:
-    ip: "10.0.0.13"  # ZMIEŃ na rzeczywisty adres IP VM-04
+    ip: "10.0.0.13"  # CHANGE to actual VM-04 IP address
 ```
 
-Znajdź sekcję `network:` i zmień ustawienia sieci:
+Find `network:` section and change network settings:
 
 ```yaml
 network:
-  subnet: "10.0.0.0/24"  # ZMIEŃ na Twoją sieć (np. "192.168.1.0/24")
-  gateway: "10.0.0.1"     # ZMIEŃ na bramę sieciową
+  subnet: "10.0.0.0/24"  # CHANGE to your network (e.g., "192.168.1.0/24")
+  gateway: "10.0.0.1"     # CHANGE to network gateway
 ```
 
-**Jak znaleźć informacje o sieci (krok po kroku):**
+**How to find network information (step by step):**
 
-1. Zaloguj się na dowolną maszynę przez SSH
-2. W terminalu wpisz: `ip addr show`
-3. Zobaczysz coś takiego:
+1. Log into any machine via SSH
+2. In terminal type: `ip addr show`
+3. You'll see something like:
    ```
    inet 192.168.1.10/24
    ```
-   - Adres IP to: `192.168.1.10`
-   - Subnet to: `192.168.1.0/24` (pierwsze 3 liczby + ".0/24")
-4. Aby znaleźć gateway (bramę sieciową), wpisz: `ip route show`
-5. Zobaczysz coś takiego:
+   - IP address is: `192.168.1.10`
+   - Subnet is: `192.168.1.0/24` (first 3 numbers + ".0/24")
+4. To find gateway (network gateway), type: `ip route show`
+5. You'll see something like:
    ```
    default via 192.168.1.1
    ```
-   - Gateway to: `192.168.1.1` (często kończy się na .1)
+   - Gateway is: `192.168.1.1` (often ends with .1)
 
-Zapisz plik (Ctrl+O, Enter) i zamknij (Ctrl+X).
+Save file (Ctrl+O, Enter) and close (Ctrl+X).
 
-### Etap 3: Instalacja na każdej maszynie
+### Stage 3: Installation on each machine
 
-**WAŻNE:** Instaluj maszyny w tej kolejności:
-1. Najpierw VM-02 (baza danych) - inne maszyny zależą od niej
-2. Potem VM-01 (zbieranie danych)
-3. Potem VM-03 (analiza)
-4. Na końcu VM-04 (zarządzanie)
+**IMPORTANT:** Install machines in this order:
+1. First VM-02 (database) - other machines depend on it
+2. Then VM-01 (data collection)
+3. Then VM-03 (analysis)
+4. Finally VM-04 (management)
 
-#### Instalacja VM-02 (Baza danych)
+#### VM-02 Installation (Database)
 
-**Krok 3.1: Zaloguj się na VM-02**
+**Step 3.1: Log into VM-02**
 
 ```bash
-ssh twoja_nazwa_uzytkownika@<VM-02_IP>
+ssh your_username@<VM-02_IP>
 ```
 
-**Krok 3.2: Przejdź do katalogu projektu**
+**Step 3.2: Go to project directory**
 
 ```bash
 cd ~/th_timmy/hosts/vm02-database
 ```
 
-**Krok 3.3: Utwórz plik konfiguracyjny dla bazy danych**
+**Step 3.3: Create database configuration file**
 
 ```bash
-# Skopiuj przykładowy plik
+# Copy example file
 cp config.example.yml config.yml
 
-# Otwórz w edytorze
+# Open in editor
 nano config.yml
 ```
 
-**Co musisz ustawić:**
+**What you need to set:**
 
-1. **`database_password`** - Silne hasło do bazy danych (zapisz je!)
+1. **`database_password`** - Strong password for database (write it down!)
    ```yaml
-   database_password: "TwojeSilneHaslo123!"
+   database_password: "YourStrongPassword123!"
    ```
 
-2. **`allowed_ips`** - Adresy IP maszyn, które mogą łączyć się z bazą danych
+2. **`allowed_ips`** - IP addresses of machines that can connect to database
    ```yaml
    allowed_ips:
      - "10.0.0.10"  # VM-01 IP
      - "10.0.0.12"  # VM-03 IP
    ```
 
-Zapisz plik (Ctrl+O, Enter) i zamknij (Ctrl+X).
+Save file (Ctrl+O, Enter) and close (Ctrl+X).
 
-**Krok 3.4: Uruchom instalację**
+**Step 3.4: Run installation**
 
 ```bash
-# Uruchom skrypt instalacyjny (potrzebujesz uprawnień administratora)
+# Run installation script (you need administrator privileges)
 sudo ./install_vm02.sh
 ```
 
-**Co się dzieje podczas instalacji:**
-- Instaluje PostgreSQL (baza danych)
-- Tworzy bazę danych i użytkownika
-- Konfiguruje dostęp sieciowy
-- Instaluje narzędzia pomocnicze
+**What happens during installation:**
+- Installs PostgreSQL (database)
+- Creates database and user
+- Configures network access
+- Installs helper tools
 
-**To może zająć 10-15 minut.** Nie zamykaj terminala podczas instalacji! Poczekaj, aż zobaczysz komunikat "Installation completed successfully" lub podobny.
+**This may take 10-15 minutes.** Don't close terminal during installation! Wait until you see message "Installation completed successfully" or similar.
 
-**Krok 3.5: Sprawdź, czy instalacja się powiodła**
+**Step 3.5: Check if installation succeeded**
 
 ```bash
-# Uruchom skrypt weryfikacyjny
+# Run verification script
 ./health_check.sh
 ```
 
-**Co powinieneś zobaczyć:**
-- ✅ Wszystkie testy powinny być oznaczone jako "PASS" lub "OK"
-- Jeśli widzisz błędy, zapisz je i przejdź do sekcji "Rozwiązywanie problemów"
+**What you should see:**
+- ✅ All tests should be marked as "PASS" or "OK"
+- If you see errors, write them down and go to "Troubleshooting" section
 
-#### Instalacja VM-01 (Zbieranie danych)
+#### VM-01 Installation (Data collection)
 
-**Krok 3.6: Zaloguj się na VM-01**
+**Step 3.6: Log into VM-01**
 
 ```bash
-ssh twoja_nazwa_uzytkownika@<VM-01_IP>
+ssh your_username@<VM-01_IP>
 ```
 
-**Krok 3.7: Przejdź do katalogu projektu**
+**Step 3.7: Go to project directory**
 
 ```bash
 cd ~/th_timmy/hosts/vm01-ingest
 ```
 
-**Krok 3.8: Uruchom instalację**
+**Step 3.8: Run installation**
 
 ```bash
 sudo ./install_vm01.sh
 ```
 
-**Co się dzieje podczas instalacji:**
-- Instaluje Python i narzędzia programistyczne
-- Instaluje biblioteki do przetwarzania danych
-- Konfiguruje środowisko wirtualne
+**What happens during installation:**
+- Installs Python and development tools
+- Installs data processing libraries
+- Configures virtual environment
 
-**Krok 3.9: Sprawdź instalację**
+**Step 3.9: Check installation**
 
 ```bash
 ./health_check.sh
 ```
 
-#### Instalacja VM-03 (Analiza)
+#### VM-03 Installation (Analysis)
 
-**Krok 3.10: Zaloguj się na VM-03**
+**Step 3.10: Log into VM-03**
 
 ```bash
-ssh twoja_nazwa_uzytkownika@<VM-03_IP>
+ssh your_username@<VM-03_IP>
 ```
 
-**Krok 3.11: Przejdź do katalogu projektu**
+**Step 3.11: Go to project directory**
 
 ```bash
 cd ~/th_timmy/hosts/vm03-analysis
 ```
 
-**Krok 3.12: (Opcjonalnie) Utwórz plik konfiguracyjny dla JupyterLab**
+**Step 3.12: (Optional) Create JupyterLab configuration file**
 
 ```bash
-# Skopiuj przykładowy plik
+# Copy example file
 cp config.example.yml config.yml
 
-# Otwórz w edytorze
+# Open in editor
 nano config.yml
 ```
 
-**Co możesz ustawić:**
-- `jupyter_ip` - Adres IP, na którym JupyterLab będzie dostępny (zostaw "0.0.0.0" dla wszystkich interfejsów)
-- `jupyter_port` - Port (domyślnie 8888)
-- `jupyter_token` - Token dostępu (zostaw puste, aby wygenerować automatycznie)
-- `jupyter_password` - Hasło (opcjonalnie)
+**What you can set:**
+- `jupyter_ip` - IP address where JupyterLab will be available (leave "0.0.0.0" for all interfaces)
+- `jupyter_port` - Port (default 8888)
+- `jupyter_token` - Access token (leave empty to generate automatically)
+- `jupyter_password` - Password (optional)
 
-Zapisz plik (Ctrl+O, Enter) i zamknij (Ctrl+X).
+Save file (Ctrl+O, Enter) and close (Ctrl+X).
 
-**Krok 3.13: Uruchom instalację**
+**Step 3.13: Run installation**
 
 ```bash
 sudo ./install_vm03.sh
 ```
 
-**Co się dzieje podczas instalacji:**
-- Instaluje Python i JupyterLab
-- Instaluje biblioteki do analizy danych i uczenia maszynowego
-- Konfiguruje JupyterLab
+**What happens during installation:**
+- Installs Python and JupyterLab
+- Installs data analysis and machine learning libraries
+- Configures JupyterLab
 
-**Krok 3.14: Sprawdź instalację**
+**Step 3.14: Check installation**
 
 ```bash
 ./health_check.sh
 ```
 
-**Krok 3.15: Uruchom JupyterLab**
+**Step 3.15: Start JupyterLab**
 
 ```bash
-# Aktywuj środowisko wirtualne
+# Activate virtual environment
 source ~/th_timmy/venv/bin/activate
 
-# Uruchom JupyterLab
+# Start JupyterLab
 jupyter lab --ip=0.0.0.0 --port=8888
 ```
 
-**Zapisz token, który się pojawi!** Będziesz go potrzebował do logowania. Token wygląda mniej więcej tak: `abc123def456ghi789...` - skopiuj cały token i zapisz w bezpiecznym miejscu (np. w notatniku).
+**Save the token that appears!** You'll need it for logging in. Token looks something like: `abc123def456ghi789...` - copy entire token and save in safe place (e.g., in notebook).
 
-**Przykład wyjścia:**
+**Example output:**
 ```
 [I 2025-01-12 10:00:00.000 LabApp] http://VM-03_IP:8888/lab?token=abc123def456...
 ```
 
-**Aby zatrzymać JupyterLab:** Naciśnij Ctrl+C w terminalu.
+**To stop JupyterLab:** Press Ctrl+C in terminal.
 
-#### Instalacja VM-04 (Zarządzanie)
+#### VM-04 Installation (Management)
 
-**Krok 3.16: Zaloguj się na VM-04**
+**Step 3.16: Log into VM-04**
 
 ```bash
-ssh twoja_nazwa_uzytkownika@<VM-04_IP>
+ssh your_username@<VM-04_IP>
 ```
 
-**Krok 3.17: Przejdź do katalogu projektu**
+**Step 3.17: Go to project directory**
 
 ```bash
 cd ~/th_timmy/hosts/vm04-orchestrator
 ```
 
-**Krok 3.18: Utwórz plik konfiguracyjny dla n8n**
+**Step 3.18: Create n8n configuration file**
 
 ```bash
-# Skopiuj przykładowy plik
+# Copy example file
 cp config.example.yml config.yml
 
-# Otwórz w edytorze
+# Open in editor
 nano config.yml
 ```
 
-**Co musisz ustawić:**
+**What you need to set:**
 
-1. **`basic_auth_user`** - Nazwa użytkownika do logowania w n8n
+1. **`basic_auth_user`** - Username for logging into n8n
    ```yaml
    basic_auth_user: "admin"
    ```
 
-2. **`basic_auth_password`** - Hasło do logowania w n8n (zapisz je!)
+2. **`basic_auth_password`** - Password for logging into n8n (write it down!)
    ```yaml
-   basic_auth_password: "TwojeSilneHaslo123!"
+   basic_auth_password: "YourStrongPassword123!"
    ```
 
-Zapisz plik (Ctrl+O, Enter) i zamknij (Ctrl+X).
+Save file (Ctrl+O, Enter) and close (Ctrl+X).
 
-**Krok 3.19: Uruchom instalację**
+**Step 3.19: Run installation**
 
 ```bash
 sudo ./install_vm04.sh
 ```
 
-**Co się dzieje podczas instalacji:**
-- Instaluje Docker
-- Pobiera i uruchamia n8n w kontenerze Docker
-- Konfiguruje dostęp sieciowy
+**What happens during installation:**
+- Installs Docker
+- Downloads and runs n8n in Docker container
+- Configures network access
 
-**Krok 3.20: Sprawdź instalację**
+**Step 3.20: Check installation**
 
 ```bash
 ./health_check.sh
 ```
 
-**Krok 3.21: Sprawdź, czy n8n działa**
+**Step 3.21: Check if n8n is running**
 
 ```bash
-# Sprawdź status kontenera Docker
+# Check Docker container status
 docker ps
 
-# Powinieneś zobaczyć kontener "n8n" w stanie "Up"
+# You should see "n8n" container in "Up" state
 ```
 
-**Krok 3.22: Otwórz n8n w przeglądarce**
+**Step 3.22: Open n8n in browser**
 
-Otwórz przeglądarkę i przejdź do:
+Open browser and go to:
 ```
 http://<VM-04_IP>:5678
 ```
 
-Zaloguj się używając:
-- **Nazwa użytkownika:** Ta, którą ustawiłeś w `config.yml`
-- **Hasło:** To, które ustawiłeś w `config.yml`
+Log in using:
+- **Username:** The one you set in `config.yml`
+- **Password:** The one you set in `config.yml`
 
 ---
 
-## Konfiguracja systemu
+## System configuration
 
-### Konfiguracja n8n workflows
+### n8n workflows configuration
 
-Po zalogowaniu się do n8n, musisz zaimportować gotowe workflows (przepływy pracy).
+After logging into n8n, you need to import ready workflows.
 
-#### Krok 4.1: Importuj Management Dashboard
+#### Step 4.1: Import Management Dashboard
 
-1. W n8n, kliknij **"Workflows"** w menu po lewej stronie
-2. Kliknij **"Import from File"** (lub ikonę importu)
-3. Przejdź do katalogu: `~/th_timmy/hosts/vm04-orchestrator/n8n-workflows/`
-4. Wybierz plik: `management-dashboard.json`
-5. Kliknij **"Import"**
+1. In n8n, click **"Workflows"** in left menu
+2. Click **"Import from File"** (or import icon)
+3. Go to directory: `~/th_timmy/hosts/vm04-orchestrator/n8n-workflows/`
+4. Select file: `management-dashboard.json`
+5. Click **"Import"**
 
-**Powtórz to dla pozostałych workflows:**
-- `testing-management.json` - Zarządzanie testami
-- `deployment-management.json` - Zarządzanie wdrożeniami
-- `hardening-management.json` - Zarządzanie zabezpieczeniami
-- `playbook-manager.json` - Zarządzanie playbookami
-- `hunt-selection-form.json` - Formularz wyboru huntów
+**Repeat this for remaining workflows:**
+- `testing-management.json` - Test management
+- `deployment-management.json` - Deployment management
+- `hardening-management.json` - Security management
+- `playbook-manager.json` - Playbook management
+- `hunt-selection-form.json` - Hunt selection form
 
-#### Krok 4.2: Aktywuj workflows
+#### Step 4.2: Activate workflows
 
-1. Po zaimportowaniu, każdy workflow będzie widoczny na liście
-2. Kliknij na workflow, aby go otworzyć
-3. Kliknij przycisk **"Active"** (w prawym górnym rogu), aby go aktywować
-4. Workflow jest teraz aktywny i będzie działał automatycznie
+1. After importing, each workflow will be visible on list
+2. Click on workflow to open it
+3. Click **"Active"** button (in top right corner) to activate it
+4. Workflow is now active and will run automatically
 
 ---
 
-## Weryfikacja instalacji
+## Installation verification
 
-### Test połączeń
+### Connection tests
 
-Na dowolnej maszynie (najlepiej VM-04), uruchom testy połączeń:
+On any machine (preferably VM-04), run connection tests:
 
 ```bash
 cd ~/th_timmy
 ./hosts/shared/test_connections.sh
 ```
 
-**Co powinieneś zobaczyć:**
-- ✅ Wszystkie testy ping powinny być "PASS"
-- ✅ Testy portów powinny być "PASS"
-- ⚠️ Testy SSH mogą pokazać "WARN" (to normalne, jeśli nie masz skonfigurowanych kluczy SSH)
+**What you should see:**
+- ✅ All ping tests should be "PASS"
+- ✅ Port tests should be "PASS"
+- ⚠️ SSH tests may show "WARN" (this is normal if you don't have SSH keys configured)
 
-### Test przepływu danych
+### Data flow test
 
 ```bash
-# Ustaw hasło do bazy danych jako zmienną środowiskową
-export POSTGRES_PASSWORD="TwojeHasloDoBazyDanych"
+# Set database password as environment variable
+export POSTGRES_PASSWORD="YourDatabasePassword"
 
-# Uruchom test przepływu danych
+# Run data flow test
 ./hosts/shared/test_data_flow.sh
 ```
 
-**Co powinieneś zobaczyć:**
-- ✅ Testy zapisu do bazy danych powinny być "PASS"
-- ✅ Testy odczytu z bazy danych powinny być "PASS"
-- ✅ Testy n8n powinny być "PASS"
+**What you should see:**
+- ✅ Database write tests should be "PASS"
+- ✅ Database read tests should be "PASS"
+- ✅ n8n tests should be "PASS"
 
 ---
 
-## Dostępne narzędzia i ich użycie
+## Available tools and their usage
 
-System zawiera wiele narzędzi do zarządzania i monitorowania. Poniżej znajdziesz szczegółowy opis każdego narzędzia.
+The system contains many tools for management and monitoring. Below you'll find detailed description of each tool.
 
 ### 1. Management Dashboard (n8n)
 
-**Co to jest:** Główny panel zarządzania systemem, dostępny przez przeglądarkę.
+**What it is:** Main system management panel, available through browser.
 
-**Gdzie jest:** http://<VM-04_IP>:5678
+**Where it is:** http://<VM-04_IP>:5678
 
-**Do czego służy:**
-- Monitorowanie statusu wszystkich maszyn
-- Wyświetlanie metryk systemowych (CPU, RAM, dysk)
-- Zarządzanie konfiguracją
-- Synchronizacja repozytorium
-- Szybkie akcje (health checks, testy)
+**What it's for:**
+- Monitoring status of all machines
+- Displaying system metrics (CPU, RAM, disk)
+- Configuration management
+- Repository synchronization
+- Quick actions (health checks, tests)
 
-**Jak używać:**
+**How to use:**
 
-1. **Zaloguj się do n8n:**
-   - Otwórz przeglądarkę
-   - Przejdź do: `http://<VM-04_IP>:5678`
-   - Zaloguj się używając nazwy użytkownika i hasła z `config.yml`
+1. **Log into n8n:**
+   - Open browser
+   - Go to: `http://<VM-04_IP>:5678`
+   - Log in using username and password from `config.yml`
 
-2. **Otwórz Management Dashboard:**
-   - W n8n, znajdź workflow "Management Dashboard"
-   - Kliknij na niego, aby otworzyć
-   - Kliknij przycisk "Active", aby go aktywować (jeśli nie jest aktywny)
+2. **Open Management Dashboard:**
+   - In n8n, find workflow "Management Dashboard"
+   - Click on it to open
+   - Click "Active" button to activate it (if not active)
 
-3. **Dostęp do dashboardu:**
-   - Dashboard jest dostępny przez webhook
-   - W workflow znajdź węzeł "Dashboard UI"
-   - Kliknij na niego i skopiuj URL webhooka
-   - Otwórz ten URL w przeglądarce
+3. **Access dashboard:**
+   - Dashboard is available through webhook
+   - In workflow find node "Dashboard UI"
+   - Click on it and copy webhook URL
+   - Open this URL in browser
 
-4. **Używanie dashboardu:**
-   - **System Overview:** Widzisz status wszystkich 4 maszyn
-     - 🟢 Zielony = maszyna działa prawidłowo
-     - 🟡 Żółty = maszyna ma problemy, ale działa
-     - 🔴 Czerwony = maszyna nie działa
-   - **Metryki:** Widzisz użycie CPU, RAM i dysku dla każdej maszyny
-   - **Synchronizacja repozytorium:** Kliknij przycisk "Sync Repository", aby zsynchronizować kod na wszystkich maszynach
-   - **Health Checks:** Kliknij przycisk "Refresh Status", aby sprawdzić status wszystkich maszyn
+4. **Using dashboard:**
+   - **System Overview:** You see status of all 4 machines
+     - 🟢 Green = machine works correctly
+     - 🟡 Yellow = machine has problems but works
+     - 🔴 Red = machine doesn't work
+   - **Metrics:** You see CPU, RAM and disk usage for each machine
+   - **Repository synchronization:** Click "Sync Repository" button to synchronize code on all machines
+   - **Health Checks:** Click "Refresh Status" button to check status of all machines
 
-**Przykładowe użycie:**
+**Example usage:**
 
 ```
-1. Otwórz dashboard w przeglądarce
-2. Sprawdź status maszyn - wszystkie powinny być zielone
-3. Jeśli któraś maszyna jest żółta lub czerwona:
-   - Kliknij na nią, aby zobaczyć szczegóły
-   - Sprawdź metryki - może być problem z pamięcią lub dyskiem
-   - Kliknij "Run Health Check", aby uruchomić szczegółowe sprawdzenie
+1. Open dashboard in browser
+2. Check machine status - all should be green
+3. If any machine is yellow or red:
+   - Click on it to see details
+   - Check metrics - there may be problem with memory or disk
+   - Click "Run Health Check" to run detailed check
 ```
 
 ### 2. Testing Management Interface
 
-**Co to jest:** Interfejs do zarządzania testami systemu.
+**What it is:** Interface for managing system tests.
 
-**Gdzie jest:** W n8n, workflow "Testing Management"
+**Where it is:** In n8n, workflow "Testing Management"
 
-**Do czego służy:**
-- Uruchamianie testów połączeń między maszynami
-- Testowanie przepływu danych
-- Sprawdzanie zdrowia maszyn
-- Przeglądanie wyników testów
+**What it's for:**
+- Running connection tests between machines
+- Testing data flow
+- Checking machine health
+- Reviewing test results
 
-**Jak używać:**
+**How to use:**
 
-1. **Otwórz Testing Management:**
-   - W n8n, znajdź workflow "Testing Management"
-   - Kliknij na niego
-   - Upewnij się, że jest aktywny
+1. **Open Testing Management:**
+   - In n8n, find workflow "Testing Management"
+   - Click on it
+   - Make sure it's active
 
-2. **Dostęp do interfejsu:**
-   - Znajdź węzeł "Testing Dashboard"
-   - Skopiuj URL webhooka
-   - Otwórz w przeglądarce
+2. **Access interface:**
+   - Find node "Testing Dashboard"
+   - Copy webhook URL
+   - Open in browser
 
-3. **Uruchamianie testów:**
-   - **Connection Tests:** Testuje połączenia między maszynami
-     - Kliknij "Run Connection Tests"
-     - Poczekaj na wyniki (może zająć 1-2 minuty)
-   - **Data Flow Tests:** Testuje przepływ danych przez system
-     - Kliknij "Run Data Flow Tests"
-     - Upewnij się, że hasło do bazy danych jest ustawione
-   - **Health Checks:** Sprawdza zdrowie wszystkich maszyn
-     - Kliknij "Run Health Checks"
-     - Zobaczysz szczegółowe informacje o każdej maszynie
+3. **Running tests:**
+   - **Connection Tests:** Tests connections between machines
+     - Click "Run Connection Tests"
+     - Wait for results (may take 1-2 minutes)
+   - **Data Flow Tests:** Tests data flow through system
+     - Click "Run Data Flow Tests"
+     - Make sure database password is set
+   - **Health Checks:** Checks health of all machines
+     - Click "Run Health Checks"
+     - You'll see detailed information about each machine
 
-**Kiedy używać:**
-- Po instalacji systemu (weryfikacja, że wszystko działa)
-- Po zmianach w konfiguracji
-- Gdy coś nie działa (diagnostyka)
-- Regularnie (np. raz w tygodniu) jako kontrola
+**When to use:**
+- After system installation (verification that everything works)
+- After configuration changes
+- When something doesn't work (diagnostics)
+- Regularly (e.g., once a week) as check
 
 ### 3. Deployment Management Interface
 
-**Co to jest:** Interfejs do zarządzania wdrożeniami i instalacjami.
+**What it is:** Interface for managing deployments and installations.
 
-**Gdzie jest:** W n8n, workflow "Deployment Management"
+**Where it is:** In n8n, workflow "Deployment Management"
 
-**Do czego służy:**
-- Sprawdzanie statusu instalacji na maszynach
-- Uruchamianie instalacji zdalnie
-- Przeglądanie logów instalacji
-- Weryfikacja wdrożeń
+**What it's for:**
+- Checking installation status on machines
+- Running installations remotely
+- Reviewing installation logs
+- Deployment verification
 
-**Jak używać:**
+**How to use:**
 
-1. **Otwórz Deployment Management:**
-   - W n8n, znajdź workflow "Deployment Management"
-   - Kliknij na niego
-   - Upewnij się, że jest aktywny
+1. **Open Deployment Management:**
+   - In n8n, find workflow "Deployment Management"
+   - Click on it
+   - Make sure it's active
 
-2. **Dostęp do interfejsu:**
-   - Znajdź węzeł "Deployment Dashboard"
-   - Skopiuj URL webhooka
-   - Otwórz w przeglądarce
+2. **Access interface:**
+   - Find node "Deployment Dashboard"
+   - Copy webhook URL
+   - Open in browser
 
-3. **Sprawdzanie statusu instalacji:**
-   - Kliknij "Get Installation Status"
-   - Zobaczysz status instalacji na każdej maszynie:
-     - ✅ Installed - maszyna jest zainstalowana
-     - ❌ Not Installed - maszyna nie jest zainstalowana
-     - ⚠️ Unknown - nie można sprawdzić statusu
+3. **Check installation status:**
+   - Click "Get Installation Status"
+   - You'll see installation status for each machine:
+     - ✅ Installed - machine is installed
+     - ❌ Not Installed - machine is not installed
+     - ⚠️ Unknown - cannot check status
 
-4. **Uruchamianie instalacji:**
-   - Wybierz maszynę z listy
-   - Kliknij "Run Installation"
-   - Podaj parametry (ścieżka do projektu, itp.)
-   - Kliknij "Start"
-   - Monitoruj postęp w logach
+4. **Run installation:**
+   - Select machine from list
+   - Click "Run Installation"
+   - Provide parameters (project path, etc.)
+   - Click "Start"
+   - Monitor progress in logs
 
-**Kiedy używać:**
-- Podczas pierwszej instalacji systemu
-- Gdy musisz ponownie zainstalować maszynę
-- Gdy aktualizujesz oprogramowanie
-- Gdy sprawdzasz, czy wszystko jest zainstalowane
+**When to use:**
+- During first system installation
+- When you need to reinstall machine
+- When updating software
+- When checking if everything is installed
 
 ### 4. Hardening Management Interface
 
-**Co to jest:** Interfejs do zarządzania zabezpieczeniami maszyn.
+**What it is:** Interface for managing machine security.
 
-**Gdzie jest:** W n8n, workflow "Hardening Management"
+**Where it is:** In n8n, workflow "Hardening Management"
 
-**Do czego służy:**
-- Sprawdzanie statusu zabezpieczeń maszyn
-- Uruchamianie procesu zabezpieczania (hardening)
-- Porównywanie przed/po zabezpieczeniu
-- Przeglądanie raportów zabezpieczeń
+**What it's for:**
+- Checking security status of machines
+- Running security process (hardening)
+- Comparing before/after security
+- Reviewing security reports
 
-**Jak używać:**
+**How to use:**
 
-1. **Otwórz Hardening Management:**
-   - W n8n, znajdź workflow "Hardening Management"
-   - Kliknij na niego
-   - Upewnij się, że jest aktywny
+1. **Open Hardening Management:**
+   - In n8n, find workflow "Hardening Management"
+   - Click on it
+   - Make sure it's active
 
-2. **Dostęp do interfejsu:**
-   - Znajdź węzeł "Hardening Dashboard"
-   - Skopiuj URL webhooka
-   - Otwórz w przeglądarce
+2. **Access interface:**
+   - Find node "Hardening Dashboard"
+   - Copy webhook URL
+   - Open in browser
 
-3. **Sprawdzanie statusu zabezpieczeń:**
-   - Kliknij "Get Hardening Status"
-   - Zobaczysz status dla każdej maszyny:
-     - ✅ Hardened - maszyna jest zabezpieczona
-     - ⚠️ Partial - maszyna jest częściowo zabezpieczona
-     - ❌ Not Hardened - maszyna nie jest zabezpieczona
+3. **Check security status:**
+   - Click "Get Hardening Status"
+   - You'll see status for each machine:
+     - ✅ Hardened - machine is secured
+     - ⚠️ Partial - machine is partially secured
+     - ❌ Not Hardened - machine is not secured
 
-4. **Uruchamianie zabezpieczania:**
-   - **WAŻNE:** Przed uruchomieniem, wykonaj testy, aby mieć punkt odniesienia
-   - Wybierz maszynę
-   - Kliknij "Run Hardening"
-   - Wybierz opcję "Capture Before State" (zapisz stan przed)
-   - Kliknij "Start"
-   - Poczekaj na zakończenie (może zająć 5-10 minut)
+4. **Run hardening:**
+   - **IMPORTANT:** Before running, run tests to have reference point
+   - Select machine
+   - Click "Run Hardening"
+   - Select option "Capture Before State" (save state before)
+   - Click "Start"
+   - Wait for completion (may take 5-10 minutes)
 
-5. **Porównywanie przed/po:**
-   - Po zakończeniu zabezpieczania, możesz porównać wyniki
-   - Kliknij "Compare Before/After"
-   - Wybierz ID zabezpieczania
-   - Zobaczysz różnice
+5. **Compare before/after:**
+   - After hardening completes, you can compare results
+   - Click "Compare Before/After"
+   - Select hardening ID
+   - You'll see differences
 
-**Kiedy używać:**
-- Po instalacji systemu (zabezpieczenie przed użyciem)
-- Gdy chcesz zwiększyć bezpieczeństwo
-- Gdy musisz spełnić wymagania bezpieczeństwa
-- Regularnie (np. raz na kwartał) jako kontrola
+**When to use:**
+- After system installation (secure before use)
+- When you want to increase security
+- When you need to meet security requirements
+- Regularly (e.g., once a quarter) as check
 
-**UWAGA:** Po zabezpieczeniu, niektóre porty mogą być zablokowane. Upewnij się, że masz dostęp do maszyn przez SSH!
+**WARNING:** After hardening, some ports may be blocked. Make sure you have SSH access to machines!
 
 ### 5. Playbook Manager
 
-**Co to jest:** Interfejs do zarządzania playbookami (skryptami analizy zagrożeń).
+**What it is:** Interface for managing playbooks (threat analysis scripts).
 
-**Gdzie jest:** W n8n, workflow "Playbook Manager"
+**Where it is:** In n8n, workflow "Playbook Manager"
 
-**Do czego służy:**
-- Przeglądanie dostępnych playbooków
-- Tworzenie nowych playbooków
-- Edycja istniejących playbooków
-- Walidacja playbooków
-- Testowanie playbooków
+**What it's for:**
+- Browsing available playbooks
+- Creating new playbooks
+- Editing existing playbooks
+- Validating playbooks
+- Testing playbooks
 
-**Jak używać:**
+**How to use:**
 
-1. **Otwórz Playbook Manager:**
-   - W n8n, znajdź workflow "Playbook Manager"
-   - Kliknij na niego
-   - Upewnij się, że jest aktywny
+1. **Open Playbook Manager:**
+   - In n8n, find workflow "Playbook Manager"
+   - Click on it
+   - Make sure it's active
 
-2. **Dostęp do interfejsu:**
-   - Znajdź węzeł "Playbook Dashboard"
-   - Skopiuj URL webhooka
-   - Otwórz w przeglądarce
+2. **Access interface:**
+   - Find node "Playbook Dashboard"
+   - Copy webhook URL
+   - Open in browser
 
-3. **Przeglądanie playbooków:**
-   - Kliknij "List Playbooks"
-   - Zobaczysz listę wszystkich dostępnych playbooków
-   - Każdy playbook ma:
-     - Nazwę
-     - Opis
+3. **Browse playbooks:**
+   - Click "List Playbooks"
+   - You'll see list of all available playbooks
+   - Each playbook has:
+     - Name
+     - Description
      - Status (valid/invalid)
-     - Datę ostatniej modyfikacji
+     - Last modification date
 
-4. **Tworzenie nowego playbooka:**
-   - Kliknij "Create New Playbook"
-   - Wypełnij formularz:
-     - Nazwa playbooka
-     - Opis
-     - MITRE ATT&CK Technique ID (np. T1566)
-     - Zapytania dla różnych narzędzi (Splunk, Sentinel, itp.)
-   - Kliknij "Create"
-   - System automatycznie zwaliduje playbook
+4. **Create new playbook:**
+   - Click "Create New Playbook"
+   - Fill form:
+     - Playbook name
+     - Description
+     - MITRE ATT&CK Technique ID (e.g., T1566)
+     - Queries for different tools (Splunk, Sentinel, etc.)
+   - Click "Create"
+   - System will automatically validate playbook
 
-5. **Edycja playbooka:**
-   - Wybierz playbook z listy
-   - Kliknij "Edit"
-   - Zmień potrzebne pola
-   - Kliknij "Save"
-   - System zwaliduje zmiany
+5. **Edit playbook:**
+   - Select playbook from list
+   - Click "Edit"
+   - Change needed fields
+   - Click "Save"
+   - System will validate changes
 
-**Kiedy używać:**
-- Gdy chcesz stworzyć nowy playbook do analizy konkretnego zagrożenia
-- Gdy musisz zaktualizować istniejący playbook
-- Gdy chcesz sprawdzić, czy playbook jest poprawny
-- Gdy chcesz zobaczyć, jakie playbooki są dostępne
+**When to use:**
+- When you want to create new playbook for specific threat analysis
+- When you need to update existing playbook
+- When you want to check if playbook is correct
+- When you want to see what playbooks are available
 
 ### 6. Hunt Selection Form
 
-**Co to jest:** Formularz do wyboru huntów (polowań na zagrożenia) i narzędzi.
+**What it is:** Form for selecting hunts (threat hunts) and tools.
 
-**Gdzie jest:** W n8n, workflow "Hunt Selection Form"
+**Where it is:** In n8n, workflow "Hunt Selection Form"
 
-**Do czego służy:**
-- Wybór technik MITRE ATT&CK do analizy
-- Wybór dostępnych narzędzi (Splunk, Sentinel, itp.)
-- Generowanie zapytań dla wybranych huntów
-- Uruchamianie analizy
+**What it's for:**
+- Selecting MITRE ATT&CK techniques for analysis
+- Selecting available tools (Splunk, Sentinel, etc.)
+- Generating queries for selected hunts
+- Running analysis
 
-**Jak używać:**
+**How to use:**
 
-1. **Otwórz Hunt Selection Form:**
-   - W n8n, znajdź workflow "Hunt Selection Form"
-   - Kliknij na niego
-   - Upewnij się, że jest aktywny
+1. **Open Hunt Selection Form:**
+   - In n8n, find workflow "Hunt Selection Form"
+   - Click on it
+   - Make sure it's active
 
-2. **Dostęp do formularza:**
-   - Znajdź węzeł "Hunt Selection Form"
-   - Skopiuj URL webhooka
-   - Otwórz w przeglądarce
+2. **Access form:**
+   - Find node "Hunt Selection Form"
+   - Copy webhook URL
+   - Open in browser
 
-3. **Wypełnianie formularza:**
-   - **Wybierz techniki MITRE ATT&CK:**
-     - Zaznacz checkboxy przy technikach, które chcesz analizować
-     - Możesz wybrać wiele technik
-   - **Wybierz dostępne narzędzia:**
-     - Zaznacz narzędzia, które masz dostępne (Splunk, Sentinel, Defender, itp.)
-   - **Wybierz tryb ingestu:**
-     - Manual - ręczne wgranie danych
-     - API - automatyczne pobieranie przez API
-   - Kliknij "Generate Queries"
+3. **Fill form:**
+   - **Select MITRE ATT&CK techniques:**
+     - Check boxes next to techniques you want to analyze
+     - You can select multiple techniques
+   - **Select available tools:**
+     - Check tools you have available (Splunk, Sentinel, Defender, etc.)
+   - **Select ingest mode:**
+     - Manual - manual data upload
+     - API - automatic retrieval via API
+   - Click "Generate Queries"
 
-4. **Generowanie zapytań:**
-   - System automatycznie wygeneruje zapytania dla wybranych technik i narzędzi
-   - Zobaczysz listę zapytań
-   - Możesz je skopiować i użyć w swoich narzędziach
+4. **Generate queries:**
+   - System will automatically generate queries for selected techniques and tools
+   - You'll see list of queries
+   - You can copy them and use in your tools
 
-5. **Uruchamianie analizy:**
-   - Po wykonaniu zapytań w swoich narzędziach, wgraj wyniki
-   - Kliknij "Start Analysis"
-   - System automatycznie przetworzy dane i wygeneruje raport
+5. **Run analysis:**
+   - After executing queries in your tools, upload results
+   - Click "Start Analysis"
+   - System will automatically process data and generate report
 
-**Kiedy używać:**
-- Gdy chcesz przeprowadzić threat hunting
-- Gdy chcesz sprawdzić konkretne techniki MITRE ATT&CK
-- Gdy potrzebujesz zapytań dla swoich narzędzi SIEM/EDR
-- Gdy chcesz zautomatyzować proces analizy
+**When to use:**
+- When you want to conduct threat hunting
+- When you want to check specific MITRE ATT&CK techniques
+- When you need queries for your SIEM/EDR tools
+- When you want to automate analysis process
 
-### 7. JupyterLab (Analiza danych)
+### 7. JupyterLab (Data analysis)
 
-**Co to jest:** Interaktywne środowisko do analizy danych i tworzenia raportów.
+**What it is:** Interactive environment for data analysis and report creation.
 
-**Gdzie jest:** http://<VM-03_IP>:8888
+**Where it is:** http://<VM-03_IP>:8888
 
-**Do czego służy:**
-- Analiza danych z bazy danych
-- Tworzenie wizualizacji
-- Pisanie i wykonywanie skryptów Python
-- Tworzenie raportów
-- Eksperymentowanie z danymi
+**What it's for:**
+- Data analysis from database
+- Creating visualizations
+- Writing and executing Python scripts
+- Creating reports
+- Experimenting with data
 
-**Jak używać:**
+**How to use:**
 
-1. **Uruchom JupyterLab:**
-   - Zaloguj się na VM-03 przez SSH
-   - Uruchom:
+1. **Start JupyterLab:**
+   - Log into VM-03 via SSH
+   - Run:
      ```bash
      cd ~/th_timmy
      source venv/bin/activate
      jupyter lab --ip=0.0.0.0 --port=8888
      ```
-   - Skopiuj token, który się pojawi
+   - Copy token that appears
 
-2. **Otwórz JupyterLab w przeglądarce:**
-   - Otwórz przeglądarkę
-   - Przejdź do: `http://<VM-03_IP>:8888`
-   - Wklej token, gdy zostaniesz poproszony
+2. **Open JupyterLab in browser:**
+   - Open browser
+   - Go to: `http://<VM-03_IP>:8888`
+   - Paste token when prompted
 
-3. **Podstawowe operacje:**
-   - **Utwórz nowy notebook:**
-     - Kliknij "New" → "Python 3"
-     - Zostanie utworzony nowy notebook
-   - **Połącz się z bazą danych:**
+3. **Basic operations:**
+   - **Create new notebook:**
+     - Click "New" → "Python 3"
+     - New notebook will be created
+   - **Connect to database:**
      ```python
      import psycopg2
      
@@ -933,10 +933,10 @@ System zawiera wiele narzędzi do zarządzania i monitorowania. Poniżej znajdzi
          port=5432,
          database="threat_hunting",
          user="threat_hunter",
-         password="TwojeHaslo"
+         password="YourPassword"
      )
      ```
-   - **Wykonaj zapytanie:**
+   - **Execute query:**
      ```python
      import pandas as pd
      
@@ -945,243 +945,242 @@ System zawiera wiele narzędzi do zarządzania i monitorowania. Poniżej znajdzi
      df.head()
      ```
 
-**Kiedy używać:**
-- Gdy chcesz przeanalizować dane ręcznie
-- Gdy chcesz stworzyć własne wizualizacje
-- Gdy chcesz eksperymentować z danymi
-- Gdy chcesz napisać własne skrypty analizy
+**When to use:**
+- When you want to analyze data manually
+- When you want to create own visualizations
+- When you want to experiment with data
+- When you want to write own analysis scripts
 
-### 8. Narzędzia wiersza poleceń
+### 8. Command line tools
 
-System zawiera również narzędzia, które możesz używać z linii poleceń (terminala).
+The system also contains tools you can use from command line (terminal).
 
 #### 8.1. Health Check
 
-**Co to jest:** Skrypt sprawdzający zdrowie maszyny.
+**What it is:** Script checking machine health.
 
-**Gdzie jest:** Na każdej maszynie: `~/th_timmy/hosts/vmXX-*/health_check.sh`
+**Where it is:** On each machine: `~/th_timmy/hosts/vmXX-*/health_check.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na dowolnej maszynie
-cd ~/th_timmy/hosts/vm01-ingest  # (lub vm02, vm03, vm04)
+# On any machine
+cd ~/th_timmy/hosts/vm01-ingest  # (or vm02, vm03, vm04)
 ./health_check.sh
 ```
 
-**Co sprawdza:**
-- Czy wszystkie wymagane programy są zainstalowane
-- Czy serwisy działają (PostgreSQL, JupyterLab, Docker)
-- Czy konfiguracja jest poprawna
-- Czy połączenia sieciowe działają
+**What it checks:**
+- If all required programs are installed
+- If services are running (PostgreSQL, JupyterLab, Docker)
+- If configuration is correct
+- If network connections work
 
 #### 8.2. Test Connections
 
-**Co to jest:** Skrypt testujący połączenia między maszynami.
+**What it is:** Script testing connections between machines.
 
-**Gdzie jest:** `~/th_timmy/hosts/shared/test_connections.sh`
+**Where it is:** `~/th_timmy/hosts/shared/test_connections.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na dowolnej maszynie
+# On any machine
 cd ~/th_timmy
 ./hosts/shared/test_connections.sh
 ```
 
-**Co sprawdza:**
-- Czy maszyny mogą się pingować (podstawowa łączność)
-- Czy porty są otwarte (SSH, PostgreSQL, JupyterLab, n8n)
-- Czy można połączyć się z bazą danych
-- Czy serwisy są dostępne
+**What it checks:**
+- If machines can ping each other (basic connectivity)
+- If ports are open (SSH, PostgreSQL, JupyterLab, n8n)
+- If can connect to database
+- If services are available
 
 #### 8.3. Test Data Flow
 
-**Co to jest:** Skrypt testujący przepływ danych przez system.
+**What it is:** Script testing data flow through system.
 
-**Gdzie jest:** `~/th_timmy/hosts/shared/test_data_flow.sh`
+**Where it is:** `~/th_timmy/hosts/shared/test_data_flow.sh`
 
-**Jak używać:**
+**How to use:**
 
 ```bash
-# Na dowolnej maszynie
+# On any machine
 cd ~/th_timmy
-export POSTGRES_PASSWORD="TwojeHasloDoBazyDanych"
+export POSTGRES_PASSWORD="YourDatabasePassword"
 ./hosts/shared/test_data_flow.sh
 ```
 
-**Co sprawdza:**
-- Czy można zapisać dane do bazy danych
-- Czy można odczytać dane z bazy danych
-- Czy n8n jest dostępne
-- Czy przepływ danych działa end-to-end
+**What it checks:**
+- If can write data to database
+- If can read data from database
+- If n8n is available
+- If data flow works end-to-end
 
 ---
 
-## Rozwiązywanie problemów
+## Troubleshooting
 
-### Problem: Nie mogę się zalogować przez SSH
+### Problem: Can't log in via SSH
 
-**Możliwe przyczyny:**
-- Błędny adres IP
-- Błędna nazwa użytkownika
-- Port SSH (22) jest zablokowany przez firewall
-- Maszyna jest wyłączona
+**Possible causes:**
+- Wrong IP address
+- Wrong username
+- SSH port (22) is blocked by firewall
+- Machine is turned off
 
-**Rozwiązanie:**
-1. Sprawdź adres IP maszyny
-2. Sprawdź, czy maszyna jest włączona
-3. Sprawdź ustawienia firewall
-4. Spróbuj użyć innego klienta SSH (PuTTY, Windows Terminal)
+**Solution:**
+1. Check machine IP address
+2. Check if machine is turned on
+3. Check firewall settings
+4. Try using different SSH client (PuTTY, Windows Terminal)
 
-### Problem: Instalacja się nie powiodła
+### Problem: Installation failed
 
-**Możliwe przyczyny:**
-- Brak dostępu do internetu
-- Brak uprawnień administratora (sudo)
-- Błędna konfiguracja
-- Niewystarczające zasoby (pamięć, dysk)
+**Possible causes:**
+- No internet access
+- No administrator privileges (sudo)
+- Wrong configuration
+- Insufficient resources (memory, disk)
 
-**Rozwiązanie:**
-1. Sprawdź logi instalacji (zostaną wyświetlone w terminalu)
-2. Sprawdź, czy masz dostęp do internetu: `ping 8.8.8.8`
-3. Sprawdź uprawnienia: `sudo -v`
-4. Sprawdź miejsce na dysku: `df -h`
-5. Sprawdź pamięć: `free -h`
+**Solution:**
+1. Check installation logs (will be displayed in terminal)
+2. Check if you have internet access: `ping 8.8.8.8`
+3. Check privileges: `sudo -v`
+4. Check disk space: `df -h`
+5. Check memory: `free -h`
 
-### Problem: Baza danych nie działa
+### Problem: Database doesn't work
 
-**Możliwe przyczyny:**
-- PostgreSQL nie jest uruchomiony
-- Błędne hasło
-- Port jest zablokowany przez firewall
-- Baza danych nie została utworzona
+**Possible causes:**
+- PostgreSQL is not running
+- Wrong password
+- Port is blocked by firewall
+- Database was not created
 
-**Rozwiązanie:**
-1. Sprawdź status PostgreSQL: `sudo systemctl status postgresql`
-2. Jeśli nie działa, uruchom: `sudo systemctl start postgresql`
-3. Sprawdź hasło w `config.yml`
-4. Sprawdź firewall: `sudo ufw status`
-5. Sprawdź logi: `sudo journalctl -u postgresql -n 50`
+**Solution:**
+1. Check PostgreSQL status: `sudo systemctl status postgresql`
+2. If not running, start: `sudo systemctl start postgresql`
+3. Check password in `config.yml`
+4. Check firewall: `sudo ufw status`
+5. Check logs: `sudo journalctl -u postgresql -n 50`
 
-### Problem: JupyterLab nie otwiera się w przeglądarce
+### Problem: JupyterLab doesn't open in browser
 
-**Możliwe przyczyny:**
-- JupyterLab nie jest uruchomiony
-- Port 8888 jest zablokowany
-- Błędny adres IP
-- Błędny token
+**Possible causes:**
+- JupyterLab is not running
+- Port 8888 is blocked
+- Wrong IP address
+- Wrong token
 
-**Rozwiązanie:**
-1. Sprawdź, czy JupyterLab działa: `ps aux | grep jupyter`
-2. Jeśli nie działa, uruchom ponownie (patrz sekcja "Instalacja VM-03")
-3. Sprawdź firewall: `sudo ufw status`
-4. Sprawdź adres IP: `ip addr show`
-5. Użyj tokenu z terminala (gdy uruchamiasz JupyterLab)
+**Solution:**
+1. Check if JupyterLab is running: `ps aux | grep jupyter`
+2. If not running, start again (see "VM-03 Installation" section)
+3. Check firewall: `sudo ufw status`
+4. Check IP address: `ip addr show`
+5. Use token from terminal (when starting JupyterLab)
 
-### Problem: n8n nie działa
+### Problem: n8n doesn't work
 
-**Możliwe przyczyny:**
-- Kontener Docker nie jest uruchomiony
-- Port 5678 jest zablokowany
-- Błędna konfiguracja
+**Possible causes:**
+- Docker container is not running
+- Port 5678 is blocked
+- Wrong configuration
 
-**Rozwiązanie:**
-1. Sprawdź status kontenera: `docker ps`
-2. Jeśli nie działa, uruchom: `cd ~/th_timmy/hosts/vm04-orchestrator && docker compose up -d`
-3. Sprawdź logi: `docker compose logs n8n`
-4. Sprawdź firewall: `sudo ufw status`
-5. Sprawdź konfigurację w `config.yml`
+**Solution:**
+1. Check container status: `docker ps`
+2. If not running, start: `cd ~/th_timmy/hosts/vm04-orchestrator && docker compose up -d`
+3. Check logs: `docker compose logs n8n`
+4. Check firewall: `sudo ufw status`
+5. Check configuration in `config.yml`
 
-### Problem: Testy nie przechodzą
+### Problem: Tests don't pass
 
-**Możliwe przyczyny:**
-- Maszyny nie mogą się komunikować
-- Serwisy nie działają
-- Błędna konfiguracja
+**Possible causes:**
+- Machines can't communicate
+- Services are not running
+- Wrong configuration
 
-**Rozwiązanie:**
-1. Sprawdź połączenia sieciowe: `ping <adres_IP>`
-2. Sprawdź, czy serwisy działają (PostgreSQL, JupyterLab, n8n)
-3. Sprawdź konfigurację w `configs/config.yml`
-4. Sprawdź logi testów (zostaną zapisane w `test_results/`)
+**Solution:**
+1. Check network connections: `ping <IP_address>`
+2. Check if services are running (PostgreSQL, JupyterLab, n8n)
+3. Check configuration in `configs/config.yml`
+4. Check test logs (will be saved in `test_results/`)
 
-### Problem: Nie mogę się zalogować do n8n
+### Problem: Can't log into n8n
 
-**Możliwe przyczyny:**
-- Błędna nazwa użytkownika lub hasło
-- n8n nie jest uruchomiony
-- Port jest zablokowany
+**Possible causes:**
+- Wrong username or password
+- n8n is not running
+- Port is blocked
 
-**Rozwiązanie:**
-1. Sprawdź konfigurację w `hosts/vm04-orchestrator/config.yml`
-2. Sprawdź, czy n8n działa: `docker ps`
-3. Sprawdź logi: `docker compose logs n8n`
-4. Spróbuj zresetować hasło (jeśli masz dostęp do kontenera)
-
----
-
-## Następne kroki
-
-Po pomyślnej instalacji i weryfikacji systemu, możesz:
-
-1. **Zabezpieczyć system:**
-   - Uruchom hardening na wszystkich maszynach
-   - Użyj Hardening Management Interface w n8n
-
-2. **Skonfigurować automatyczne zadania:**
-   - Skonfiguruj automatyczne health checks
-   - Skonfiguruj automatyczną synchronizację repozytorium
-
-3. **Stworzyć pierwszy playbook:**
-   - Użyj Playbook Manager w n8n
-   - Stwórz playbook dla konkretnej techniki MITRE ATT&CK
-
-4. **Przeprowadzić pierwszy hunt:**
-   - Użyj Hunt Selection Form
-   - Wybierz techniki do analizy
-   - Wygeneruj zapytania
-   - Wykonaj analizę
-
-5. **Zapoznać się z dokumentacją:**
-   - Przeczytaj dokumentację w katalogu `docs/`
-   - Zapoznaj się z przykładami playbooków
-   - Naucz się używać JupyterLab do analizy
+**Solution:**
+1. Check configuration in `hosts/vm04-orchestrator/config.yml`
+2. Check if n8n is running: `docker ps`
+3. Check logs: `docker compose logs n8n`
+4. Try resetting password (if you have access to container)
 
 ---
 
-## Wsparcie
+## Next steps
 
-Jeśli napotkasz problemy, które nie są opisane w tym przewodniku:
+After successful installation and system verification, you can:
 
-1. **Sprawdź dokumentację:**
-   - `docs/PROJECT_STATUS.md` - Status projektu i znane problemy
-   - `docs/TESTING.md` - Przewodnik testowania
-   - `docs/CONFIGURATION.md` - Przewodnik konfiguracji
+1. **Secure system:**
+   - Run hardening on all machines
+   - Use Hardening Management Interface in n8n
 
-2. **Sprawdź logi:**
-   - Logi instalacji są wyświetlane w terminalu
-   - Logi serwisów: `sudo journalctl -u <nazwa_serwisu>`
-   - Logi Docker: `docker compose logs`
+2. **Configure automatic tasks:**
+   - Configure automatic health checks
+   - Configure automatic repository synchronization
 
-3. **Uruchom testy diagnostyczne:**
-   - `./health_check.sh` na każdej maszynie
+3. **Create first playbook:**
+   - Use Playbook Manager in n8n
+   - Create playbook for specific MITRE ATT&CK technique
+
+4. **Conduct first hunt:**
+   - Use Hunt Selection Form
+   - Select techniques for analysis
+   - Generate queries
+   - Run analysis
+
+5. **Familiarize with documentation:**
+   - Read documentation in `docs/` directory
+   - Familiarize with playbook examples
+   - Learn to use JupyterLab for analysis
+
+---
+
+## Support
+
+If you encounter problems not described in this guide:
+
+1. **Check documentation:**
+   - `docs/PROJECT_STATUS.md` - Project status and known issues
+   - `docs/TESTING.md` - Testing guide
+   - `docs/CONFIGURATION.md` - Configuration guide
+
+2. **Check logs:**
+   - Installation logs are displayed in terminal
+   - Service logs: `sudo journalctl -u <service_name>`
+   - Docker logs: `docker compose logs`
+
+3. **Run diagnostic tests:**
+   - `./health_check.sh` on each machine
    - `./hosts/shared/test_connections.sh`
    - `./hosts/shared/test_data_flow.sh`
 
 ---
 
-## Podsumowanie
+## Summary
 
-Ten przewodnik poprowadził Cię przez:
-- ✅ Przygotowanie środowiska
-- ✅ Instalację na wszystkich maszynach
-- ✅ Konfigurację systemu
-- ✅ Weryfikację instalacji
-- ✅ Użycie wszystkich dostępnych narzędzi
-- ✅ Rozwiązywanie problemów
+This guide walked you through:
+- ✅ Environment preparation
+- ✅ Installation on all machines
+- ✅ System configuration
+- ✅ Installation verification
+- ✅ Usage of all available tools
+- ✅ Troubleshooting
 
-System jest teraz gotowy do użycia! Możesz rozpocząć threat hunting i analizę danych.
+The system is now ready to use! You can start threat hunting and data analysis.
 
-**Powodzenia!** 🎉
-
+**Good luck!** 🎉
