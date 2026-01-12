@@ -53,6 +53,8 @@ th_timmy/
 - [x] Configuration management
 - [x] Health monitoring
 - [x] Management dashboard (basic)
+- [x] Testing management interface
+- [x] Deployment management interface
 
 **Phase 1: Threat Hunting Foundations** - In Progress
 - [x] Project structure created

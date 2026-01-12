@@ -26,6 +26,7 @@ from ..services.repo_sync import RepoSyncService, RepoSyncError
 from ..services.config_manager import ConfigManager, ConfigManagerError
 from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
 from ..services.test_runner import TestRunner, TestRunnerError
+from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
 
 
 # Security
@@ -106,6 +107,7 @@ _repo_sync: Optional[RepoSyncService] = None
 _config_manager: Optional[ConfigManager] = None
 _remote_executor: Optional[RemoteExecutor] = None
 _test_runner: Optional[TestRunner] = None
+_deployment_manager: Optional[DeploymentManager] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -191,6 +193,23 @@ def get_test_runner() -> TestRunner:
         )
     
     return _test_runner
+
+
+def get_deployment_manager() -> DeploymentManager:
+    """Get or create DeploymentManager instance."""
+    global _deployment_manager
+    
+    if _deployment_manager is None:
+        config_path = os.getenv('CONFIG_PATH', 'configs/config.yml')
+        remote_executor = get_remote_executor()
+        
+        _deployment_manager = DeploymentManager(
+            config_path=config_path,
+            remote_executor=remote_executor,
+            logger=logger
+        )
+    
+    return _deployment_manager
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -772,6 +791,261 @@ async def export_test_results(
         
     except HTTPException:
         raise
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# Deployment Management Models
+class InstallationStatusResponse(BaseModel):
+    """Response model for installation status."""
+    success: bool
+    data: Dict[str, Any]
+    timestamp: str
+
+
+class RunInstallationRequest(BaseModel):
+    """Request model for running installation."""
+    vm_id: str = Field(..., description="VM identifier (e.g., 'vm01')")
+    project_root: Optional[str] = Field(None, description="Project root path on VM")
+
+
+class RunInstallationResponse(BaseModel):
+    """Response model for installation execution."""
+    success: bool
+    deployment_id: str
+    vm_id: str
+    status: str
+    message: str
+    timestamp: str
+
+
+class InstallationLogsResponse(BaseModel):
+    """Response model for installation logs."""
+    success: bool
+    logs: List[Dict[str, Any]]
+    total: int
+
+
+class VerifyDeploymentRequest(BaseModel):
+    """Request model for deployment verification."""
+    vm_id: str = Field(..., description="VM identifier (e.g., 'vm01')")
+
+
+class VerifyDeploymentResponse(BaseModel):
+    """Response model for deployment verification."""
+    success: bool
+    vm_id: str
+    verification_status: str
+    data: Dict[str, Any]
+    timestamp: str
+
+
+class DeploymentSummaryResponse(BaseModel):
+    """Response model for deployment summary."""
+    success: bool
+    summary: Dict[str, Any]
+    timestamp: str
+
+
+# Deployment Management Endpoints
+@app.get("/deployment/installation-status", response_model=InstallationStatusResponse)
+async def get_installation_status(
+    vm_id: Optional[str] = None,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get installation status for VM(s).
+    
+    Args:
+        vm_id: Optional VM identifier (if not provided, returns status for all VMs)
+    
+    Returns:
+        Installation status
+    """
+    try:
+        deployment_manager = get_deployment_manager()
+        
+        if vm_id:
+            status = deployment_manager.get_installation_status(vm_id)
+            return InstallationStatusResponse(
+                success=True,
+                data=status,
+                timestamp=datetime.utcnow().isoformat()
+            )
+        else:
+            all_status = deployment_manager.get_installation_status_all()
+            return InstallationStatusResponse(
+                success=True,
+                data=all_status,
+                timestamp=datetime.utcnow().isoformat()
+            )
+            
+    except DeploymentManagerError as e:
+        logger.error(f"Deployment manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/deployment/run-installation", response_model=RunInstallationResponse)
+async def run_installation(
+    request: RunInstallationRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Run installation script on VM.
+    
+    Args:
+        request: Installation request
+    
+    Returns:
+        Installation result
+    """
+    try:
+        deployment_manager = get_deployment_manager()
+        
+        result = deployment_manager.run_installation(
+            vm_id=request.vm_id,
+            project_root=request.project_root
+        )
+        
+        return RunInstallationResponse(
+            success=result.get('status') in ['success', 'completed'],
+            deployment_id=result.get('deployment_id', ''),
+            vm_id=result.get('vm_id', request.vm_id),
+            status=result.get('status', 'unknown'),
+            message=f"Installation {'completed' if result.get('status') == 'success' else 'failed'}",
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat())
+        )
+        
+    except DeploymentManagerError as e:
+        logger.error(f"Deployment manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/deployment/installation-logs", response_model=InstallationLogsResponse)
+async def get_installation_logs(
+    vm_id: Optional[str] = None,
+    deployment_id: Optional[str] = None,
+    limit: Optional[int] = 50,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get installation logs.
+    
+    Args:
+        vm_id: Optional VM identifier filter
+        deployment_id: Optional deployment ID filter
+        limit: Maximum number of logs to return
+    
+    Returns:
+        Installation logs
+    """
+    try:
+        deployment_manager = get_deployment_manager()
+        
+        logs = deployment_manager.get_installation_logs(
+            vm_id=vm_id,
+            deployment_id=deployment_id,
+            limit=limit
+        )
+        
+        return InstallationLogsResponse(
+            success=True,
+            logs=logs,
+            total=len(logs)
+        )
+        
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/deployment/verify", response_model=VerifyDeploymentResponse)
+async def verify_deployment(
+    request: VerifyDeploymentRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Verify deployment on VM.
+    
+    Args:
+        request: Verification request
+    
+    Returns:
+        Verification result
+    """
+    try:
+        deployment_manager = get_deployment_manager()
+        
+        result = deployment_manager.verify_deployment(request.vm_id)
+        
+        return VerifyDeploymentResponse(
+            success=result.get('verification_status') == 'verified',
+            vm_id=result.get('vm_id', request.vm_id),
+            verification_status=result.get('verification_status', 'unknown'),
+            data=result,
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat())
+        )
+        
+    except DeploymentManagerError as e:
+        logger.error(f"Deployment manager error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/deployment/summary", response_model=DeploymentSummaryResponse)
+async def get_deployment_summary(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get deployment summary statistics.
+    
+    Returns:
+        Deployment summary
+    """
+    try:
+        deployment_manager = get_deployment_manager()
+        
+        summary = deployment_manager.get_deployment_summary()
+        
+        return DeploymentSummaryResponse(
+            success=True,
+            summary=summary,
+            timestamp=datetime.utcnow().isoformat()
+        )
+        
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(

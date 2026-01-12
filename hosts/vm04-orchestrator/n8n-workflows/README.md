@@ -220,6 +220,53 @@ Workflow składa się z następujących węzłów:
 - `GET /webhook/test-history` - Pobierz historię testów
 - `GET /webhook/testing-dashboard` - Dashboard zarządzania testami
 
+## Deployment Management Workflow
+
+### Instalacja
+
+1. Importuj workflow `deployment-management.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/deployment-dashboard`
+
+### Funkcjonalności
+
+- **Installation Status**: Status instalacji na wszystkich VM
+- **Run Installation**: Uruchamianie `install_vmXX.sh` zdalnie
+- **Installation Logs**: Wyświetlanie logów instalacji
+- **Deployment Verification**: Weryfikacja po instalacji
+
+### Webhook Endpoints
+
+- `GET /webhook/installation-status` - Pobierz status instalacji wszystkich VM
+- `POST /webhook/run-installation` - Uruchom instalację na wybranym VM
+- `GET /webhook/installation-logs` - Pobierz logi instalacji
+- `POST /webhook/verify-deployment` - Zweryfikuj deployment na VM
+- `GET /webhook/deployment-dashboard` - Dashboard zarządzania deploymentem
+
+### Użycie
+
+#### Sprawdzenie statusu instalacji
+
+```bash
+curl http://VM04_IP:5678/webhook/installation-status
+```
+
+#### Uruchomienie instalacji
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/run-installation \
+  -H "Content-Type: application/json" \
+  -d '{"vm_id": "vm01"}'
+```
+
+#### Weryfikacja deploymentu
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/verify-deployment \
+  -H "Content-Type: application/json" \
+  -d '{"vm_id": "vm01"}'
+```
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów
