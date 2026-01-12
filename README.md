@@ -120,6 +120,7 @@ For detailed installation instructions, see the VM-specific README files in `hos
 - [Testing Guide](docs/TESTING.md) - Testing procedures and validation
 - [Hardening Guide](docs/HARDENING.md) - Security hardening procedures
 - [Project Status](docs/PROJECT_STATUS.md) - Current implementation status and documentation gaps
+- [Documentation Summary](docs/DOCUMENTATION_SUMMARY.md) - Overview of all documentation
 
 ### VM-Specific Documentation
 - [VM-01: Ingest/Parser](hosts/vm01-ingest/README.md) - Installation and setup
