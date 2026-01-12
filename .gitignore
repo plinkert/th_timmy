@@ -56,6 +56,7 @@ results/
 !configs/*.example.*
 !playbooks/*/examples/*.csv
 !playbooks/*/queries/*.csv
+!hosts/vm04-orchestrator/n8n-workflows/*.json
 
 # OS
 .DS_Store

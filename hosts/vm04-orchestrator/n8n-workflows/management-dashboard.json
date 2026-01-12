@@ -1,0 +1,323 @@
+{
+  "name": "Management Dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "schedule-trigger",
+      "name": "Schedule Health Check",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [250, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/health",
+        "options": {}
+      },
+      "id": "api-health-check",
+      "name": "API Health Check",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "get-health-status",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-get-health",
+      "name": "Get Health Status",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "get-health-status"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/execute-command",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vm_id",
+              "value": "={{ $json.vm_id || 'vm01' }}"
+            },
+            {
+              "name": "command",
+              "value": "={{ $json.command || 'echo \"Health check\"' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-execute-command",
+      "name": "Execute Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "sync-repository",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-sync-repo",
+      "name": "Sync Repository",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "sync-repository"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/execute-command",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "vm_id",
+              "value": "={{ $json.vm_id || 'all' }}"
+            },
+            {
+              "name": "command",
+              "value": "cd /home/thadmin/th_timmy && git pull origin main"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-sync-repo",
+      "name": "Sync Repository Command",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "get-config",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-get-config",
+      "name": "Get Configuration",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 900],
+      "webhookId": "get-config"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "update-config",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-update-config",
+      "name": "Update Configuration",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 1100],
+      "webhookId": "update-config"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "vm-status",
+              "name": "vm_status",
+              "value": "={{ $json }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-vm-status",
+      "name": "Set VM Status",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Health check completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-health",
+      "name": "Respond Health",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"status\": \"success\", \"message\": \"Repository sync completed\", \"data\": $json } }}",
+        "options": {}
+      },
+      "id": "respond-sync",
+      "name": "Respond Sync",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get health status for all VMs\nconst vms = ['vm01', 'vm02', 'vm03', 'vm04'];\nconst results = [];\n\nfor (const vmId of vms) {\n  // In real implementation, this would call the health monitor API\n  results.push({\n    vm_id: vmId,\n    status: 'healthy',\n    timestamp: new Date().toISOString(),\n    metrics: {\n      cpu: Math.random() * 100,\n      memory: Math.random() * 100,\n      disk: Math.random() * 100\n    }\n  });\n}\n\nreturn results.map(item => ({ json: item }));"
+      },
+      "id": "get-all-vm-status",
+      "name": "Get All VM Status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "dashboard",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-dashboard",
+      "name": "Dashboard UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "dashboard"
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Threat Hunting Lab - Management Dashboard</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1200px; margin: 0 auto; }\n    .header { background: #2c3e50; color: white; padding: 20px; border-radius: 5px; margin-bottom: 20px; }\n    .vm-card { background: white; padding: 20px; margin: 10px 0; border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .vm-card.healthy { border-left: 5px solid #27ae60; }\n    .vm-card.unhealthy { border-left: 5px solid #e74c3c; }\n    .vm-card.degraded { border-left: 5px solid #f39c12; }\n    .status-badge { display: inline-block; padding: 5px 10px; border-radius: 3px; font-size: 12px; font-weight: bold; }\n    .status-healthy { background: #27ae60; color: white; }\n    .status-unhealthy { background: #e74c3c; color: white; }\n    .status-degraded { background: #f39c12; color: white; }\n    .actions { margin-top: 20px; }\n    .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 3px; cursor: pointer; }\n    .btn-primary { background: #3498db; color: white; }\n    .btn-success { background: #27ae60; color: white; }\n    .btn-warning { background: #f39c12; color: white; }\n    .metrics { display: flex; gap: 20px; margin-top: 10px; }\n    .metric { flex: 1; }\n    .metric-label { font-size: 12px; color: #7f8c8d; }\n    .metric-value { font-size: 24px; font-weight: bold; }\n  </style>\n  <script>\n    function syncRepository() {\n      fetch('/webhook/sync-repository', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({}) })\n        .then(r => r.json())\n        .then(d => alert('Sync: ' + d.message));\n    }\n    function refreshStatus() {\n      location.reload();\n    }\n    setInterval(refreshStatus, 300000); // Refresh every 5 minutes\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>Threat Hunting Lab - Management Dashboard</h1>\n      <p>Last updated: {{ $now }}</p>\n    </div>\n    \n    <div class=\"actions\">\n      <button class=\"btn btn-primary\" onclick=\"refreshStatus()\">Refresh Status</button>\n      <button class=\"btn btn-success\" onclick=\"syncRepository()\">Sync Repository</button>\n    </div>\n    \n    <h2>System Overview</h2>\n    {{#each $json}}\n    <div class=\"vm-card {{status}}\">\n      <h3>{{vm_id}} - {{name}}</h3>\n      <span class=\"status-badge status-{{status}}\">{{status}}</span>\n      <div class=\"metrics\">\n        <div class=\"metric\">\n          <div class=\"metric-label\">CPU</div>\n          <div class=\"metric-value\">{{metrics.cpu}}%</div>\n        </div>\n        <div class=\"metric\">\n          <div class=\"metric-label\">Memory</div>\n          <div class=\"metric-value\">{{metrics.memory}}%</div>\n        </div>\n        <div class=\"metric\">\n          <div class=\"metric-label\">Disk</div>\n          <div class=\"metric-value\">{{metrics.disk}}%</div>\n        </div>\n      </div>\n    </div>\n    {{/each}}\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-dashboard",
+      "name": "Respond Dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    }
+  ],
+  "connections": {
+    "Schedule Health Check": {
+      "main": [
+        [
+          {
+            "node": "Get All VM Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All VM Status": {
+      "main": [
+        [
+          {
+            "node": "Set VM Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Health Status": {
+      "main": [
+        [
+          {
+            "node": "Execute Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Command": {
+      "main": [
+        [
+          {
+            "node": "Respond Health",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Repository": {
+      "main": [
+        [
+          {
+            "node": "Sync Repository Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Repository Command": {
+      "main": [
+        [
+          {
+            "node": "Respond Sync",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dashboard UI": {
+      "main": [
+        [
+          {
+            "node": "Get All VM Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All VM Status": {
+      "main": [
+        [
+          {
+            "node": "Respond Dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+
