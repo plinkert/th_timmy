@@ -66,6 +66,7 @@ th_timmy/
 - [x] Query generator for multiple tools and hunt types (PHASE1-02)
 - [x] Deterministic anonymization with mapping table (PHASE1-03)
 - [x] n8n UI - formularz wyboru huntów i narzędzi (PHASE1-04)
+- [x] Data Package - struktura i walidacja (PHASE1-05)
 - [ ] Playbook engine
 
 **Phase 2: AI Integration** - Planned

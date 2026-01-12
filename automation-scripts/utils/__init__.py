@@ -14,6 +14,7 @@ from .query_generator import QueryGenerator, QueryGeneratorError
 from .query_templates import QueryTemplates, QueryTool, QueryMode
 from .deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 from .security import DataAnonymizer, anonymize_data
+from .data_package import DataPackage, DataPackageError, DataPackageValidationError
 
 __all__ = [
     'GitManager',
@@ -29,7 +30,10 @@ __all__ = [
     'DeterministicAnonymizer',
     'DeterministicAnonymizerError',
     'DataAnonymizer',
-    'anonymize_data'
+    'anonymize_data',
+    'DataPackage',
+    'DataPackageError',
+    'DataPackageValidationError'
 ]
 
 
