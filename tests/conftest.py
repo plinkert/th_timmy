@@ -669,3 +669,42 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     
     yield client
 
+
+@pytest.fixture(scope="function")
+def temp_playbook_dir(project_root_path):
+    """
+    Create a temporary playbook directory based on template for testing.
+    
+    Returns:
+        Path: Path to temporary playbook directory
+    """
+    template_path = project_root_path / "playbooks" / "template"
+    temp_dir = tempfile.mkdtemp(prefix="th_test_playbook_")
+    temp_path = Path(temp_dir)
+    
+    try:
+        # Copy template structure
+        if template_path.exists():
+            # Copy all files and directories
+            for item in template_path.iterdir():
+                if item.name.startswith('.'):
+                    continue  # Skip hidden files
+                if item.is_file():
+                    shutil.copy2(item, temp_path / item.name)
+                elif item.is_dir():
+                    shutil.copytree(item, temp_path / item.name)
+        
+        # Ensure required directories exist (even if empty in template)
+        required_dirs = ["queries", "scripts", "config", "tests", "examples"]
+        for dir_name in required_dirs:
+            dir_path = temp_path / dir_name
+            if not dir_path.exists():
+                dir_path.mkdir(parents=True, exist_ok=True)
+        
+        yield temp_path
+        
+    finally:
+        # Cleanup
+        if temp_path.exists():
+            shutil.rmtree(temp_path, ignore_errors=True)
+

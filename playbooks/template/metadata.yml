@@ -197,10 +197,10 @@ data_sources:
             time_range: "7d"
             index: "security-*"
           expected_fields:
-            - @timestamp
-            - host.name
-            - user.name
-            - event.action
+            - "@timestamp"
+            - "host.name"
+            - "user.name"
+            - "event.action"
           instructions: |
             Step-by-step instructions:
             1. Open Kibana (https://your-kibana-instance)
@@ -224,10 +224,10 @@ data_sources:
           api_method: "POST"
           api_authentication: "Basic Auth or API Key"
           expected_fields:
-            - @timestamp
-            - host.name
-            - user.name
-            - event.action
+            - "@timestamp"
+            - "host.name"
+            - "user.name"
+            - "event.action"
           instructions: |
             This query is executed automatically by the system via Elasticsearch REST API.
             The query_generator service will handle authentication and execution.
