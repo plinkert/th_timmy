@@ -121,6 +121,15 @@ class ConfigManager:
         
         self.logger.info("ConfigManager initialized")
     
+    def get_config(self) -> Dict[str, Any]:
+        """
+        Get current configuration.
+        
+        Returns:
+            Current configuration dictionary
+        """
+        return self.config.copy() if self.config else {}
+    
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from YAML file."""
         try:

@@ -512,3 +512,39 @@ def health_monitor(test_config, remote_executor, project_root_path, temp_dir):
     # Cleanup
     service.close()
 
+
+@pytest.fixture(scope="function")
+def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_service, config_manager, project_root_path, temp_dir):
+    """Create TestClient for Dashboard API."""
+    from fastapi.testclient import TestClient
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.api" not in sys.modules:
+        sys.modules["automation_scripts.api"] = types.ModuleType("automation_scripts.api")
+    
+    # Load dashboard_api
+    dashboard_api_path = automation_scripts_path / "api" / "dashboard_api.py"
+    dashboard_api_spec = importlib.util.spec_from_file_location("automation_scripts.api.dashboard_api", dashboard_api_path)
+    dashboard_api_module = importlib.util.module_from_spec(dashboard_api_spec)
+    sys.modules["automation_scripts.api.dashboard_api"] = dashboard_api_module
+    
+    # Set environment variables
+    os.environ['CONFIG_PATH'] = str(project_root_path / "configs" / "config.yml")
+    
+    dashboard_api_spec.loader.exec_module(dashboard_api_module)
+    
+    # Override service getters to use test instances
+    dashboard_api_module.get_health_monitor = lambda: health_monitor
+    dashboard_api_module.get_repo_sync = lambda: repo_sync_service
+    dashboard_api_module.get_config_manager = lambda: config_manager
+    dashboard_api_module.get_remote_executor = lambda: remote_executor
+    
+    app = dashboard_api_module.app
+    client = TestClient(app)
+    
+    yield client
+
