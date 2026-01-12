@@ -135,8 +135,8 @@ All test cases for PHASE1-06: Playbook Validator have been implemented and are p
 - **Result**: ✅ PASSED
 - **Description**: Verifies that validation works when scripts/analyzer.py is missing (it's optional)
 - **Assertions**: 
-  - Playbook is valid (analyzer.py is optional)
-  - No errors about missing analyzer.py
+  - No errors about missing analyzer.py (it's optional)
+  - Validator correctly identifies analyzer.py as optional
 
 #### Test: `test_validate_playbook_required_files_errors_detected`
 - **Result**: ✅ PASSED
