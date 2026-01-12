@@ -64,8 +64,8 @@ th_timmy/
 - [x] Basic automation scripts
 - [x] Playbook structure with query definitions (PHASE1-01)
 - [x] Query generator for multiple tools and hunt types (PHASE1-02)
+- [x] Deterministic anonymization with mapping table (PHASE1-03)
 - [ ] Playbook engine
-- [ ] Data anonymization
 
 **Phase 2: AI Integration** - Planned
 - [ ] AI service integration

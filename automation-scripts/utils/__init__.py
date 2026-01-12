@@ -12,6 +12,8 @@ from .config_backup import ConfigBackup
 from .alert_manager import AlertManager, AlertLevel
 from .query_generator import QueryGenerator, QueryGeneratorError
 from .query_templates import QueryTemplates, QueryTool, QueryMode
+from .deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+from .security import DataAnonymizer, anonymize_data
 
 __all__ = [
     'GitManager',
@@ -23,7 +25,11 @@ __all__ = [
     'QueryGeneratorError',
     'QueryTemplates',
     'QueryTool',
-    'QueryMode'
+    'QueryMode',
+    'DeterministicAnonymizer',
+    'DeterministicAnonymizerError',
+    'DataAnonymizer',
+    'anonymize_data'
 ]
 
 
