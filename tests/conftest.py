@@ -708,3 +708,108 @@ def temp_playbook_dir(project_root_path):
         if temp_path.exists():
             shutil.rmtree(temp_path, ignore_errors=True)
 
+
+@pytest.fixture(scope="function")
+def temp_playbooks_with_t1059(project_root_path):
+    """
+    Create temporary playbooks directory with T1059 playbook for testing.
+    
+    Returns:
+        Path: Path to temporary playbooks directory
+    """
+    template_path = project_root_path / "playbooks" / "template"
+    temp_dir = tempfile.mkdtemp(prefix="th_test_playbooks_")
+    temp_path = Path(temp_dir)
+    
+    try:
+        # Create T1059 playbook
+        t1059_path = temp_path / "T1059-command-and-scripting-interpreter"
+        t1059_path.mkdir(parents=True)
+        
+        # Copy template structure
+        if template_path.exists():
+            for item in template_path.iterdir():
+                if item.name.startswith('.'):
+                    continue
+                if item.is_file():
+                    shutil.copy2(item, t1059_path / item.name)
+                elif item.is_dir():
+                    shutil.copytree(item, t1059_path / item.name)
+        
+        # Update metadata.yml for T1059
+        metadata_path = t1059_path / "metadata.yml"
+        with open(metadata_path, 'r') as f:
+            metadata = yaml.safe_load(f)
+        
+        # Update for T1059
+        metadata['playbook']['id'] = "T1059-command-and-scripting-interpreter"
+        metadata['playbook']['name'] = "Command and Scripting Interpreter Detection"
+        metadata['mitre']['technique_id'] = "T1059"
+        metadata['mitre']['technique_name'] = "Command and Scripting Interpreter"
+        metadata['mitre']['tactic'] = "Execution"
+        
+        with open(metadata_path, 'w') as f:
+            yaml.dump(metadata, f, default_flow_style=False, allow_unicode=True)
+        
+        yield temp_path
+        
+    finally:
+        # Cleanup
+        if temp_path.exists():
+            shutil.rmtree(temp_path, ignore_errors=True)
+
+
+@pytest.fixture(scope="function")
+def temp_playbooks_with_multiple(project_root_path):
+    """
+    Create temporary playbooks directory with T1059, T1047, T1071 playbooks for testing.
+    
+    Returns:
+        Path: Path to temporary playbooks directory
+    """
+    template_path = project_root_path / "playbooks" / "template"
+    temp_dir = tempfile.mkdtemp(prefix="th_test_playbooks_multi_")
+    temp_path = Path(temp_dir)
+    
+    try:
+        techniques = [
+            ("T1059", "Command and Scripting Interpreter", "Execution"),
+            ("T1047", "Windows Management Instrumentation", "Execution"),
+            ("T1071", "Application Layer Protocol", "Command and Control")
+        ]
+        
+        for technique_id, technique_name, tactic in techniques:
+            playbook_path = temp_path / f"{technique_id}-{technique_name.lower().replace(' ', '-')}"
+            playbook_path.mkdir(parents=True)
+            
+            # Copy template structure
+            if template_path.exists():
+                for item in template_path.iterdir():
+                    if item.name.startswith('.'):
+                        continue
+                    if item.is_file():
+                        shutil.copy2(item, playbook_path / item.name)
+                    elif item.is_dir():
+                        shutil.copytree(item, playbook_path / item.name)
+            
+            # Update metadata.yml
+            metadata_path = playbook_path / "metadata.yml"
+            with open(metadata_path, 'r') as f:
+                metadata = yaml.safe_load(f)
+            
+            metadata['playbook']['id'] = f"{technique_id}-{technique_name.lower().replace(' ', '-')}"
+            metadata['playbook']['name'] = f"{technique_name} Detection"
+            metadata['mitre']['technique_id'] = technique_id
+            metadata['mitre']['technique_name'] = technique_name
+            metadata['mitre']['tactic'] = tactic
+            
+            with open(metadata_path, 'w') as f:
+                yaml.dump(metadata, f, default_flow_style=False, allow_unicode=True)
+        
+        yield temp_path
+        
+    finally:
+        # Cleanup
+        if temp_path.exists():
+            shutil.rmtree(temp_path, ignore_errors=True)
+
