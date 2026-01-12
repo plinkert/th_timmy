@@ -659,15 +659,7 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
         sys.modules["automation_scripts.api"].__path__ = [str(automation_scripts_path / "api")]
     
     # Load required modules first
-    # Load query_generator
-    query_generator_path = automation_scripts_path / "utils" / "query_generator.py"
-    query_generator_spec = importlib.util.spec_from_file_location(
-        "automation_scripts.utils.query_generator", query_generator_path
-    )
-    query_generator_module = importlib.util.module_from_spec(query_generator_spec)
-    sys.modules["automation_scripts.utils.query_generator"] = query_generator_module
-    
-    # Load query_templates first (dependency)
+    # Load query_templates first (dependency for query_generator)
     query_templates_path = automation_scripts_path / "utils" / "query_templates.py"
     query_templates_spec = importlib.util.spec_from_file_location(
         "automation_scripts.utils.query_templates", query_templates_path
@@ -676,8 +668,32 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     sys.modules["automation_scripts.utils.query_templates"] = query_templates_module
     query_templates_spec.loader.exec_module(query_templates_module)
     
-    # Now load query_generator
+    # Load query_generator
+    query_generator_path = automation_scripts_path / "utils" / "query_generator.py"
+    query_generator_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.query_generator", query_generator_path
+    )
+    query_generator_module = importlib.util.module_from_spec(query_generator_spec)
+    sys.modules["automation_scripts.utils.query_generator"] = query_generator_module
     query_generator_spec.loader.exec_module(query_generator_module)
+    
+    # Load playbook_validator (dependency for playbook_manager)
+    playbook_validator_path = automation_scripts_path / "utils" / "playbook_validator.py"
+    playbook_validator_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.playbook_validator", playbook_validator_path
+    )
+    playbook_validator_module = importlib.util.module_from_spec(playbook_validator_spec)
+    sys.modules["automation_scripts.utils.playbook_validator"] = playbook_validator_module
+    playbook_validator_spec.loader.exec_module(playbook_validator_module)
+    
+    # Load playbook_manager (dependency for dashboard_api)
+    playbook_manager_path = automation_scripts_path / "services" / "playbook_manager.py"
+    playbook_manager_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.services.playbook_manager", playbook_manager_path
+    )
+    playbook_manager_module = importlib.util.module_from_spec(playbook_manager_spec)
+    sys.modules["automation_scripts.services.playbook_manager"] = playbook_manager_module
+    playbook_manager_spec.loader.exec_module(playbook_manager_module)
     
     # Load dashboard_api
     dashboard_api_path = automation_scripts_path / "api" / "dashboard_api.py"
