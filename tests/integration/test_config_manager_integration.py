@@ -64,13 +64,28 @@ class TestFullConfigManagementCycle:
         """
         test_config_path = os.path.join(temp_dir, "test_config.yml")
         
-        # 1. Get configuration (from test_config fixture)
-        original_config = test_config.copy()
+        # Helper function to create valid config
+        def create_valid_test_config():
+            return {
+                'vms': {
+                    'vm01': {'ip': '192.168.1.10', 'role': 'ingest-parser', 'enabled': True},
+                    'vm02': {'ip': '192.168.1.11', 'role': 'database', 'enabled': True},
+                    'vm03': {'ip': '192.168.1.12', 'role': 'analysis-jupyter', 'enabled': True},
+                    'vm04': {'ip': '192.168.1.13', 'role': 'orchestrator-n8n', 'enabled': True}
+                }
+            }
+        
+        # 1. Get configuration (use valid test config)
+        original_config = create_valid_test_config()
         assert 'vms' in original_config, "Should have VMs in config"
         
-        # 2. Modify configuration
+        # 2. Modify configuration (use real VM IPs from test_config for sync)
         modified_config = original_config.copy()
-        modified_config['vms']['vm01']['ip'] = '192.168.1.200'
+        # Use actual VM IPs from test_config for sync test
+        if 'vms' in test_config and 'vm01' in test_config['vms']:
+            modified_config['vms']['vm01']['ip'] = test_config['vms']['vm01']['ip']
+        else:
+            modified_config['vms']['vm01']['ip'] = '192.168.1.200'
         modified_config['vms']['vm02']['ip'] = '192.168.1.201'
         
         # 3. Validate configuration
@@ -129,8 +144,18 @@ class TestConfigRollback:
         """
         test_config_path = os.path.join(temp_dir, "test_config.yml")
         
+        # Helper function to create valid config
+        def create_valid_test_config():
+            return {
+                'vms': {
+                    'vm01': {'ip': '192.168.1.10', 'role': 'ingest-parser', 'enabled': True},
+                    'vm02': {'ip': '192.168.1.11', 'role': 'database', 'enabled': True}
+                }
+            }
+        
         # 1. Create initial config
-        original_config = test_config.copy()
+        original_config = create_valid_test_config()
+        original_ip = original_config['vms']['vm01']['ip']
         with open(test_config_path, 'w') as f:
             yaml.dump(original_config, f)
         
@@ -171,8 +196,8 @@ class TestConfigRollback:
         with open(test_config_path, 'r') as f:
             restored_config = yaml.safe_load(f)
         
-        assert restored_config['vms']['vm01']['ip'] == original_config['vms']['vm01']['ip'], \
-            "Restored config should match original"
+        assert restored_config['vms']['vm01']['ip'] == original_ip, \
+            f"Restored config should match original IP {original_ip}, got {restored_config['vms']['vm01']['ip']}"
         
         # 6. Verify restored config is valid
         validation = config_manager.validate_config(

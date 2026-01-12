@@ -14,8 +14,19 @@ from datetime import datetime
 import yaml
 
 from .remote_executor import RemoteExecutor, RemoteExecutorError
-from ..utils.config_validator import ConfigValidator, ConfigValidatorError
-from ..utils.config_backup import ConfigBackup, ConfigBackupError
+
+# Try relative imports first, fallback to absolute
+try:
+    from ..utils.config_validator import ConfigValidator, ConfigValidatorError
+    from ..utils.config_backup import ConfigBackup, ConfigBackupError
+except ImportError:
+    # Fallback for direct execution or when package structure is different
+    import sys
+    from pathlib import Path
+    automation_scripts_path = Path(__file__).parent.parent
+    sys.path.insert(0, str(automation_scripts_path))
+    from utils.config_validator import ConfigValidator, ConfigValidatorError
+    from utils.config_backup import ConfigBackup, ConfigBackupError
 
 
 class ConfigManagerError(Exception):
