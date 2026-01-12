@@ -13,10 +13,10 @@ Security audit performed to identify and remove production data from the reposit
 ### 1. Production Configuration File in Repository ⚠️
 
 **Issue**: `configs/config.yml` was tracked in Git and contained production data:
-- Production IP addresses (removed - were: removed - private network IP, removed - private network IP, removed - private network IP, removed - private network IP)
-- Network configuration (removed - was: removed - private network IP/24)
-- Gateway addresses
-- Production paths
+- Production IP addresses (removed - contained private network IPs for all VMs)
+- Network configuration (removed - contained private network CIDR)
+- Gateway addresses (removed)
+- Production paths (removed)
 
 **Severity**: HIGH
 
