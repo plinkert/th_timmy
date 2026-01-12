@@ -28,6 +28,7 @@ from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
 from ..services.test_runner import TestRunner, TestRunnerError
 from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
 from ..services.hardening_manager import HardeningManager, HardeningManagerError
+from ..utils.query_generator import QueryGenerator, QueryGeneratorError
 
 
 # Security
@@ -110,6 +111,7 @@ _remote_executor: Optional[RemoteExecutor] = None
 _test_runner: Optional[TestRunner] = None
 _deployment_manager: Optional[DeploymentManager] = None
 _hardening_manager: Optional[HardeningManager] = None
+_query_generator: Optional[QueryGenerator] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -231,6 +233,16 @@ def get_hardening_manager() -> HardeningManager:
         )
     
     return _hardening_manager
+
+
+def get_query_generator() -> QueryGenerator:
+    """Get or create QueryGenerator instance."""
+    global _query_generator
+    
+    if _query_generator is None:
+        _query_generator = QueryGenerator(logger=logger)
+    
+    return _query_generator
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -1328,6 +1340,202 @@ async def get_hardening_summary(
             timestamp=datetime.utcnow().isoformat()
         )
         
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# Query Generator Models
+class GenerateQueriesRequest(BaseModel):
+    """Request model for query generation."""
+    technique_ids: List[str] = Field(..., description="List of MITRE technique IDs (e.g., ['T1566', 'T1059'])")
+    tool_names: List[str] = Field(..., description="List of tool names (e.g., ['Microsoft Defender for Endpoint', 'Splunk'])")
+    mode: str = Field("manual", description="Query mode: 'manual' or 'api'")
+    parameters: Optional[Dict[str, Any]] = Field(None, description="Optional parameters (time_range, severity, etc.)")
+
+
+class GenerateQueriesResponse(BaseModel):
+    """Response model for query generation."""
+    success: bool
+    techniques: List[str]
+    tools: List[str]
+    mode: str
+    queries: Dict[str, Any]
+    warnings: List[str]
+    timestamp: str
+
+
+class GetPlaybooksResponse(BaseModel):
+    """Response model for available playbooks."""
+    success: bool
+    playbooks: List[Dict[str, Any]]
+    total: int
+    timestamp: str
+
+
+class GetAvailableToolsResponse(BaseModel):
+    """Response model for available tools."""
+    success: bool
+    tools: List[str]
+    timestamp: str
+
+
+class GetQuerySummaryResponse(BaseModel):
+    """Response model for query summary."""
+    success: bool
+    summary: Dict[str, Any]
+    timestamp: str
+
+
+# Query Generator Endpoints
+@app.get("/query-generator/playbooks", response_model=GetPlaybooksResponse)
+async def get_playbooks(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get all available playbooks.
+    
+    Returns:
+        List of available playbooks with MITRE techniques
+    """
+    try:
+        query_generator = get_query_generator()
+        playbooks = query_generator.discover_playbooks()
+        
+        return GetPlaybooksResponse(
+            success=True,
+            playbooks=playbooks,
+            total=len(playbooks),
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except QueryGeneratorError as e:
+        logger.error(f"Query generator error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/query-generator/tools", response_model=GetAvailableToolsResponse)
+async def get_available_tools(
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get list of available tools from playbooks.
+    
+    Returns:
+        List of available tool names
+    """
+    try:
+        query_generator = get_query_generator()
+        tools = query_generator.get_available_tools()
+        
+        return GetAvailableToolsResponse(
+            success=True,
+            tools=tools,
+            timestamp=datetime.utcnow().isoformat()
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/query-generator/generate", response_model=GenerateQueriesResponse)
+async def generate_queries(
+    request: GenerateQueriesRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Generate queries for specified techniques and tools.
+    
+    Args:
+        request: Query generation request
+    
+    Returns:
+        Generated queries organized by technique and tool
+    """
+    try:
+        query_generator = get_query_generator()
+        
+        result = query_generator.generate_queries(
+            technique_ids=request.technique_ids,
+            tool_names=request.tool_names,
+            mode=request.mode,
+            parameters=request.parameters
+        )
+        
+        return GenerateQueriesResponse(
+            success=True,
+            techniques=result.get('techniques', []),
+            tools=result.get('tools', []),
+            mode=result.get('mode', request.mode),
+            queries=result.get('queries', {}),
+            warnings=result.get('warnings', []),
+            timestamp=result.get('timestamp', datetime.utcnow().isoformat())
+        )
+    except QueryGeneratorError as e:
+        logger.error(f"Query generator error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.get("/query-generator/summary", response_model=GetQuerySummaryResponse)
+async def get_query_summary(
+    technique_ids: Optional[str] = None,
+    tool_names: Optional[str] = None,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Get summary of available queries.
+    
+    Args:
+        technique_ids: Optional comma-separated list of technique IDs
+        tool_names: Optional comma-separated list of tool names
+    
+    Returns:
+        Query summary statistics
+    """
+    try:
+        query_generator = get_query_generator()
+        
+        tech_list = None
+        if technique_ids:
+            tech_list = [t.strip() for t in technique_ids.split(',')]
+        
+        tool_list = None
+        if tool_names:
+            tool_list = [t.strip() for t in tool_names.split(',')]
+        
+        summary = query_generator.get_query_summary(
+            technique_ids=tech_list,
+            tool_names=tool_list
+        )
+        
+        return GetQuerySummaryResponse(
+            success=True,
+            summary=summary,
+            timestamp=datetime.utcnow().isoformat()
+        )
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         raise HTTPException(

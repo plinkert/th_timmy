@@ -1,0 +1,285 @@
+{
+  "name": "Hunt Selection Form",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "hunt-selection",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-hunt-selection",
+      "name": "Hunt Selection Form UI",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "hunt-selection"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "available-playbooks",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-available-playbooks",
+      "name": "Get Available Playbooks",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "available-playbooks"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "available-tools",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-available-tools",
+      "name": "Get Available Tools",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "available-tools"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-queries",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-generate-queries",
+      "name": "Generate Queries",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "generate-queries"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/query-generator/playbooks",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-get-playbooks",
+      "name": "Get Playbooks",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/query-generator/tools",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "http-get-tools",
+      "name": "Get Tools",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/query-generator/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "technique_ids",
+              "value": "={{ $json.technique_ids || [] }}"
+            },
+            {
+              "name": "tool_names",
+              "value": "={{ $json.tool_names || [] }}"
+            },
+            {
+              "name": "mode",
+              "value": "={{ $json.mode || 'manual' }}"
+            },
+            {
+              "name": "parameters",
+              "value": "={{ $json.parameters || {} }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-generate-queries",
+      "name": "Generate Queries API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Format playbooks for display\nconst playbooks = $input.item.json.playbooks || [];\n\n// Group by tactic\nconst byTactic = {};\nfor (const pb of playbooks) {\n  const tactic = pb.tactic || 'Other';\n  if (!byTactic[tactic]) {\n    byTactic[tactic] = [];\n  }\n  byTactic[tactic].push(pb);\n}\n\nreturn [{\n  json: {\n    playbooks: playbooks,\n    by_tactic: byTactic,\n    total: playbooks.length\n  }\n}];"
+      },
+      "id": "format-playbooks",
+      "name": "Format Playbooks",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Threat Hunting - Hunt Selection</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }\n    .header h1 { margin: 0; font-size: 28px; }\n    .header p { margin: 10px 0 0 0; opacity: 0.9; }\n    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #667eea; }\n    .section h2 { margin-top: 0; color: #333; }\n    .checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin: 15px 0; }\n    .checkbox-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 4px; border: 1px solid #ddd; }\n    .checkbox-item input[type=\"checkbox\"] { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }\n    .checkbox-item label { cursor: pointer; flex: 1; }\n    .technique-id { font-weight: bold; color: #667eea; margin-right: 8px; }\n    .tactic-group { margin: 20px 0; }\n    .tactic-header { font-size: 18px; font-weight: bold; color: #555; margin: 15px 0 10px 0; padding-bottom: 8px; border-bottom: 2px solid #667eea; }\n    .radio-group { display: flex; gap: 20px; margin: 15px 0; }\n    .radio-item { display: flex; align-items: center; }\n    .radio-item input[type=\"radio\"] { margin-right: 8px; width: 18px; height: 18px; cursor: pointer; }\n    .radio-item label { cursor: pointer; }\n    .form-group { margin: 20px 0; }\n    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }\n    .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }\n    .btn { padding: 12px 24px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }\n    .btn-primary { background: #667eea; color: white; }\n    .btn-primary:hover { background: #5568d3; }\n    .btn-secondary { background: #6c757d; color: white; }\n    .btn-secondary:hover { background: #5a6268; }\n    .btn-success { background: #28a745; color: white; }\n    .btn-success:hover { background: #218838; }\n    .actions { text-align: center; margin: 30px 0; }\n    .results { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }\n    .results.show { display: block; }\n    .query-card { background: white; padding: 20px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #28a745; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }\n    .query-card h3 { margin-top: 0; color: #333; }\n    .query-code { background: #2d2d2d; color: #f8f8f2; padding: 15px; border-radius: 4px; overflow-x: auto; font-family: 'Courier New', monospace; font-size: 13px; white-space: pre-wrap; }\n    .copy-btn { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin-top: 10px; }\n    .copy-btn:hover { background: #5568d3; }\n    .warning { background: #fff3cd; border: 1px solid #ffc107; color: #856404; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .info { background: #d1ecf1; border: 1px solid #17a2b8; color: #0c5460; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .loading { text-align: center; padding: 20px; color: #667eea; }\n  </style>\n  <script>\n    let playbooksData = [];\n    let toolsData = [];\n    \n    // Load playbooks and tools on page load\n    window.addEventListener('DOMContentLoaded', function() {\n      loadPlaybooks();\n      loadTools();\n    });\n    \n    function loadPlaybooks() {\n      fetch('/webhook/available-playbooks')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.playbooks) {\n            playbooksData = d.playbooks;\n            renderPlaybooks();\n          }\n        })\n        .catch(e => console.error('Error loading playbooks:', e));\n    }\n    \n    function loadTools() {\n      fetch('/webhook/available-tools')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.tools) {\n            toolsData = d.tools;\n            renderTools();\n          }\n        })\n        .catch(e => console.error('Error loading tools:', e));\n    }\n    \n    function renderPlaybooks() {\n      const container = document.getElementById('playbooks-container');\n      if (!container || playbooksData.length === 0) return;\n      \n      // Group by tactic\n      const byTactic = {};\n      for (const pb of playbooksData) {\n        const tactic = pb.tactic || 'Other';\n        if (!byTactic[tactic]) byTactic[tactic] = [];\n        byTactic[tactic].push(pb);\n      }\n      \n      let html = '';\n      for (const [tactic, playbooks] of Object.entries(byTactic)) {\n        html += `<div class=\"tactic-group\"><div class=\"tactic-header\">${tactic}</div><div class=\"checkbox-group\">`;\n        for (const pb of playbooks) {\n          html += `\n            <div class=\"checkbox-item\">\n              <input type=\"checkbox\" id=\"tech_${pb.technique_id}\" name=\"techniques\" value=\"${pb.technique_id}\">\n              <label for=\"tech_${pb.technique_id}\">\n                <span class=\"technique-id\">${pb.technique_id}</span>\n                ${pb.technique_name || pb.name}\n              </label>\n            </div>\n          `;\n        }\n        html += '</div></div>';\n      }\n      container.innerHTML = html;\n    }\n    \n    function renderTools() {\n      const container = document.getElementById('tools-container');\n      if (!container || toolsData.length === 0) return;\n      \n      let html = '<div class=\"checkbox-group\">';\n      for (const tool of toolsData) {\n        html += `\n          <div class=\"checkbox-item\">\n            <input type=\"checkbox\" id=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\" name=\"tools\" value=\"${tool}\">\n            <label for=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\">${tool}</label>\n          </div>\n        `;\n      }\n      html += '</div>';\n      container.innerHTML = html;\n    }\n    \n    function selectAllTechniques() {\n      document.querySelectorAll('input[name=\"techniques\"]').forEach(cb => cb.checked = true);\n    }\n    \n    function deselectAllTechniques() {\n      document.querySelectorAll('input[name=\"techniques\"]').forEach(cb => cb.checked = false);\n    }\n    \n    function selectAllTools() {\n      document.querySelectorAll('input[name=\"tools\"]').forEach(cb => cb.checked = true);\n    }\n    \n    function deselectAllTools() {\n      document.querySelectorAll('input[name=\"tools\"]').forEach(cb => cb.checked = false);\n    }\n    \n    function generateQueries() {\n      const techniques = Array.from(document.querySelectorAll('input[name=\"techniques\"]:checked')).map(cb => cb.value);\n      const tools = Array.from(document.querySelectorAll('input[name=\"tools\"]:checked')).map(cb => cb.value);\n      const mode = document.querySelector('input[name=\"mode\"]:checked')?.value || 'manual';\n      const timeRange = document.getElementById('time_range').value || '7d';\n      const severity = document.getElementById('severity').value || 'high';\n      \n      if (techniques.length === 0) {\n        alert('Please select at least one MITRE ATT&CK technique');\n        return;\n      }\n      \n      if (tools.length === 0) {\n        alert('Please select at least one tool');\n        return;\n      }\n      \n      const resultsDiv = document.getElementById('results');\n      resultsDiv.classList.add('show');\n      resultsDiv.innerHTML = '<div class=\"loading\">Generating queries... Please wait.</div>';\n      \n      fetch('/webhook/generate-queries', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          technique_ids: techniques,\n          tool_names: tools,\n          mode: mode,\n          parameters: {\n            time_range: timeRange,\n            severity: severity\n          }\n        })\n      })\n        .then(r => r.json())\n        .then(d => {\n          if (d.success) {\n            displayQueries(d);\n          } else {\n            resultsDiv.innerHTML = `<div class=\"warning\">Error: ${d.message || 'Failed to generate queries'}</div>`;\n          }\n        })\n        .catch(e => {\n          resultsDiv.innerHTML = `<div class=\"warning\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function displayQueries(data) {\n      const resultsDiv = document.getElementById('results');\n      let html = '<h2>Generated Queries</h2>';\n      \n      if (data.warnings && data.warnings.length > 0) {\n        html += '<div class=\"warning\"><strong>Warnings:</strong><ul>';\n        for (const warning of data.warnings) {\n          html += `<li>${warning}</li>`;\n        }\n        html += '</ul></div>';\n      }\n      \n      const queries = data.queries || {};\n      \n      for (const [techniqueId, techniqueData] of Object.entries(queries)) {\n        html += `<div class=\"query-card\"><h3>${techniqueId}: ${techniqueData.technique_name || ''}</h3>`;\n        \n        const tools = techniqueData.tools || {};\n        for (const [toolName, queryData] of Object.entries(tools)) {\n          html += `<h4>${toolName}</h4>`;\n          if (queryData.description) {\n            html += `<p><em>${queryData.description}</em></p>`;\n          }\n          html += `<div class=\"query-code\">${escapeHtml(queryData.query || '')}</div>`;\n          html += `<button class=\"copy-btn\" onclick=\"copyToClipboard(this)\">Copy Query</button>`;\n          if (queryData.instructions) {\n            html += `<div class=\"info\"><strong>Instructions:</strong><br>${queryData.instructions.replace(/\\n/g, '<br>')}</div>`;\n          }\n        }\n        \n        html += '</div>';\n      }\n      \n      resultsDiv.innerHTML = html;\n    }\n    \n    function escapeHtml(text) {\n      const div = document.createElement('div');\n      div.textContent = text;\n      return div.innerHTML;\n    }\n    \n    function copyToClipboard(button) {\n      const codeBlock = button.previousElementSibling;\n      const text = codeBlock.textContent;\n      navigator.clipboard.writeText(text).then(() => {\n        button.textContent = 'Copied!';\n        setTimeout(() => button.textContent = 'Copy Query', 2000);\n      });\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🎯 Threat Hunting - Hunt Selection</h1>\n      <p>Select MITRE ATT&CK techniques and tools to generate hunting queries</p>\n    </div>\n    \n    <form id=\"hunt-form\">\n      <div class=\"section\">\n        <h2>1. Select MITRE ATT&CK Techniques</h2>\n        <p>Choose which threat hunting techniques you want to investigate:</p>\n        <div style=\"margin: 15px 0;\">\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"selectAllTechniques()\">Select All</button>\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"deselectAllTechniques()\">Deselect All</button>\n        </div>\n        <div id=\"playbooks-container\">\n          <div class=\"loading\">Loading playbooks...</div>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>2. Select Available Tools</h2>\n        <p>Select which SIEM/EDR tools you have access to:</p>\n        <div style=\"margin: 15px 0;\">\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"selectAllTools()\">Select All</button>\n          <button type=\"button\" class=\"btn btn-secondary\" onclick=\"deselectAllTools()\">Deselect All</button>\n        </div>\n        <div id=\"tools-container\">\n          <div class=\"loading\">Loading tools...</div>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>3. Select Ingest Mode</h2>\n        <p>Choose how you want to execute the queries:</p>\n        <div class=\"radio-group\">\n          <div class=\"radio-item\">\n            <input type=\"radio\" id=\"mode_manual\" name=\"mode\" value=\"manual\" checked>\n            <label for=\"mode_manual\">Manual (Copy & Paste)</label>\n          </div>\n          <div class=\"radio-item\">\n            <input type=\"radio\" id=\"mode_api\" name=\"mode\" value=\"api\">\n            <label for=\"mode_api\">API (Automated)</label>\n          </div>\n        </div>\n        <div class=\"info\">\n          <strong>Manual Mode:</strong> Queries are ready to copy and paste into your SIEM/EDR tool interface.<br>\n          <strong>API Mode:</strong> Queries are designed for automated execution via API (requires API credentials).\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>4. Query Parameters</h2>\n        <div class=\"form-group\">\n          <label for=\"time_range\">Time Range:</label>\n          <select id=\"time_range\">\n            <option value=\"1h\">Last 1 hour</option>\n            <option value=\"6h\">Last 6 hours</option>\n            <option value=\"24h\">Last 24 hours</option>\n            <option value=\"7d\" selected>Last 7 days</option>\n            <option value=\"30d\">Last 30 days</option>\n            <option value=\"90d\">Last 90 days</option>\n          </select>\n        </div>\n        <div class=\"form-group\">\n          <label for=\"severity\">Minimum Severity:</label>\n          <select id=\"severity\">\n            <option value=\"low\">Low</option>\n            <option value=\"medium\">Medium</option>\n            <option value=\"high\" selected>High</option>\n            <option value=\"critical\">Critical</option>\n          </select>\n        </div>\n      </div>\n      \n      <div class=\"actions\">\n        <button type=\"button\" class=\"btn btn-primary btn-success\" onclick=\"generateQueries()\">\n          🚀 Generate Queries\n        </button>\n      </div>\n    </form>\n    \n    <div id=\"results\" class=\"results\"></div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-hunt-selection",
+      "name": "Respond Hunt Selection",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"playbooks\": $json.playbooks, \"total\": $json.total, \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-available-playbooks",
+      "name": "Respond Available Playbooks",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": true, \"tools\": $json.tools, \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-available-tools",
+      "name": "Respond Available Tools",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"techniques\": $json.techniques, \"tools\": $json.tools, \"mode\": $json.mode, \"queries\": $json.queries, \"warnings\": $json.warnings || [], \"timestamp\": $json.timestamp } }}",
+        "options": {}
+      },
+      "id": "respond-generate-queries",
+      "name": "Respond Generate Queries",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    }
+  ],
+  "connections": {
+    "Hunt Selection Form UI": {
+      "main": [
+        [
+          {
+            "node": "Get Playbooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Available Playbooks": {
+      "main": [
+        [
+          {
+            "node": "Get Playbooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Playbooks": {
+      "main": [
+        [
+          {
+            "node": "Format Playbooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Playbooks": {
+      "main": [
+        [
+          {
+            "node": "Respond Hunt Selection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond Available Playbooks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Available Tools": {
+      "main": [
+        [
+          {
+            "node": "Get Tools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Tools": {
+      "main": [
+        [
+          {
+            "node": "Respond Available Tools",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Queries": {
+      "main": [
+        [
+          {
+            "node": "Generate Queries API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Queries API": {
+      "main": [
+        [
+          {
+            "node": "Respond Generate Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

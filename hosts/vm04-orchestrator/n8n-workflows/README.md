@@ -314,6 +314,89 @@ curl -X POST http://VM04_IP:5678/webhook/compare-before-after \
   -d '{"hardening_id": "20240115_120000", "vm_id": "vm01"}'
 ```
 
+## Hunt Selection Form Workflow
+
+### Instalacja
+
+1. Importuj workflow `hunt-selection-form.json` do n8n
+2. Aktywuj workflow
+3. Dostęp do formularza: `http://VM04_IP:5678/webhook/hunt-selection`
+
+### Funkcjonalności
+
+- **Hunt Selection**: Wybór technik MITRE ATT&CK do badania
+- **Tool Selection**: Wybór dostępnych narzędzi SIEM/EDR
+- **Ingest Mode**: Wybór trybu wykonania (manual/API)
+- **Query Generation**: Automatyczne generowanie zapytań
+- **Query Display**: Wyświetlanie wygenerowanych zapytań z możliwością kopiowania
+
+### Webhook Endpoints
+
+- `GET /webhook/hunt-selection` - Formularz wyboru huntów (HTML)
+- `GET /webhook/available-playbooks` - Pobierz dostępne playbooki
+- `GET /webhook/available-tools` - Pobierz dostępne narzędzia
+- `POST /webhook/generate-queries` - Generuj zapytania dla wybranych huntów i narzędzi
+
+### Użycie
+
+#### Dostęp do formularza
+
+1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/hunt-selection`
+2. Formularz automatycznie załaduje dostępne playbooki i narzędzia
+
+#### Wybór huntów i generowanie zapytań
+
+1. **Wybierz techniki MITRE ATT&CK**: Zaznacz checkboxy dla technik, które chcesz badać
+2. **Wybierz narzędzia**: Zaznacz checkboxy dla narzędzi, które masz dostępne
+3. **Wybierz tryb ingestu**: 
+   - **Manual**: Zapytania do ręcznego skopiowania i wykonania
+   - **API**: Zapytania do automatycznego wykonania przez API
+4. **Ustaw parametry**: Wybierz zakres czasowy i minimalną ważność
+5. **Kliknij "Generate Queries"**: System wygeneruje zapytania dla wybranych kombinacji
+
+#### Wyświetlanie wyników
+
+- Wygenerowane zapytania są wyświetlane w czytelnej formie
+- Każde zapytanie ma przycisk "Copy Query" do skopiowania
+- Instrukcje wykonania są wyświetlane dla każdego zapytania
+- Ostrzeżenia są wyświetlane jeśli zapytania nie są dostępne
+
+### Integracja
+
+- **PHASE1-02**: Używa Query Generator do generowania zapytań
+- **PHASE0-05**: Integracja z Management Dashboard
+- **API Endpoints**: Używa endpointów `/query-generator/*` z dashboard_api.py
+
+### Przykłady użycia
+
+#### Pobranie dostępnych playbooków
+
+```bash
+curl http://VM04_IP:5678/webhook/available-playbooks
+```
+
+#### Pobranie dostępnych narzędzi
+
+```bash
+curl http://VM04_IP:5678/webhook/available-tools
+```
+
+#### Generowanie zapytań
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/generate-queries \
+  -H "Content-Type: application/json" \
+  -d '{
+    "technique_ids": ["T1566", "T1059"],
+    "tool_names": ["Microsoft Defender for Endpoint", "Splunk"],
+    "mode": "manual",
+    "parameters": {
+      "time_range": "7d",
+      "severity": "high"
+    }
+  }'
+```
+
 ## Przyszłe ulepszenia
 
 - [ ] Dodanie API endpointów dla wszystkich serwisów
