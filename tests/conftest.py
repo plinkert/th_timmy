@@ -345,3 +345,57 @@ def repo_sync_service(test_config, remote_executor, project_root_path):
     # Cleanup
     service.close()
 
+
+@pytest.fixture(scope="function")
+def config_manager(test_config, remote_executor, project_root_path, temp_dir):
+    """Create ConfigManager instance for testing."""
+    # Ensure configuration_management config exists
+    if 'configuration_management' not in test_config:
+        test_config['configuration_management'] = {
+            'main_config_path': str(project_root_path / "configs" / "config.yml"),
+            'vm_config_paths': {
+                'vm01': '/home/thadmin/th_timmy/configs/config.yml',
+                'vm02': '/home/thadmin/th_timmy/configs/config.yml',
+                'vm03': '/home/thadmin/th_timmy/configs/config.yml',
+                'vm04': '/home/thadmin/th_timmy/configs/config.yml',
+            },
+            'backup_dir': str(Path(temp_dir) / "config_backups"),
+            'history_dir': str(Path(temp_dir) / "config_history")
+        }
+    
+    # Import ConfigManager
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load config_manager
+    config_manager_path = automation_scripts_path / "services" / "config_manager.py"
+    config_manager_spec = importlib.util.spec_from_file_location("automation_scripts.services.config_manager", config_manager_path)
+    config_manager_module = importlib.util.module_from_spec(config_manager_spec)
+    sys.modules["automation_scripts.services.config_manager"] = config_manager_module
+    
+    # Inject dependencies
+    config_manager_module.RemoteExecutor = RemoteExecutor
+    config_manager_module.RemoteExecutorError = RemoteExecutorError
+    
+    config_manager_spec.loader.exec_module(config_manager_module)
+    ConfigManager = config_manager_module.ConfigManager
+    
+    # Create manager instance
+    manager = ConfigManager(
+        config=test_config,
+        remote_executor=remote_executor,
+        backup_dir=str(Path(temp_dir) / "config_backups"),
+        history_dir=str(Path(temp_dir) / "config_history")
+    )
+    
+    yield manager
+    
+    # Cleanup
+    manager.close()
+
