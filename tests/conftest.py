@@ -440,3 +440,75 @@ def config_manager(test_config, remote_executor, project_root_path, temp_dir):
     # Cleanup
     service.close()
 
+
+@pytest.fixture(scope="function")
+def health_monitor(test_config, remote_executor, project_root_path, temp_dir):
+    """Create HealthMonitor instance for testing."""
+    # Import HealthMonitor
+    import importlib.util
+    import types
+    
+    automation_scripts_path = project_root_path / "automation-scripts"
+    
+    # Create package structure if needed
+    if "automation_scripts.services" not in sys.modules:
+        sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
+    
+    # Load health_monitor
+    health_monitor_path = automation_scripts_path / "services" / "health_monitor.py"
+    health_monitor_spec = importlib.util.spec_from_file_location("automation_scripts.services.health_monitor", health_monitor_path)
+    health_monitor_module = importlib.util.module_from_spec(health_monitor_spec)
+    sys.modules["automation_scripts.services.health_monitor"] = health_monitor_module
+    
+    # Inject dependencies
+    health_monitor_module.RemoteExecutor = RemoteExecutor
+    health_monitor_module.RemoteExecutorError = RemoteExecutorError
+    
+    # Load metrics_collector
+    try:
+        metrics_path = automation_scripts_path / "services" / "metrics_collector.py"
+        if metrics_path.exists():
+            metrics_spec = importlib.util.spec_from_file_location("automation_scripts.services.metrics_collector", metrics_path)
+            metrics_module = importlib.util.module_from_spec(metrics_spec)
+            sys.modules["automation_scripts.services.metrics_collector"] = metrics_module
+            metrics_spec.loader.exec_module(metrics_module)
+            health_monitor_module.MetricsCollector = metrics_module.MetricsCollector
+            health_monitor_module.MetricsCollectorError = metrics_module.MetricsCollectorError
+    except Exception as e:
+        pass
+    
+    # Load alert_manager
+    try:
+        alert_path = automation_scripts_path / "utils" / "alert_manager.py"
+        if alert_path.exists():
+            alert_spec = importlib.util.spec_from_file_location("automation_scripts.utils.alert_manager", alert_path)
+            alert_module = importlib.util.module_from_spec(alert_spec)
+            if "automation_scripts.utils" not in sys.modules:
+                sys.modules["automation_scripts.utils"] = types.ModuleType("automation_scripts.utils")
+            sys.modules["automation_scripts.utils.alert_manager"] = alert_module
+            alert_spec.loader.exec_module(alert_module)
+            health_monitor_module.AlertManager = alert_module.AlertManager
+            health_monitor_module.AlertLevel = alert_module.AlertLevel
+    except Exception as e:
+        pass
+    
+    health_monitor_spec.loader.exec_module(health_monitor_module)
+    HealthMonitor = health_monitor_module.HealthMonitor
+    
+    # Add health_monitoring section to test_config if not present
+    if 'health_monitoring' not in test_config:
+        test_config['health_monitoring'] = {
+            'alert_history_file': os.path.join(temp_dir, 'alerts_history.json')
+        }
+    
+    # Create service instance
+    service = HealthMonitor(
+        config=test_config,
+        remote_executor=remote_executor
+    )
+    
+    yield service
+    
+    # Cleanup
+    service.close()
+

@@ -143,10 +143,20 @@ class HealthMonitor:
                 raise HealthMonitorError(f"No health check script configured for {vm_id}")
             
             # Determine project root on VM
-            project_root = self.config.get('repository', {}).get('vm_repo_paths', {}).get(
-                vm_id,
-                '/home/user/th_timmy'
-            )
+            # Try configuration_management first, then repository
+            project_root = None
+            if 'configuration_management' in self.config:
+                vm_paths = self.config.get('configuration_management', {}).get('vm_config_paths', {})
+                if vm_id in vm_paths:
+                    # Extract directory from config path
+                    config_path = vm_paths[vm_id]
+                    project_root = str(Path(config_path).parent.parent)
+            
+            if not project_root:
+                project_root = self.config.get('repository', {}).get('vm_repo_paths', {}).get(
+                    vm_id,
+                    '/home/thadmin/th_timmy'
+                )
             
             # Execute health check script
             health_check_command = f"cd {project_root} && bash {script_path} {project_root} 2>&1"
