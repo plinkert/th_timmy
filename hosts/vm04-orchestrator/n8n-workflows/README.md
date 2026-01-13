@@ -1,257 +1,257 @@
 # Management Dashboard - n8n Workflow
 
-## Opis
+## Description
 
-Management Dashboard to podstawowy workflow n8n do zarządzania systemem Threat Hunting Lab. Dashboard zapewnia centralny interfejs do monitorowania i zarządzania wszystkimi komponentami systemu.
+Management Dashboard is the primary n8n workflow for managing the Threat Hunting Lab system. The dashboard provides a central interface for monitoring and managing all system components.
 
-## Funkcjonalności
+## Features
 
 ### 1. System Overview
-- **Status wszystkich 4 VM** - wyświetlanie statusu zdrowia każdego VM w formie kart z kolorami:
-  - 🟢 Zielony - VM zdrowy (healthy)
-  - 🟡 Żółty - VM w stanie degraded
-  - 🔴 Czerwony - VM niezdrowy (unhealthy)
-- **Metryki systemowe** - wyświetlanie metryk dla każdego VM:
+- **Status of all 4 VMs** - Displays health status of each VM as color-coded cards:
+  - 🟢 Green - VM healthy
+  - 🟡 Yellow - VM in degraded state
+  - 🔴 Red - VM unhealthy
+- **System metrics** - Displays metrics for each VM:
   - CPU usage (%)
   - Memory usage (%)
   - Disk usage (%)
-- **Automatyczne odświeżanie** - status jest automatycznie odświeżany co 5 minut
+- **Automatic refresh** - Status is automatically refreshed every 5 minutes
 
 ### 2. Health Monitoring
-- **Automatyczne health checks** - scheduled trigger uruchamia health checks co 5 minut
-- **Integracja z Health Monitor Service** - używa `HealthMonitor` (PHASE0-04) do sprawdzania zdrowia VM
-- **Alerty** - automatyczne alerty w przypadku problemów ze zdrowiem VM
+- **Automatic health checks** - Scheduled trigger runs health checks every 5 minutes
+- **Health Monitor Service integration** - Uses `HealthMonitor` (PHASE0-04) to check VM health
+- **Alerts** - Automatic alerts in case of VM health problems
 
 ### 3. Repository Sync
-- **Przycisk synchronizacji** - ręczne uruchomienie synchronizacji repozytorium
-- **Synchronizacja do wszystkich VM** - używa `RepoSyncService` (PHASE0-02)
-- **Status synchronizacji** - wyświetlanie wyniku operacji synchronizacji
+- **Sync button** - Manual repository synchronization trigger
+- **Sync to all VMs** - Uses `RepoSyncService` (PHASE0-02)
+- **Sync status** - Displays synchronization operation results
 
 ### 4. Configuration Management
-- **Wyświetlanie konfiguracji** - możliwość przeglądania centralnej konfiguracji
-- **Edycja konfiguracji** - możliwość aktualizacji konfiguracji przez dashboard
-- **Walidacja** - automatyczna walidacja przed zapisem zmian
-- **Backup** - automatyczne tworzenie backupu przed zmianami
+- **Configuration display** - Ability to view central configuration
+- **Configuration editing** - Ability to update configuration through dashboard
+- **Validation** - Automatic validation before saving changes
+- **Backup** - Automatic backup creation before changes
 
 ### 5. Quick Actions
-- **Health Checks** - ręczne uruchomienie health check dla wybranego VM
-- **Testy połączeń** - testowanie łączności między VM
-- **Status serwisów** - sprawdzanie statusu serwisów (PostgreSQL, JupyterLab, n8n, Docker)
+- **Health Checks** - Manual health check trigger for selected VM
+- **Connection tests** - Testing connectivity between VMs
+- **Service status** - Checking status of services (PostgreSQL, JupyterLab, n8n, Docker)
 
-## Instalacja
+## Installation
 
-### 1. Import workflow do n8n
+### 1. Import workflow to n8n
 
-1. Zaloguj się do n8n (domyślnie: http://VM04_IP:5678)
-2. Przejdź do **Workflows** → **Import from File**
-3. Wybierz plik `management-dashboard.json`
-4. Kliknij **Import**
+1. Log into n8n (default: http://VM04_IP:5678)
+2. Go to **Workflows** → **Import from File**
+3. Select file `management-dashboard.json`
+4. Click **Import**
 
-### 2. Konfiguracja
+### 2. Configuration
 
-Po zaimportowaniu workflow, skonfiguruj następujące elementy:
+After importing the workflow, configure the following elements:
 
 #### API Endpoints
 
-Workflow wymaga, aby API serwisy były dostępne. Upewnij się, że:
+The workflow requires API services to be available. Ensure that:
 
-1. **Remote Execution API** jest uruchomione:
+1. **Remote Execution API** is running:
    ```bash
-   # Na VM04
+   # On VM04
    cd /home/thadmin/th_timmy
    uvicorn automation-scripts.api.remote_api:app --host 0.0.0.0 --port 8000
    ```
 
-2. **Health Monitor Service** jest dostępny przez API (można dodać endpointy w przyszłości)
+2. **Health Monitor Service** is available via API (endpoints can be added in the future)
 
-3. **Repository Sync Service** jest dostępny przez API (można dodać endpointy w przyszłości)
+3. **Repository Sync Service** is available via API (endpoints can be added in the future)
 
-#### Konfiguracja Webhook URLs
+#### Webhook URL Configuration
 
-Workflow używa webhooków n8n. Po aktywacji workflow, n8n wygeneruje unikalne URL-e dla każdego webhooka. Zaktualizuj je w dashboard UI jeśli potrzebne.
+The workflow uses n8n webhooks. After activating the workflow, n8n will generate unique URLs for each webhook. Update them in the dashboard UI if needed.
 
-#### Konfiguracja Authentication
+#### Authentication Configuration
 
-Jeśli API wymaga autentykacji (API key), skonfiguruj ją w węzłach HTTP Request:
-1. Otwórz węzeł HTTP Request
-2. W sekcji **Authentication** wybierz **Header Auth**
-3. Ustaw:
+If the API requires authentication (API key), configure it in HTTP Request nodes:
+1. Open HTTP Request node
+2. In **Authentication** section select **Header Auth**
+3. Set:
    - **Name**: `Authorization`
    - **Value**: `Bearer YOUR_API_KEY`
 
-## Użycie
+## Usage
 
-### Dostęp do Dashboard
+### Accessing Dashboard
 
-1. Aktywuj workflow w n8n
-2. Otwórz webhook URL dla "Dashboard UI" (np. `http://VM04_IP:5678/webhook/dashboard`)
-3. Dashboard zostanie wyświetlony w przeglądarce
+1. Activate workflow in n8n
+2. Open webhook URL for "Dashboard UI" (e.g., `http://VM04_IP:5678/webhook/dashboard`)
+3. Dashboard will be displayed in browser
 
-### Automatyczne Health Checks
+### Automatic Health Checks
 
-Workflow automatycznie uruchamia health checks co 5 minut. Możesz zmienić interwał w węźle "Schedule Health Check":
-- Otwórz węzeł
-- Zmień wartość `minutesInterval` w parametrach
+The workflow automatically runs health checks every 5 minutes. You can change the interval in the "Schedule Health Check" node:
+- Open the node
+- Change `minutesInterval` value in parameters
 
-### Ręczne operacje
+### Manual Operations
 
-#### Synchronizacja repozytorium
+#### Repository Synchronization
 
-1. Kliknij przycisk **"Sync Repository"** w dashboard
-2. Lub wyślij POST request do webhooka:
+1. Click **"Sync Repository"** button in dashboard
+2. Or send POST request to webhook:
    ```bash
    curl -X POST http://VM04_IP:5678/webhook/sync-repository \
      -H "Content-Type: application/json" \
      -d '{}'
    ```
 
-#### Sprawdzenie statusu zdrowia
+#### Health Status Check
 
-1. Kliknij przycisk **"Refresh Status"** w dashboard
-2. Lub wyślij POST request do webhooka:
+1. Click **"Refresh Status"** button in dashboard
+2. Or send POST request to webhook:
    ```bash
    curl -X POST http://VM04_IP:5678/webhook/get-health-status \
      -H "Content-Type: application/json" \
      -d '{"vm_id": "vm01"}'
    ```
 
-## Integracja z serwisami
+## Service Integration
 
-Dashboard integruje się z następującymi serwisami:
+The dashboard integrates with the following services:
 
 ### PHASE0-01: Remote Execution Service
 - **Endpoint**: `POST /execute-command`
-- **Użycie**: Wykonywanie komend na zdalnych VM
-- **Przykład**: Health checks, testy połączeń
+- **Usage**: Executing commands on remote VMs
+- **Example**: Health checks, connection tests
 
 ### PHASE0-02: Repository Sync Service
-- **Funkcja**: `sync_repository_to_all_vms()`
-- **Użycie**: Synchronizacja repozytorium Git na wszystkich VM
-- **Status**: Obecnie przez bezpośrednie wywołanie (można dodać API endpoint)
+- **Function**: `sync_repository_to_all_vms()`
+- **Usage**: Git repository synchronization on all VMs
+- **Status**: Currently via direct call (API endpoint can be added)
 
 ### PHASE0-03: Configuration Manager
-- **Funkcje**: `get_config()`, `update_config()`, `validate_config()`
-- **Użycie**: Zarządzanie konfiguracją systemu
-- **Status**: Obecnie przez bezpośrednie wywołanie (można dodać API endpoint)
+- **Functions**: `get_config()`, `update_config()`, `validate_config()`
+- **Usage**: System configuration management
+- **Status**: Currently via direct call (API endpoint can be added)
 
 ### PHASE0-04: Health Monitor
-- **Funkcje**: `check_vm_health()`, `get_health_status_all()`, `collect_metrics()`
-- **Użycie**: Monitoring zdrowia VM i zbieranie metryk
-- **Status**: Obecnie przez bezpośrednie wywołanie (można dodać API endpoint)
+- **Functions**: `check_vm_health()`, `get_health_status_all()`, `collect_metrics()`
+- **Usage**: VM health monitoring and metrics collection
+- **Status**: Currently via direct call (API endpoint can be added)
 
-## Struktura workflow
+## Workflow Structure
 
-Workflow składa się z następujących węzłów:
+The workflow consists of the following nodes:
 
-1. **Schedule Health Check** - Trigger uruchamiający się co 5 minut
-2. **Get All VM Status** - Zbieranie statusu wszystkich VM
-3. **Set VM Status** - Przygotowanie danych statusu
-4. **Dashboard UI** - Webhook wyświetlający interfejs użytkownika
-5. **Get Health Status** - Webhook do ręcznego sprawdzania statusu
-6. **Sync Repository** - Webhook do synchronizacji repozytorium
-7. **Execute Command** - Wykonywanie komend przez API
-8. **Respond nodes** - Odpowiedzi HTTP dla webhooków
+1. **Schedule Health Check** - Trigger that runs every 5 minutes
+2. **Get All VM Status** - Collecting status of all VMs
+3. **Set VM Status** - Preparing status data
+4. **Dashboard UI** - Webhook displaying user interface
+5. **Get Health Status** - Webhook for manual status check
+6. **Sync Repository** - Webhook for repository synchronization
+7. **Execute Command** - Command execution via API
+8. **Respond nodes** - HTTP responses for webhooks
 
-## Rozszerzanie
+## Extending
 
-### Dodawanie nowych funkcji
+### Adding New Features
 
-1. Dodaj nowy webhook node dla nowej funkcji
-2. Dodaj HTTP Request node do komunikacji z API
-3. Dodaj przycisk w dashboard UI
-4. Zaktualizuj JavaScript w dashboard do obsługi nowej funkcji
+1. Add new webhook node for new feature
+2. Add HTTP Request node for API communication
+3. Add button in dashboard UI
+4. Update JavaScript in dashboard to handle new feature
 
-### Dodawanie nowych metryk
+### Adding New Metrics
 
-1. Rozszerz węzeł "Get All VM Status" o nowe metryki
-2. Zaktualizuj template HTML w "Respond Dashboard" o wyświetlanie nowych metryk
+1. Extend "Get All VM Status" node with new metrics
+2. Update HTML template in "Respond Dashboard" to display new metrics
 
 ## Troubleshooting
 
-### Dashboard nie ładuje się
+### Dashboard Not Loading
 
-1. Sprawdź, czy workflow jest aktywowany w n8n
-2. Sprawdź, czy webhook URL jest poprawny
-3. Sprawdź logi n8n pod kątem błędów
+1. Check if workflow is activated in n8n
+2. Check if webhook URL is correct
+3. Check n8n logs for errors
 
-### Health checks nie działają
+### Health Checks Not Working
 
-1. Sprawdź, czy API jest uruchomione i dostępne
-2. Sprawdź konfigurację authentication w węzłach HTTP Request
-3. Sprawdź, czy VM są dostępne przez SSH
+1. Check if API is running and available
+2. Check authentication configuration in HTTP Request nodes
+3. Check if VMs are accessible via SSH
 
-### Synchronizacja repozytorium nie działa
+### Repository Synchronization Not Working
 
-1. Sprawdź, czy repozytorium Git jest skonfigurowane na wszystkich VM
-2. Sprawdź uprawnienia SSH do zdalnych VM
-3. Sprawdź logi w n8n i w serwisach
+1. Check if Git repository is configured on all VMs
+2. Check SSH permissions to remote VMs
+3. Check logs in n8n and services
 
-## Bezpieczeństwo
+## Security
 
-⚠️ **UWAGA**: Dashboard obecnie nie ma pełnej autentykacji. W środowisku produkcyjnym:
+⚠️ **WARNING**: Dashboard currently does not have full authentication. In production environment:
 
-1. Skonfiguruj n8n z Basic Auth lub OAuth
-2. Dodaj API key authentication do wszystkich endpointów
-3. Ogranicz dostęp do dashboard tylko dla autoryzowanych użytkowników
-4. Użyj HTTPS zamiast HTTP
+1. Configure n8n with Basic Auth or OAuth
+2. Add API key authentication to all endpoints
+3. Restrict dashboard access to authorized users only
+4. Use HTTPS instead of HTTP
 
 ## Testing Management Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `testing-management.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/testing-dashboard`
+1. Import workflow `testing-management.json` to n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/testing-dashboard`
 
-### Funkcjonalności
+### Features
 
-- **Connection Tests**: Uruchamianie `test_connections.sh` zdalnie
-- **Data Flow Tests**: Uruchamianie `test_data_flow.sh` zdalnie
-- **Health Checks**: Uruchamianie `health_check.sh` na wszystkich VM
-- **Test Results**: Wyświetlanie wyników testów w dashboardzie
-- **Test History**: Historia wszystkich testów
+- **Connection Tests**: Running `test_connections.sh` remotely
+- **Data Flow Tests**: Running `test_data_flow.sh` remotely
+- **Health Checks**: Running `health_check.sh` on all VMs
+- **Test Results**: Displaying test results in dashboard
+- **Test History**: History of all tests
 
 ### Webhook Endpoints
 
-- `POST /webhook/run-connection-tests` - Uruchom testy połączeń
-- `POST /webhook/run-data-flow-tests` - Uruchom testy przepływu danych
-- `POST /webhook/run-health-checks` - Uruchom health checks na wszystkich VM
-- `GET /webhook/test-results` - Pobierz wyniki testów
-- `GET /webhook/test-history` - Pobierz historię testów
-- `GET /webhook/testing-dashboard` - Dashboard zarządzania testami
+- `POST /webhook/run-connection-tests` - Run connection tests
+- `POST /webhook/run-data-flow-tests` - Run data flow tests
+- `POST /webhook/run-health-checks` - Run health checks on all VMs
+- `GET /webhook/test-results` - Get test results
+- `GET /webhook/test-history` - Get test history
+- `GET /webhook/testing-dashboard` - Testing management dashboard
 
 ## Deployment Management Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `deployment-management.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/deployment-dashboard`
+1. Import workflow `deployment-management.json` to n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/deployment-dashboard`
 
-### Funkcjonalności
+### Features
 
-- **Installation Status**: Status instalacji na wszystkich VM
-- **Run Installation**: Uruchamianie `install_vmXX.sh` zdalnie
-- **Installation Logs**: Wyświetlanie logów instalacji
-- **Deployment Verification**: Weryfikacja po instalacji
+- **Installation Status**: Installation status on all VMs
+- **Run Installation**: Running `install_vmXX.sh` remotely
+- **Installation Logs**: Displaying installation logs
+- **Deployment Verification**: Post-installation verification
 
 ### Webhook Endpoints
 
-- `GET /webhook/installation-status` - Pobierz status instalacji wszystkich VM
-- `POST /webhook/run-installation` - Uruchom instalację na wybranym VM
-- `GET /webhook/installation-logs` - Pobierz logi instalacji
-- `POST /webhook/verify-deployment` - Zweryfikuj deployment na VM
-- `GET /webhook/deployment-dashboard` - Dashboard zarządzania deploymentem
+- `GET /webhook/installation-status` - Get installation status of all VMs
+- `POST /webhook/run-installation` - Run installation on selected VM
+- `GET /webhook/installation-logs` - Get installation logs
+- `POST /webhook/verify-deployment` - Verify deployment on VM
+- `GET /webhook/deployment-dashboard` - Deployment management dashboard
 
-### Użycie
+### Usage
 
-#### Sprawdzenie statusu instalacji
+#### Check Installation Status
 
 ```bash
 curl http://VM04_IP:5678/webhook/installation-status
 ```
 
-#### Uruchomienie instalacji
+#### Run Installation
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/run-installation \
@@ -259,7 +259,7 @@ curl -X POST http://VM04_IP:5678/webhook/run-installation \
   -d '{"vm_id": "vm01"}'
 ```
 
-#### Weryfikacja deploymentu
+#### Verify Deployment
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/verify-deployment \
@@ -269,36 +269,36 @@ curl -X POST http://VM04_IP:5678/webhook/verify-deployment \
 
 ## Hardening Management Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `hardening-management.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/hardening-dashboard`
+1. Import workflow `hardening-management.json` to n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/hardening-dashboard`
 
-### Funkcjonalności
+### Features
 
-- **Hardening Status**: Status hardeningu na wszystkich VM
-- **Run Hardening**: Uruchamianie `harden_vmXX.sh` zdalnie
-- **Before/After Comparison**: Porównanie przed/po hardeningu
-- **Hardening Reports**: Raporty z hardeningu
+- **Hardening Status**: Hardening status on all VMs
+- **Run Hardening**: Running `harden_vmXX.sh` remotely
+- **Before/After Comparison**: Before/after hardening comparison
+- **Hardening Reports**: Hardening reports
 
 ### Webhook Endpoints
 
-- `GET /webhook/hardening-status` - Pobierz status hardeningu wszystkich VM
-- `POST /webhook/run-hardening` - Uruchom hardening na wybranym VM
-- `GET /webhook/hardening-reports` - Pobierz raporty hardeningu
-- `POST /webhook/compare-before-after` - Porównaj przed/po hardeningu
-- `GET /webhook/hardening-dashboard` - Dashboard zarządzania hardeningiem
+- `GET /webhook/hardening-status` - Get hardening status of all VMs
+- `POST /webhook/run-hardening` - Run hardening on selected VM
+- `GET /webhook/hardening-reports` - Get hardening reports
+- `POST /webhook/compare-before-after` - Compare before/after hardening
+- `GET /webhook/hardening-dashboard` - Hardening management dashboard
 
-### Użycie
+### Usage
 
-#### Sprawdzenie statusu hardeningu
+#### Check Hardening Status
 
 ```bash
 curl http://VM04_IP:5678/webhook/hardening-status
 ```
 
-#### Uruchomienie hardeningu
+#### Run Hardening
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/run-hardening \
@@ -306,7 +306,7 @@ curl -X POST http://VM04_IP:5678/webhook/run-hardening \
   -d '{"vm_id": "vm01", "capture_before": true}'
 ```
 
-#### Porównanie przed/po
+#### Before/After Comparison
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/compare-before-after \
@@ -316,72 +316,72 @@ curl -X POST http://VM04_IP:5678/webhook/compare-before-after \
 
 ## Hunt Selection Form Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `hunt-selection-form.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do formularza: `http://VM04_IP:5678/webhook/hunt-selection`
+1. Import workflow `hunt-selection-form.json` to n8n
+2. Activate workflow
+3. Access form: `http://VM04_IP:5678/webhook/hunt-selection`
 
-### Funkcjonalności
+### Features
 
-- **Hunt Selection**: Wybór technik MITRE ATT&CK do badania
-- **Tool Selection**: Wybór dostępnych narzędzi SIEM/EDR
-- **Ingest Mode**: Wybór trybu wykonania (manual/API)
-- **Query Generation**: Automatyczne generowanie zapytań
-- **Query Display**: Wyświetlanie wygenerowanych zapytań z możliwością kopiowania
+- **Hunt Selection**: Selection of MITRE ATT&CK techniques for investigation
+- **Tool Selection**: Selection of available SIEM/EDR tools
+- **Ingest Mode**: Selection of execution mode (manual/API)
+- **Query Generation**: Automatic query generation
+- **Query Display**: Displaying generated queries with copy functionality
 
 ### Webhook Endpoints
 
-- `GET /webhook/hunt-selection` - Formularz wyboru huntów (HTML)
-- `GET /webhook/available-playbooks` - Pobierz dostępne playbooki
-- `GET /webhook/available-tools` - Pobierz dostępne narzędzia
-- `POST /webhook/generate-queries` - Generuj zapytania dla wybranych huntów i narzędzi
+- `GET /webhook/hunt-selection` - Hunt selection form (HTML)
+- `GET /webhook/available-playbooks` - Get available playbooks
+- `GET /webhook/available-tools` - Get available tools
+- `POST /webhook/generate-queries` - Generate queries for selected hunts and tools
 
-### Użycie
+### Usage
 
-#### Dostęp do formularza
+#### Access Form
 
-1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/hunt-selection`
-2. Formularz automatycznie załaduje dostępne playbooki i narzędzia
+1. Open in browser: `http://VM04_IP:5678/webhook/hunt-selection`
+2. Form will automatically load available playbooks and tools
 
-#### Wybór huntów i generowanie zapytań
+#### Hunt Selection and Query Generation
 
-1. **Wybierz techniki MITRE ATT&CK**: Zaznacz checkboxy dla technik, które chcesz badać
-2. **Wybierz narzędzia**: Zaznacz checkboxy dla narzędzi, które masz dostępne
-3. **Wybierz tryb ingestu**: 
-   - **Manual**: Zapytania do ręcznego skopiowania i wykonania
-   - **API**: Zapytania do automatycznego wykonania przez API
-4. **Ustaw parametry**: Wybierz zakres czasowy i minimalną ważność
-5. **Kliknij "Generate Queries"**: System wygeneruje zapytania dla wybranych kombinacji
+1. **Select MITRE ATT&CK techniques**: Check boxes for techniques you want to investigate
+2. **Select tools**: Check boxes for tools you have available
+3. **Select ingest mode**: 
+   - **Manual**: Queries for manual copy and execution
+   - **API**: Queries for automatic execution via API
+4. **Set parameters**: Select time range and minimum severity
+5. **Click "Generate Queries"**: System will generate queries for selected combinations
 
-#### Wyświetlanie wyników
+#### Displaying Results
 
-- Wygenerowane zapytania są wyświetlane w czytelnej formie
-- Każde zapytanie ma przycisk "Copy Query" do skopiowania
-- Instrukcje wykonania są wyświetlane dla każdego zapytania
-- Ostrzeżenia są wyświetlane jeśli zapytania nie są dostępne
+- Generated queries are displayed in readable format
+- Each query has "Copy Query" button for copying
+- Execution instructions are displayed for each query
+- Warnings are displayed if queries are not available
 
-### Integracja
+### Integration
 
-- **PHASE1-02**: Używa Query Generator do generowania zapytań
-- **PHASE0-05**: Integracja z Management Dashboard
-- **API Endpoints**: Używa endpointów `/query-generator/*` z dashboard_api.py
+- **PHASE1-02**: Uses Query Generator for query generation
+- **PHASE0-05**: Integration with Management Dashboard
+- **API Endpoints**: Uses `/query-generator/*` endpoints from dashboard_api.py
 
-### Przykłady użycia
+### Usage Examples
 
-#### Pobranie dostępnych playbooków
+#### Get Available Playbooks
 
 ```bash
 curl http://VM04_IP:5678/webhook/available-playbooks
 ```
 
-#### Pobranie dostępnych narzędzi
+#### Get Available Tools
 
 ```bash
 curl http://VM04_IP:5678/webhook/available-tools
 ```
 
-#### Generowanie zapytań
+#### Generate Queries
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/generate-queries \
@@ -399,76 +399,76 @@ curl -X POST http://VM04_IP:5678/webhook/generate-queries \
 
 ## Playbook Manager Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `playbook-manager.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do dashboard: `http://VM04_IP:5678/webhook/playbook-manager`
+1. Import workflow `playbook-manager.json` to n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/playbook-manager`
 
-### Funkcjonalności
+### Features
 
-- **Lista Playbooków**: Wyświetlanie wszystkich dostępnych playbooków z statusem walidacji
-- **Tworzenie Playbooka**: Formularz do tworzenia nowego playbooka z template
-- **Edycja Playbooka**: Aktualizacja metadanych playbooka
-- **Walidacja Playbooka**: Walidacja struktury i metadanych playbooka
-- **Testowanie Playbooka**: Testowanie playbooka (walidacja, struktura, query files)
+- **Playbook List**: Displaying all available playbooks with validation status
+- **Create Playbook**: Form for creating new playbook from template
+- **Edit Playbook**: Updating playbook metadata
+- **Validate Playbook**: Validating playbook structure and metadata
+- **Test Playbook**: Testing playbook (validation, structure, query files)
 
 ### Webhook Endpoints
 
-- `GET /webhook/playbook-manager` - Dashboard zarządzania playbookami (HTML)
-- `GET /webhook/list-playbooks` - Pobierz listę wszystkich playbooków
-- `GET /webhook/get-playbook` - Pobierz szczegóły playbooka
-- `POST /webhook/create-playbook` - Utwórz nowy playbook
-- `POST /webhook/update-playbook` - Zaktualizuj playbook
-- `POST /webhook/validate-playbook` - Zwaliduj playbook
-- `POST /webhook/test-playbook` - Przetestuj playbook
+- `GET /webhook/playbook-manager` - Playbook management dashboard (HTML)
+- `GET /webhook/list-playbooks` - Get list of all playbooks
+- `GET /webhook/get-playbook` - Get playbook details
+- `POST /webhook/create-playbook` - Create new playbook
+- `POST /webhook/update-playbook` - Update playbook
+- `POST /webhook/validate-playbook` - Validate playbook
+- `POST /webhook/test-playbook` - Test playbook
 
-### Użycie
+### Usage
 
-#### Dostęp do dashboard
+#### Access Dashboard
 
-1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/playbook-manager`
-2. Dashboard automatycznie załaduje listę playbooków
+1. Open in browser: `http://VM04_IP:5678/webhook/playbook-manager`
+2. Dashboard will automatically load playbook list
 
-#### Tworzenie nowego playbooka
+#### Create New Playbook
 
-1. Wypełnij formularz "Create New Playbook":
-   - Playbook ID (np. `T1566-phishing`)
-   - MITRE Technique ID (np. `T1566`)
-   - Technique Name (np. `Phishing`)
-   - Tactic (np. `Initial Access`)
+1. Fill "Create New Playbook" form:
+   - Playbook ID (e.g., `T1566-phishing`)
+   - MITRE Technique ID (e.g., `T1566`)
+   - Technique Name (e.g., `Phishing`)
+   - Tactic (e.g., `Initial Access`)
    - Author
    - Description
    - Hypothesis
-2. Kliknij "Create Playbook"
-3. System utworzy playbook z template i zwaliduje go
+2. Click "Create Playbook"
+3. System will create playbook from template and validate it
 
-#### Walidacja playbooka
+#### Validate Playbook
 
-1. Kliknij przycisk "Validate" przy playbooku
-2. System wyświetli wyniki walidacji (błędy i ostrzeżenia)
+1. Click "Validate" button next to playbook
+2. System will display validation results (errors and warnings)
 
-#### Testowanie playbooka
+#### Test Playbook
 
-1. Kliknij przycisk "Test" przy playbooku
-2. System wykona testy (walidacja, struktura, query files)
-3. Wyniki testów zostaną wyświetlone
+1. Click "Test" button next to playbook
+2. System will run tests (validation, structure, query files)
+3. Test results will be displayed
 
-### Integracja
+### Integration
 
-- **PHASE1-06**: Używa Playbook Validator do walidacji
-- **PHASE0-05**: Integracja z Management Dashboard
-- **API Endpoints**: Używa endpointów `/playbooks/*` z dashboard_api.py
+- **PHASE1-06**: Uses Playbook Validator for validation
+- **PHASE0-05**: Integration with Management Dashboard
+- **API Endpoints**: Uses `/playbooks/*` endpoints from dashboard_api.py
 
-### Przykłady użycia
+### Usage Examples
 
-#### Pobranie listy playbooków
+#### Get Playbook List
 
 ```bash
 curl http://VM04_IP:5678/webhook/list-playbooks
 ```
 
-#### Utworzenie playbooka
+#### Create Playbook
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/create-playbook \
@@ -484,7 +484,7 @@ curl -X POST http://VM04_IP:5678/webhook/create-playbook \
   }'
 ```
 
-#### Walidacja playbooka
+#### Validate Playbook
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/validate-playbook \
@@ -492,7 +492,7 @@ curl -X POST http://VM04_IP:5678/webhook/validate-playbook \
   -d '{"playbook_id": "T1566-phishing"}'
 ```
 
-#### Testowanie playbooka
+#### Test Playbook
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/test-playbook \
@@ -502,20 +502,20 @@ curl -X POST http://VM04_IP:5678/webhook/test-playbook \
 
 ## Data Ingest Pipeline Workflow
 
-### Instalacja
+### Installation
 
-1. Importuj workflow `data-ingest-pipeline.json` do n8n
-2. Aktywuj workflow
-3. Dostęp do pipeline: `http://VM04_IP:5678/webhook/data-pipeline`
+1. Import workflow `data-ingest-pipeline.json` to n8n
+2. Activate workflow
+3. Access pipeline: `http://VM04_IP:5678/webhook/data-pipeline`
 
-### Funkcjonalności
+### Features
 
-- **End-to-End Pipeline**: Automatyczny przepływ danych przez wszystkie VM
-- **Query Generation**: Generowanie zapytań dla wybranych huntów
-- **Data Ingestion**: Ingest danych (manual lub API)
-- **Data Storage**: Zapis danych do bazy danych na VM02
-- **Playbook Execution**: Wykonanie playbooków na VM03
-- **Results Aggregation**: Agregacja wyników w n8n
+- **End-to-End Pipeline**: Automatic data flow through all VMs
+- **Query Generation**: Query generation for selected hunts
+- **Data Ingestion**: Data ingestion (manual or API)
+- **Data Storage**: Data storage to database on VM02
+- **Playbook Execution**: Playbook execution on VM03
+- **Results Aggregation**: Results aggregation in n8n
 
 ### Pipeline Flow
 
@@ -533,44 +533,44 @@ n8n (VM04) → Results Aggregation
 
 ### Webhook Endpoints
 
-- `GET /webhook/data-pipeline` - Dashboard pipeline (HTML)
-- `POST /webhook/execute-pipeline` - Uruchom pipeline
+- `GET /webhook/data-pipeline` - Pipeline dashboard (HTML)
+- `POST /webhook/execute-pipeline` - Execute pipeline
 
-### Użycie
+### Usage
 
-#### Dostęp do pipeline
+#### Access Pipeline
 
-1. Otwórz w przeglądarce: `http://VM04_IP:5678/webhook/data-pipeline`
-2. Dashboard automatycznie załaduje dostępne playbooki i narzędzia
+1. Open in browser: `http://VM04_IP:5678/webhook/data-pipeline`
+2. Dashboard will automatically load available playbooks and tools
 
-#### Wykonanie pipeline
+#### Execute Pipeline
 
-1. **Wybierz techniki MITRE ATT&CK**: Zaznacz checkboxy dla technik
-2. **Wybierz narzędzia**: Zaznacz checkboxy dla narzędzi
-3. **Wybierz tryb ingestu**: 
-   - **Manual**: Przesyłanie DataPackage ręcznie
-   - **API**: Automatyczne pobieranie danych przez API
-4. **Ustaw opcje**: Zaznacz "Anonymize data before analysis" jeśli potrzebne
-5. **Kliknij "Execute Pipeline"**: System wykona pełny pipeline
+1. **Select MITRE ATT&CK techniques**: Check boxes for techniques
+2. **Select tools**: Check boxes for tools
+3. **Select ingest mode**: 
+   - **Manual**: Manual DataPackage upload
+   - **API**: Automatic data retrieval via API
+4. **Set options**: Check "Anonymize data before analysis" if needed
+5. **Click "Execute Pipeline"**: System will execute full pipeline
 
-#### Wyświetlanie wyników
+#### Displaying Results
 
-- Status każdego etapu pipeline
-- Liczba znalezionych findings
-- Rozkład ważności findings
-- Szczegóły wykonania każdego etapu
+- Status of each pipeline stage
+- Number of findings discovered
+- Severity distribution of findings
+- Execution details for each stage
 
-### Integracja
+### Integration
 
-- **PHASE1-04**: Używa Hunt Selection Form do wyboru huntów
-- **PHASE1-05**: Używa DataPackage do standaryzacji danych
-- **PHASE2-01**: Używa Playbook Engine do analizy
-- **PHASE0-01**: Używa Remote Execution Service do komunikacji z VM
-- **PHASE1-03**: Używa DeterministicAnonymizer do anonimizacji
+- **PHASE1-04**: Uses Hunt Selection Form for hunt selection
+- **PHASE1-05**: Uses DataPackage for data standardization
+- **PHASE2-01**: Uses Playbook Engine for analysis
+- **PHASE0-01**: Uses Remote Execution Service for VM communication
+- **PHASE1-03**: Uses DeterministicAnonymizer for anonymization
 
-### Przykłady użycia
+### Usage Examples
 
-#### Wykonanie pipeline
+#### Execute Pipeline
 
 ```bash
 curl -X POST http://VM04_IP:5678/webhook/execute-pipeline \
@@ -586,46 +586,45 @@ curl -X POST http://VM04_IP:5678/webhook/execute-pipeline \
 ### Pipeline Stages
 
 1. **Stage 1: Query Generation** (VM04)
-   - Generowanie zapytań dla wybranych technik i narzędzi
-   - Przygotowanie zapytań do wykonania
+   - Generating queries for selected techniques and tools
+   - Preparing queries for execution
 
 2. **Stage 2: Data Ingestion** (VM01 - optional)
-   - Wykonanie zapytań przez API
-   - Parsing i normalizacja danych
-   - Tworzenie DataPackage
+   - Executing queries via API
+   - Parsing and data normalization
+   - Creating DataPackage
 
 3. **Stage 3: Data Storage** (VM02)
-   - Anonimizacja danych (jeśli wymagana)
-   - Zapis do bazy danych PostgreSQL
-   - Walidacja DataPackage
+   - Data anonymization (if required)
+   - Storage to PostgreSQL database
+   - DataPackage validation
 
 4. **Stage 4: Playbook Execution** (VM03)
-   - Wykonanie playbooków przez Playbook Engine
-   - Analiza danych z deterministyczną logiką
-   - Generowanie findings
+   - Playbook execution via Playbook Engine
+   - Data analysis with deterministic logic
+   - Findings generation
 
 5. **Stage 5: Results Aggregation** (VM04)
-   - Agregacja wyników z wszystkich playbooków
-   - Podsumowanie findings
-   - Przygotowanie raportu
+   - Aggregating results from all playbooks
+   - Findings summary
+   - Report preparation
 
-## Przyszłe ulepszenia
+## Future Enhancements
 
-- [ ] Dodanie API endpointów dla wszystkich serwisów
-- [ ] Pełna autentykacja i autoryzacja
-- [ ] Więcej metryk i wykresów
-- [ ] Historia zmian i logi
-- [ ] Powiadomienia (email, Slack, etc.)
-- [ ] Automatyczne akcje naprawcze
-- [ ] Eksport raportów
-- [ ] Zaplanowane testy (scheduled tests)
-- [ ] Porównywanie wyników testów (before/after)
+- [ ] Add API endpoints for all services
+- [ ] Full authentication and authorization
+- [ ] More metrics and charts
+- [ ] Change history and logs
+- [ ] Notifications (email, Slack, etc.)
+- [ ] Automatic remediation actions
+- [ ] Report export
+- [ ] Scheduled tests
+- [ ] Test results comparison (before/after)
 
-## Wsparcie
+## Support
 
-W przypadku problemów:
-1. Sprawdź dokumentację n8n: https://docs.n8n.io
-2. Sprawdź logi n8n: `docker logs n8n`
-3. Sprawdź logi serwisów w `logs/` directory
-4. Sprawdź wyniki testów w `test_results/` directory
-
+For issues:
+1. Check n8n documentation: https://docs.n8n.io
+2. Check n8n logs: `docker logs n8n`
+3. Check service logs in `logs/` directory
+4. Check test results in `test_results/` directory

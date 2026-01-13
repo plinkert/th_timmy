@@ -65,15 +65,15 @@ th_timmy/
 - [x] Playbook structure with query definitions (PHASE1-01)
 - [x] Query generator for multiple tools and hunt types (PHASE1-02)
 - [x] Deterministic anonymization with mapping table (PHASE1-03)
-- [x] n8n UI - formularz wyboru huntów i narzędzi (PHASE1-04)
-- [x] Data Package - struktura i walidacja (PHASE1-05)
-- [x] Playbook Validator - walidacja playbooków (PHASE1-06)
-- [x] Playbook Management Interface - zarządzanie playbookami (PHASE1-07)
+- [x] n8n UI - Hunt selection form and tool selection (PHASE1-04)
+- [x] Data Package - structure and validation (PHASE1-05)
+- [x] Playbook Validator - playbook validation (PHASE1-06)
+- [x] Playbook Management Interface - playbook management (PHASE1-07)
 
 **Phase 2: Playbook Engine and Analysis** - In Progress
-- [x] Playbook Engine - deterministyczna analiza (PHASE2-01)
-- [x] Integracja pipeline: n8n → VM01 → VM02 → VM03 (PHASE2-02)
-- [x] Evidence & Findings - struktura i przechowywanie (PHASE2-03)
+- [x] Playbook Engine - deterministic analysis (PHASE2-01)
+- [x] Pipeline integration: n8n → VM01 → VM02 → VM03 (PHASE2-02)
+- [x] Evidence & Findings - structure and storage (PHASE2-03)
 
 **Phase 3: AI Integration** - Planned
 - [ ] AI service integration
