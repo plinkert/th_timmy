@@ -44,6 +44,7 @@ test_results/
 
 # Database
 *.sql
+!hosts/vm02-database/schema_updates.sql
 *.dump
 *.db
 *.sqlite
@@ -57,6 +58,7 @@ results/
 !playbooks/*/examples/*.csv
 !playbooks/*/queries/*.csv
 !hosts/vm04-orchestrator/n8n-workflows/*.json
+!automation-scripts/schemas/*.json
 
 # OS
 .DS_Store
