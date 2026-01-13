@@ -1,0 +1,247 @@
+# Threat Hunting Final Report
+
+**Report ID:** {{report_id}}  
+**Generated:** {{generated_at}}  
+**Exercise Period:** {{time_range}}  
+**Total Findings:** {{total_findings}}  
+**Playbooks Executed:** {{playbooks_executed}}  
+**Report Status:** {{report_status}}
+
+---
+
+## Executive Summary
+
+{{executive_summary_text}}
+
+### Key Highlights
+
+- **Total Findings:** {{total_findings}}
+- **Critical Findings:** {{critical_count}}
+- **High Severity:** {{high_severity_count}}
+- **Medium Severity:** {{medium_severity_count}}
+- **Low Severity:** {{low_severity_count}}
+- **Overall Risk Level:** {{overall_risk}}
+- **Risk Score:** {{risk_score}}/10
+
+---
+
+## Critical Findings
+
+{{#critical_findings}}
+### Finding {{index}}: {{title}}
+
+- **Finding ID:** {{finding_id}}
+- **MITRE ATT&CK Technique:** {{technique_id}} - {{technique_name}}
+- **Tactic:** {{tactic}}
+- **Severity:** {{severity}}
+- **Confidence:** {{confidence}}
+- **Status:** {{status}}
+- **Timestamp:** {{timestamp}}
+- **Source:** {{source}}
+
+**Description:**
+{{description}}
+
+**Indicators of Compromise:**
+{{#indicators}}
+- {{indicator}}
+{{/indicators}}
+
+**Recommendations:**
+{{#recommendations}}
+- {{recommendation}}
+{{/recommendations}}
+
+{{#evidence_references}}
+**Evidence References:**
+{{#evidence_list}}
+- Evidence ID: {{evidence_id}} (Type: {{evidence_type}}, Relevance: {{relevance_score}})
+{{/evidence_list}}
+{{/evidence_references}}
+
+---
+
+{{/critical_findings}}
+
+## Detailed Findings
+
+{{#findings}}
+### Finding {{index}}: {{title}}
+
+- **Finding ID:** {{finding_id}}
+- **MITRE ATT&CK Technique:** {{technique_id}} - {{technique_name}}
+- **Tactic:** {{tactic}}
+- **Severity:** {{severity}}
+- **Confidence:** {{confidence}}
+- **Status:** {{status}}
+- **Timestamp:** {{timestamp}}
+- **Source:** {{source}}
+- **Playbook ID:** {{playbook_id}}
+- **Execution ID:** {{execution_id}}
+
+**Description:**
+{{description}}
+
+**Indicators of Compromise:**
+{{#indicators}}
+- {{indicator}}
+{{/indicators}}
+
+**Recommendations:**
+{{#recommendations}}
+- {{recommendation}}
+{{/recommendations}}
+
+{{#evidence_references}}
+**Evidence References:**
+{{#evidence_list}}
+- Evidence ID: {{evidence_id}} (Type: {{evidence_type}}, Relevance: {{relevance_score}})
+{{/evidence_list}}
+{{/evidence_references}}
+
+---
+
+{{/findings}}
+
+## Threat Landscape Analysis
+
+### MITRE ATT&CK Techniques Detected
+
+{{#techniques_detected}}
+- **{{technique_id}}:** {{technique_name}}
+  - Findings: {{count}}
+  - Tactic: {{tactic}}
+  - Severity Distribution: Critical: {{critical_count}}, High: {{high_count}}, Medium: {{medium_count}}, Low: {{low_count}}
+{{/techniques_detected}}
+
+### Attack Tactics Observed
+
+{{#tactics_observed}}
+- **{{tactic}}:** {{count}} findings
+{{/tactics_observed}}
+
+### Attack Patterns
+
+{{attack_patterns}}
+
+---
+
+## Risk Assessment
+
+**Overall Risk Level:** {{overall_risk}}  
+**Risk Score:** {{risk_score}}/10
+
+### Risk Factors
+
+{{#risk_factors}}
+- {{risk_factor}}
+{{/risk_factors}}
+
+### Severity Distribution
+
+- **Critical:** {{critical_count}} findings ({{critical_percentage}}%)
+- **High:** {{high_severity_count}} findings ({{high_percentage}}%)
+- **Medium:** {{medium_severity_count}} findings ({{medium_percentage}}%)
+- **Low:** {{low_severity_count}} findings ({{low_percentage}}%)
+
+### Confidence Distribution
+
+- **High Confidence (≥0.8):** {{high_confidence_count}} findings
+- **Medium Confidence (0.5-0.8):** {{medium_confidence_count}} findings
+- **Low Confidence (<0.5):** {{low_confidence_count}} findings
+
+---
+
+## Recommendations
+
+### Immediate Actions Required
+
+{{#immediate_actions}}
+1. {{action}}
+{{/immediate_actions}}
+
+### Long-Term Security Improvements
+
+{{#long_term_improvements}}
+1. {{improvement}}
+{{/long_term_improvements}}
+
+---
+
+## Next Steps
+
+### Follow-Up Investigations
+
+{{#follow_up_investigations}}
+- {{investigation}}
+{{/follow_up_investigations}}
+
+### Additional Threat Hunting Queries
+
+{{#additional_queries}}
+- {{query}}
+{{/additional_queries}}
+
+### Recommended Playbooks
+
+{{#recommended_playbooks}}
+- {{playbook_id}}: {{playbook_name}}
+{{/recommended_playbooks}}
+
+---
+
+## Statistics and Metrics
+
+### Findings Statistics
+
+- **Total Findings:** {{total_findings}}
+- **Unique Techniques:** {{unique_techniques_count}}
+- **Unique Tactics:** {{unique_tactics_count}}
+- **Average Confidence:** {{average_confidence}}
+- **Findings by Status:**
+  - New: {{new_count}}
+  - Investigating: {{investigating_count}}
+  - Confirmed: {{confirmed_count}}
+  - False Positive: {{false_positive_count}}
+  - Resolved: {{resolved_count}}
+
+### Timeline Analysis
+
+- **First Finding:** {{first_finding_timestamp}}
+- **Last Finding:** {{last_finding_timestamp}}
+- **Time Span:** {{time_span}}
+
+### Data Sources
+
+{{#data_sources}}
+- **{{source}}:** {{count}} findings
+{{/data_sources}}
+
+---
+
+## Appendix
+
+### Report Metadata
+
+- **Report Version:** {{report_version}}
+- **Generated By:** {{generated_by}}
+- **Model Used:** {{model_used}}
+- **Anonymization Status:** {{anonymization_status}}
+- **Data Status:** {{data_status}}
+
+### Playbook Execution Details
+
+{{#playbook_executions}}
+- **Playbook:** {{playbook_id}}
+  - Technique: {{technique_id}} - {{technique_name}}
+  - Tactic: {{tactic}}
+  - Findings Generated: {{findings_count}}
+  - Execution Time: {{execution_timestamp}}
+{{/playbook_executions}}
+
+---
+
+**End of Report**
+
+*This report contains sensitive information. Handle according to your organization's data classification policies.*
+

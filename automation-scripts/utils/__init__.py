@@ -18,6 +18,7 @@ from .data_package import DataPackage, DataPackageError, DataPackageValidationEr
 from .playbook_validator import PlaybookValidator, PlaybookValidatorError, PlaybookValidationError
 from .deanonymizer import Deanonymizer, DeanonymizerError
 from .report_generator import ReportGenerator, ReportGeneratorError
+from .final_report_generator import FinalReportGenerator, FinalReportGeneratorError
 
 __all__ = [
     'GitManager',
@@ -43,7 +44,9 @@ __all__ = [
     'Deanonymizer',
     'DeanonymizerError',
     'ReportGenerator',
-    'ReportGeneratorError'
+    'ReportGeneratorError',
+    'FinalReportGenerator',
+    'FinalReportGeneratorError'
 ]
 
 
