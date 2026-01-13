@@ -15,9 +15,10 @@ from .deployment_manager import DeploymentManager
 from .hardening_manager import HardeningManager
 from .playbook_manager import PlaybookManager
 from .ai_service import AIService, AIServiceError
+from .executive_summary_generator import ExecutiveSummaryGenerator, ExecutiveSummaryGeneratorError
 
 # Temporarily disable repo_sync import to avoid import errors in tests
 # from .repo_sync import RepoSyncService
 
-__all__ = ['RemoteExecutor', 'SSHClient', 'HealthMonitor', 'MetricsCollector', 'TestRunner', 'DeploymentManager', 'HardeningManager', 'PlaybookManager', 'AIService', 'AIServiceError']  # 'RepoSyncService']
+__all__ = ['RemoteExecutor', 'SSHClient', 'HealthMonitor', 'MetricsCollector', 'TestRunner', 'DeploymentManager', 'HardeningManager', 'PlaybookManager', 'AIService', 'AIServiceError', 'ExecutiveSummaryGenerator', 'ExecutiveSummaryGeneratorError']  # 'RepoSyncService']
 
