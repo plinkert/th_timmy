@@ -2170,6 +2170,62 @@ async def review_playbook_execution(
         )
 
 
+# Final Report Models
+class GenerateFinalReportRequest(BaseModel):
+    """Request model for generating final report."""
+    findings: List[Dict[str, Any]] = Field(..., description="List of findings to include in report")
+    context: Optional[Dict[str, Any]] = Field(None, description="Optional context information")
+    deanonymize: bool = Field(True, description="Whether to deanonymize data before reporting")
+    include_executive_summary: bool = Field(True, description="Whether to include AI-generated executive summary")
+    format: str = Field("markdown", description="Output format: 'markdown', 'json', or 'both'")
+
+
+class GenerateFinalReportResponse(BaseModel):
+    """Response model for final report generation."""
+    success: bool
+    report: Dict[str, Any]
+    error: Optional[str] = None
+
+
+# Final Report Endpoints
+@app.post("/final-report/generate", response_model=GenerateFinalReportResponse)
+async def generate_final_report(
+    request: GenerateFinalReportRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Generate final report with deanonymized data.
+    
+    Args:
+        request: Final report generation request
+    
+    Returns:
+        Final report result
+    """
+    try:
+        from automation_scripts.utils.final_report_generator import FinalReportGenerator
+        
+        generator = FinalReportGenerator(config_path=os.getenv('CONFIG_PATH', 'configs/config.yml'), logger=logger)
+        report = generator.generate_final_report(
+            findings=request.findings,
+            context=request.context,
+            deanonymize=request.deanonymize,
+            include_executive_summary=request.include_executive_summary,
+            format=request.format
+        )
+        
+        return GenerateFinalReportResponse(
+            success=True,
+            report=report
+        )
+    except Exception as e:
+        logger.error(f"Error generating final report: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
 # Router for inclusion in main app
 router = app
 

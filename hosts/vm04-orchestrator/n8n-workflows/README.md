@@ -711,6 +711,116 @@ curl -X POST http://VM04_IP:5678/webhook/execute-pipeline \
    - Findings summary
    - Report preparation
 
+## Complete Hunt Workflow - End-to-End
+
+### Installation
+
+1. Import workflow `complete-hunt-workflow.json` into n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/complete-hunt`
+
+### Features
+
+- **Complete End-to-End Pipeline**: Full workflow from hunt selection to final report
+- **Hunt Selection**: Select MITRE ATT&CK techniques and tools
+- **Pipeline Execution**: Execute data pipeline through all VMs
+- **AI Review**: Automated AI review of findings
+- **Final Report Generation**: Generate comprehensive final reports with real data
+- **Deanonymization**: Automatic deanonymization for final reports
+
+### Workflow Steps
+
+1. **Hunt Selection**: Select techniques and tools
+2. **Pipeline Execution**: Execute data pipeline (n8n → VM01 → VM02 → VM03)
+3. **AI Review**: Review findings with AI (optional)
+4. **Final Report**: Generate final report with deanonymized data (optional)
+
+### Webhook Endpoints
+
+- `GET /webhook/complete-hunt` - Complete hunt dashboard (HTML)
+- `POST /webhook/execute-complete-hunt` - Execute complete hunt workflow
+
+### Usage
+
+#### Access Dashboard
+
+1. Open in browser: `http://VM04_IP:5678/webhook/complete-hunt`
+2. Dashboard provides interface for:
+   - Selecting MITRE ATT&CK techniques
+   - Selecting tools
+   - Configuring workflow options
+   - Executing complete hunt workflow
+
+#### Execute Complete Hunt
+
+1. **Select MITRE ATT&CK techniques**: Check boxes for techniques
+2. **Select tools**: Check boxes for tools
+3. **Select ingest mode**: 
+   - **Manual**: Manual DataPackage upload
+   - **API**: Automatic data retrieval via API
+4. **Set workflow options**:
+   - **Anonymize data**: Anonymize before analysis
+   - **AI Review**: Review findings with AI
+   - **Generate Report**: Generate final report
+   - **Deanonymize**: Deanonymize data in final report
+5. **Click "Execute Complete Hunt"**: System will execute full workflow
+
+### Workflow Flow
+
+```
+Hunt Selection (n8n)
+    ↓
+Pipeline Execution (n8n → VM01 → VM02 → VM03)
+    ↓
+AI Review (n8n - optional)
+    ↓
+Final Report Generation (n8n - optional)
+    ↓
+Report Download
+```
+
+### Integration
+
+- **PHASE1-04**: Uses Hunt Selection Form for hunt selection
+- **PHASE2-02**: Uses Data Pipeline for end-to-end execution
+- **PHASE3-02**: Uses AI Review for findings validation
+- **PHASE4-02**: Uses Final Report Generator for report creation
+- **PHASE4-01**: Uses Deanonymizer for data deanonymization
+
+### Workflow Options
+
+- **Anonymize Data**: Anonymize sensitive data before AI analysis
+- **AI Review**: Automatically review findings with AI
+- **Generate Report**: Generate comprehensive final report
+- **Deanonymize**: Include real data in final report (requires deanonymization)
+
+### Output
+
+- **Pipeline Results**: Execution results from data pipeline
+- **AI Review Results**: Review results with validation status
+- **Final Report**: Comprehensive report with findings and analysis
+  - Markdown format
+  - JSON format
+  - Downloadable files
+
+### Examples
+
+#### Execute Complete Hunt
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/execute-complete-hunt \
+  -H "Content-Type: application/json" \
+  -d '{
+    "technique_ids": ["T1566", "T1059"],
+    "tool_names": ["Microsoft Defender for Endpoint", "Splunk"],
+    "ingest_mode": "manual",
+    "anonymize": true,
+    "ai_review": true,
+    "generate_report": true,
+    "deanonymize": true
+  }'
+```
+
 ## Future Enhancements
 
 - [ ] Add API endpoints for all services

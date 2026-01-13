@@ -1,0 +1,229 @@
+{
+  "name": "Complete Hunt Workflow - End-to-End",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "complete-hunt",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-complete-hunt",
+      "name": "Complete Hunt Dashboard",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "complete-hunt"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "execute-complete-hunt",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-execute-complete-hunt",
+      "name": "Execute Complete Hunt",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "execute-complete-hunt"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/pipeline/execute",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "technique_ids",
+              "value": "={{ $json.technique_ids || [] }}"
+            },
+            {
+              "name": "tool_names",
+              "value": "={{ $json.tool_names || [] }}"
+            },
+            {
+              "name": "ingest_mode",
+              "value": "={{ $json.ingest_mode || 'manual' }}"
+            },
+            {
+              "name": "anonymize",
+              "value": "={{ $json.anonymize !== false }}"
+            },
+            {
+              "name": "playbook_ids",
+              "value": "={{ $json.playbook_ids || null }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-execute-pipeline",
+      "name": "Execute Pipeline",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/ai-review/review-execution",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "execution_result",
+              "value": "={{ $json.pipeline_result }}"
+            },
+            {
+              "name": "update_status",
+              "value": "={{ $json.update_status !== false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-ai-review",
+      "name": "AI Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/final-report/generate",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "findings",
+              "value": "={{ $json.review_result.result.batch_review.results || $json.pipeline_result.findings || [] }}"
+            },
+            {
+              "name": "context",
+              "value": "={{ { \"pipeline_id\": $json.pipeline_result.pipeline_id, \"time_range\": $json.time_range, \"playbooks_executed\": $json.technique_ids } }}"
+            },
+            {
+              "name": "deanonymize",
+              "value": "={{ $json.deanonymize !== false }}"
+            },
+            {
+              "name": "include_executive_summary",
+              "value": "={{ $json.include_executive_summary !== false }}"
+            },
+            {
+              "name": "format",
+              "value": "={{ $json.format || 'both' }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-generate-final-report",
+      "name": "Generate Final Report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>Complete Hunt Workflow - End-to-End</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1600px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }\n    .header h1 { margin: 0; font-size: 32px; }\n    .workflow-steps { display: flex; justify-content: space-between; align-items: center; margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; }\n    .step { flex: 1; text-align: center; padding: 15px; background: white; border-radius: 4px; margin: 0 5px; border: 2px solid #ddd; }\n    .step.active { border-color: #667eea; background: #667eea; color: white; }\n    .step.completed { border-color: #28a745; background: #28a745; color: white; }\n    .step-number { font-size: 24px; font-weight: bold; margin-bottom: 5px; }\n    .step-label { font-size: 14px; }\n    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #667eea; }\n    .section h2 { margin-top: 0; color: #333; }\n    .btn { padding: 12px 24px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }\n    .btn-primary { background: #667eea; color: white; }\n    .btn-primary:hover { background: #5568d3; }\n    .btn-success { background: #28a745; color: white; }\n    .btn-success:hover { background: #218838; }\n    .form-group { margin: 20px 0; }\n    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }\n    .checkbox-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin: 15px 0; }\n    .checkbox-item { display: flex; align-items: center; padding: 10px; background: white; border-radius: 4px; border: 1px solid #ddd; }\n    .checkbox-item input[type=\"checkbox\"] { margin-right: 10px; width: 18px; height: 18px; cursor: pointer; }\n    .results { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }\n    .results.show { display: block; }\n    .stage { margin: 15px 0; padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #667eea; }\n    .stage.success { border-left-color: #28a745; }\n    .stage.error { border-left-color: #dc3545; }\n    .stage.processing { border-left-color: #ffc107; }\n    .loading { text-align: center; padding: 20px; color: #667eea; }\n    .success-msg { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .error-msg { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .download-btn { background: #17a2b8; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }\n    .download-btn:hover { background: #138496; }\n  </style>\n  <script>\n    let playbooksData = [];\n    let toolsData = [];\n    \n    window.addEventListener('DOMContentLoaded', function() {\n      loadPlaybooks();\n      loadTools();\n    });\n    \n    function loadPlaybooks() {\n      fetch('/webhook/available-playbooks')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.playbooks) {\n            playbooksData = d.playbooks;\n            renderPlaybooks();\n          }\n        })\n        .catch(e => console.error('Error loading playbooks:', e));\n    }\n    \n    function loadTools() {\n      fetch('/webhook/available-tools')\n        .then(r => r.json())\n        .then(d => {\n          if (d.success && d.tools) {\n            toolsData = d.tools;\n            renderTools();\n          }\n        })\n        .catch(e => console.error('Error loading tools:', e));\n    }\n    \n    function renderPlaybooks() {\n      const container = document.getElementById('playbooks-container');\n      if (!container || playbooksData.length === 0) return;\n      \n      const byTactic = {};\n      for (const pb of playbooksData) {\n        const tactic = pb.tactic || 'Other';\n        if (!byTactic[tactic]) byTactic[tactic] = [];\n        byTactic[tactic].push(pb);\n      }\n      \n      let html = '';\n      for (const [tactic, playbooks] of Object.entries(byTactic)) {\n        html += `<div style=\"margin: 15px 0;\"><strong>${tactic}</strong></div><div class=\"checkbox-group\">`;\n        for (const pb of playbooks) {\n          html += `\n            <div class=\"checkbox-item\">\n              <input type=\"checkbox\" id=\"tech_${pb.technique_id}\" name=\"techniques\" value=\"${pb.technique_id}\">\n              <label for=\"tech_${pb.technique_id}\">${pb.technique_id}: ${pb.technique_name || pb.name}</label>\n            </div>\n          `;\n        }\n        html += '</div>';\n      }\n      container.innerHTML = html;\n    }\n    \n    function renderTools() {\n      const container = document.getElementById('tools-container');\n      if (!container || toolsData.length === 0) return;\n      \n      let html = '<div class=\"checkbox-group\">';\n      for (const tool of toolsData) {\n        html += `\n          <div class=\"checkbox-item\">\n            <input type=\"checkbox\" id=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\" name=\"tools\" value=\"${tool}\">\n            <label for=\"tool_${tool.replace(/[^a-zA-Z0-9]/g, '_')}\">${tool}</label>\n          </div>\n        `;\n      }\n      html += '</div>';\n      container.innerHTML = html;\n    }\n    \n    function executeCompleteHunt() {\n      const techniques = Array.from(document.querySelectorAll('input[name=\"techniques\"]:checked')).map(cb => cb.value);\n      const tools = Array.from(document.querySelectorAll('input[name=\"tools\"]:checked')).map(cb => cb.value);\n      const ingestMode = document.querySelector('input[name=\"ingest_mode\"]:checked')?.value || 'manual';\n      const anonymize = document.getElementById('anonymize').checked;\n      const aiReview = document.getElementById('ai-review').checked;\n      const generateReport = document.getElementById('generate-report').checked;\n      const deanonymize = document.getElementById('deanonymize').checked;\n      \n      if (techniques.length === 0) {\n        alert('Please select at least one MITRE ATT&CK technique');\n        return;\n      }\n      \n      if (tools.length === 0) {\n        alert('Please select at least one tool');\n        return;\n      }\n      \n      const resultsDiv = document.getElementById('results');\n      resultsDiv.classList.add('show');\n      resultsDiv.innerHTML = '<div class=\"loading\">Executing complete hunt workflow... This may take several minutes.</div>';\n      \n      fetch('/webhook/execute-complete-hunt', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({\n          technique_ids: techniques,\n          tool_names: tools,\n          ingest_mode: ingestMode,\n          anonymize: anonymize,\n          ai_review: aiReview,\n          generate_report: generateReport,\n          deanonymize: deanonymize\n        })\n      })\n        .then(r => r.json())\n        .then(d => {\n          if (d.success) {\n            displayResults(d);\n          } else {\n            resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${d.error || 'Hunt execution failed'}</div>`;\n          }\n        })\n        .catch(e => {\n          resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function displayResults(data) {\n      const resultsDiv = document.getElementById('results');\n      let html = '<h2>Complete Hunt Execution Results</h2>';\n      \n      if (data.pipeline_result) {\n        html += `<div class=\"stage success\"><h3>✅ Stage 1: Pipeline Execution</h3><p>Pipeline ID: ${data.pipeline_result.pipeline_id || 'N/A'}</p><p>Total Findings: ${data.pipeline_result.total_findings || 0}</p></div>`;\n      }\n      \n      if (data.review_result) {\n        html += `<div class=\"stage success\"><h3>✅ Stage 2: AI Review</h3><p>Reviewed: ${data.review_result.result.batch_review.summary.reviewed || 0} findings</p><p>Valid: ${data.review_result.result.batch_review.summary.valid || 0}</p></div>`;\n      }\n      \n      if (data.final_report) {\n        html += `<div class=\"stage success\"><h3>✅ Stage 3: Final Report Generated</h3><p>Report ID: ${data.final_report.report_id || 'N/A'}</p>`;\n        if (data.final_report.markdown) {\n          html += `<button class=\"download-btn\" onclick=\"downloadReport('markdown')\">Download Markdown</button>`;\n        }\n        if (data.final_report.json) {\n          html += `<button class=\"download-btn\" onclick=\"downloadReport('json')\">Download JSON</button>`;\n        }\n        html += '</div>';\n      }\n      \n      resultsDiv.innerHTML = html;\n    }\n    \n    function downloadReport(format) {\n      // Implementation for downloading report\n      alert('Report download functionality will be implemented');\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🎯 Complete Hunt Workflow - End-to-End</h1>\n      <p>Full threat hunting pipeline from hunt selection to final report</p>\n    </div>\n    \n    <div class=\"workflow-steps\">\n      <div class=\"step\"><div class=\"step-number\">1</div><div class=\"step-label\">Hunt Selection</div></div>\n      <div class=\"step\"><div class=\"step-number\">2</div><div class=\"step-label\">Pipeline Execution</div></div>\n      <div class=\"step\"><div class=\"step-number\">3</div><div class=\"step-label\">AI Review</div></div>\n      <div class=\"step\"><div class=\"step-number\">4</div><div class=\"step-label\">Final Report</div></div>\n    </div>\n    \n    <form id=\"hunt-form\">\n      <div class=\"section\">\n        <h2>1. Select MITRE ATT&CK Techniques</h2>\n        <div id=\"playbooks-container\">Loading playbooks...</div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>2. Select Available Tools</h2>\n        <div id=\"tools-container\">Loading tools...</div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>3. Select Ingest Mode</h2>\n        <div class=\"form-group\">\n          <label><input type=\"radio\" name=\"ingest_mode\" value=\"manual\" checked> Manual (Upload Data Package)</label>\n          <label><input type=\"radio\" name=\"ingest_mode\" value=\"api\"> API (Automated)</label>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <h2>4. Workflow Options</h2>\n        <div class=\"form-group\">\n          <label><input type=\"checkbox\" id=\"anonymize\" checked> Anonymize data before analysis</label>\n          <label><input type=\"checkbox\" id=\"ai-review\" checked> AI Review findings</label>\n          <label><input type=\"checkbox\" id=\"generate-report\" checked> Generate final report</label>\n          <label><input type=\"checkbox\" id=\"deanonymize\" checked> Deanonymize data in final report</label>\n        </div>\n      </div>\n      \n      <div class=\"section\">\n        <button type=\"button\" class=\"btn btn-success\" onclick=\"executeCompleteHunt()\">🚀 Execute Complete Hunt</button>\n      </div>\n    </form>\n    \n    <div id=\"results\" class=\"results\"></div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-complete-hunt",
+      "name": "Respond Complete Hunt",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"pipeline_result\": $json.pipeline_result, \"review_result\": $json.review_result, \"final_report\": $json.final_report, \"error\": $json.error } }}",
+        "options": {}
+      },
+      "id": "respond-execute-complete-hunt",
+      "name": "Respond Execute Complete Hunt",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1050, 300]
+    }
+  ],
+  "connections": {
+    "Complete Hunt Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Respond Complete Hunt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Complete Hunt": {
+      "main": [
+        [
+          {
+            "node": "Execute Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute Pipeline": {
+      "main": [
+        [
+          {
+            "node": "AI Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Review": {
+      "main": [
+        [
+          {
+            "node": "Generate Final Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Final Report": {
+      "main": [
+        [
+          {
+            "node": "Respond Execute Complete Hunt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+
