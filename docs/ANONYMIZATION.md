@@ -268,6 +268,110 @@ anonymizer._load_cache()
 - Verify database connection
 - Check cache if enabled
 
+## Deanonymization Service
+
+### Overview
+
+The `Deanonymizer` service provides a high-level interface for deanonymizing data before generating reports. It uses `DeterministicAnonymizer` internally to reverse anonymization using the mapping table stored in PostgreSQL.
+
+### Features
+
+- **Finding Deanonymization**: Deanonymize individual findings with all related fields
+- **Batch Deanonymization**: Deanonymize multiple findings at once
+- **Evidence Deanonymization**: Deanonymize evidence records
+- **Report Deanonymization**: Deanonymize complete reports
+- **Text Deanonymization**: Deanonymize text fields containing anonymized values
+- **Nested Structure Support**: Handles nested JSON structures
+
+### Usage
+
+#### Basic Usage
+
+```python
+from automation_scripts.utils.deanonymizer import Deanonymizer
+
+# Initialize deanonymizer
+deanonymizer = Deanonymizer(config_path='configs/config.yml')
+
+# Deanonymize a finding
+finding = {
+    'finding_id': 'T1566_001',
+    'ip': '10.123.45.67',  # Anonymized IP
+    'username': 'user_abc123456789',  # Anonymized username
+    'description': 'Activity from 10.123.45.67 by user_abc123456789'
+}
+
+deanonymized_finding = deanonymizer.deanonymize_finding(finding)
+# Returns finding with original values restored:
+# {
+#     'finding_id': 'T1566_001',
+#     'ip': '192.168.1.100',  # Original IP
+#     'username': 'john.doe',  # Original username
+#     'description': 'Activity from 192.168.1.100 by john.doe'
+# }
+```
+
+#### Batch Deanonymization
+
+```python
+findings = [finding1, finding2, finding3]
+
+deanonymized_findings = deanonymizer.deanonymize_findings(findings)
+```
+
+#### Evidence Deanonymization
+
+```python
+evidence = {
+    'evidence_id': 'evd_001',
+    'ip': '10.123.45.67',
+    'raw_data': {
+        'source_ip': '10.123.45.67',
+        'username': 'user_abc123456789'
+    }
+}
+
+deanonymized_evidence = deanonymizer.deanonymize_evidence(evidence)
+```
+
+#### Report Deanonymization
+
+```python
+report = {
+    'findings': [finding1, finding2],
+    'evidence': [evidence1, evidence2],
+    'summary': 'Report summary with 10.123.45.67'
+}
+
+deanonymized_report = deanonymizer.deanonymize_report(report)
+```
+
+### Integration with Reporting
+
+```python
+from automation_scripts.utils.deanonymizer import Deanonymizer
+from automation_scripts.utils.final_report_generator import FinalReportGenerator
+
+# Deanonymize findings before reporting
+deanonymizer = Deanonymizer(config_path='configs/config.yml')
+deanonymized_findings = deanonymizer.deanonymize_findings(findings)
+
+# Generate report with deanonymized data
+report_generator = FinalReportGenerator(config_path='configs/config.yml')
+report = report_generator.generate_final_report(
+    findings=deanonymized_findings,
+    deanonymize=False,  # Already deanonymized
+    include_executive_summary=True
+)
+```
+
+### Security Considerations
+
+1. **Controlled Deanonymization**: Deanonymization should only be performed when generating reports for authorized stakeholders
+2. **Access Control**: Limit access to deanonymization service
+3. **Audit Logging**: Log all deanonymization operations
+4. **Mapping Table Security**: Protect the anonymization mapping table with proper database permissions
+
 ## API Reference
 
 ### DeterministicAnonymizer
@@ -309,4 +413,24 @@ Tokenize email address.
 
 #### `anonymize_record(record, fields_to_anonymize) -> Dict`
 Anonymize fields in a record.
+
+### Deanonymizer
+
+#### `__init__(config_path, anonymizer, logger)`
+Initialize deanonymizer service.
+
+#### `deanonymize_finding(finding, fields_to_deanonymize) -> Dict`
+Deanonymize a finding.
+
+#### `deanonymize_findings(findings, fields_to_deanonymize) -> List[Dict]`
+Deanonymize multiple findings.
+
+#### `deanonymize_evidence(evidence, fields_to_deanonymize) -> Dict`
+Deanonymize evidence.
+
+#### `deanonymize_report(report, fields_to_deanonymize) -> Dict`
+Deanonymize a complete report.
+
+#### `deanonymize_text(text, value_types) -> str`
+Deanonymize text containing anonymized values.
 
