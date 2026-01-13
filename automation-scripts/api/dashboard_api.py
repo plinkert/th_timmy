@@ -31,6 +31,7 @@ from ..services.hardening_manager import HardeningManager, HardeningManagerError
 from ..services.playbook_manager import PlaybookManager, PlaybookManagerError
 from ..utils.query_generator import QueryGenerator, QueryGeneratorError
 from ..orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
+from ..orchestrators.ai_reviewer import AIReviewer, AIReviewerError
 
 
 # Security
@@ -116,6 +117,7 @@ _hardening_manager: Optional[HardeningManager] = None
 _query_generator: Optional[QueryGenerator] = None
 _playbook_manager: Optional[PlaybookManager] = None
 _pipeline_orchestrator: Optional[PipelineOrchestrator] = None
+_ai_reviewer: Optional[AIReviewer] = None
 
 
 def get_health_monitor() -> HealthMonitor:
@@ -268,6 +270,17 @@ def get_pipeline_orchestrator() -> PipelineOrchestrator:
         _pipeline_orchestrator = PipelineOrchestrator(config_path=config_path, logger=logger)
     
     return _pipeline_orchestrator
+
+
+def get_ai_reviewer() -> AIReviewer:
+    """Get or create AIReviewer instance."""
+    global _ai_reviewer
+    
+    if _ai_reviewer is None:
+        config_path = os.getenv('CONFIG_PATH', 'configs/config.yml')
+        _ai_reviewer = AIReviewer(config_path=config_path, logger=logger)
+    
+    return _ai_reviewer
 
 
 def verify_api_key(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)) -> bool:
@@ -1985,6 +1998,166 @@ async def execute_pipeline(
         )
     except PipelineExecutionError as e:
         logger.error(f"Pipeline execution error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+# AI Review Models
+class ReviewFindingRequest(BaseModel):
+    """Request model for reviewing a single finding."""
+    finding: Dict[str, Any] = Field(..., description="Finding dictionary to review")
+    update_status: bool = Field(True, description="Whether to update finding status based on review")
+
+
+class ReviewFindingResponse(BaseModel):
+    """Response model for finding review."""
+    success: bool
+    result: Dict[str, Any]
+    error: Optional[str] = None
+
+
+class ReviewBatchRequest(BaseModel):
+    """Request model for reviewing findings batch."""
+    findings: List[Dict[str, Any]] = Field(..., description="List of findings to review")
+    update_status: bool = Field(True, description="Whether to update finding status based on review")
+    batch_size: int = Field(10, description="Number of findings to process in parallel")
+
+
+class ReviewBatchResponse(BaseModel):
+    """Response model for batch review."""
+    success: bool
+    result: Dict[str, Any]
+    error: Optional[str] = None
+
+
+class ReviewExecutionRequest(BaseModel):
+    """Request model for reviewing playbook execution."""
+    execution_result: Dict[str, Any] = Field(..., description="Playbook execution result")
+    update_status: bool = Field(True, description="Whether to update finding status based on review")
+
+
+class ReviewExecutionResponse(BaseModel):
+    """Response model for execution review."""
+    success: bool
+    result: Dict[str, Any]
+    error: Optional[str] = None
+
+
+# AI Review Endpoints
+@app.post("/ai-review/review-finding", response_model=ReviewFindingResponse)
+async def review_finding(
+    request: ReviewFindingRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Review a single finding using AI.
+    
+    Args:
+        request: Review finding request
+    
+    Returns:
+        Review result
+    """
+    try:
+        reviewer = get_ai_reviewer()
+        result = reviewer.review_finding(
+            finding=request.finding,
+            update_status=request.update_status
+        )
+        
+        return ReviewFindingResponse(
+            success=True,
+            result=result
+        )
+    except AIReviewerError as e:
+        logger.error(f"AI reviewer error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/ai-review/review-batch", response_model=ReviewBatchResponse)
+async def review_findings_batch(
+    request: ReviewBatchRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Review multiple findings in batch using AI.
+    
+    Args:
+        request: Review batch request
+    
+    Returns:
+        Batch review results
+    """
+    try:
+        reviewer = get_ai_reviewer()
+        result = reviewer.review_findings_batch(
+            findings=request.findings,
+            update_status=request.update_status,
+            batch_size=request.batch_size
+        )
+        
+        return ReviewBatchResponse(
+            success=True,
+            result=result
+        )
+    except AIReviewerError as e:
+        logger.error(f"AI reviewer error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@app.post("/ai-review/review-execution", response_model=ReviewExecutionResponse)
+async def review_playbook_execution(
+    request: ReviewExecutionRequest,
+    _: bool = Depends(verify_api_key)
+):
+    """
+    Review findings from a playbook execution using AI.
+    
+    Args:
+        request: Review execution request
+    
+    Returns:
+        Execution review results
+    """
+    try:
+        reviewer = get_ai_reviewer()
+        result = reviewer.review_playbook_execution(
+            execution_result=request.execution_result,
+            update_status=request.update_status
+        )
+        
+        return ReviewExecutionResponse(
+            success=True,
+            result=result
+        )
+    except AIReviewerError as e:
+        logger.error(f"AI reviewer error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=str(e)

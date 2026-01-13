@@ -7,6 +7,7 @@ threat hunting workflows.
 
 from .playbook_engine import PlaybookEngine, PlaybookEngineError, PlaybookExecutionError
 from .pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
+from .ai_reviewer import AIReviewer, AIReviewerError
 
 __all__ = [
     'PlaybookEngine',
@@ -14,6 +15,8 @@ __all__ = [
     'PlaybookExecutionError',
     'PipelineOrchestrator',
     'PipelineOrchestratorError',
-    'PipelineExecutionError'
+    'PipelineExecutionError',
+    'AIReviewer',
+    'AIReviewerError'
 ]
 

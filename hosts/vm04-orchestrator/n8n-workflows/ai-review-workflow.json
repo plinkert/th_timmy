@@ -1,0 +1,283 @@
+{
+  "name": "AI Review Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "ai-review",
+        "responseMode": "html",
+        "options": {}
+      },
+      "id": "webhook-ai-review",
+      "name": "AI Review Dashboard",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 100],
+      "webhookId": "ai-review"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "review-finding",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-review-finding",
+      "name": "Review Finding",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 300],
+      "webhookId": "review-finding"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "review-findings-batch",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-review-batch",
+      "name": "Review Findings Batch",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 500],
+      "webhookId": "review-findings-batch"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "review-execution",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-review-execution",
+      "name": "Review Playbook Execution",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1.1,
+      "position": [250, 700],
+      "webhookId": "review-execution"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/ai-review/review-finding",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "finding",
+              "value": "={{ $json.finding }}"
+            },
+            {
+              "name": "update_status",
+              "value": "={{ $json.update_status !== false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-review-finding",
+      "name": "Review Finding API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/ai-review/review-batch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "findings",
+              "value": "={{ $json.findings || [] }}"
+            },
+            {
+              "name": "update_status",
+              "value": "={{ $json.update_status !== false }}"
+            },
+            {
+              "name": "batch_size",
+              "value": "={{ $json.batch_size || 10 }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-review-batch",
+      "name": "Review Batch API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 500]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/ai-review/review-execution",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "execution_result",
+              "value": "={{ $json.execution_result }}"
+            },
+            {
+              "name": "update_status",
+              "value": "={{ $json.update_status !== false }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "http-review-execution",
+      "name": "Review Execution API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [450, 700]
+    },
+    {
+      "parameters": {
+        "respondWith": "html",
+        "responseBody": "=<!DOCTYPE html>\n<html>\n<head>\n  <title>AI Review Dashboard</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }\n    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }\n    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; }\n    .header h1 { margin: 0; font-size: 28px; }\n    .section { margin: 30px 0; padding: 20px; background: #f9f9f9; border-radius: 5px; border-left: 4px solid #667eea; }\n    .section h2 { margin-top: 0; color: #333; }\n    .btn { padding: 12px 24px; margin: 10px 5px; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; transition: all 0.3s; }\n    .btn-primary { background: #667eea; color: white; }\n    .btn-primary:hover { background: #5568d3; }\n    .btn-success { background: #28a745; color: white; }\n    .btn-success:hover { background: #218838; }\n    .form-group { margin: 20px 0; }\n    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }\n    .form-group input, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }\n    .results { margin-top: 30px; padding: 20px; background: #f9f9f9; border-radius: 5px; display: none; }\n    .results.show { display: block; }\n    .review-item { margin: 15px 0; padding: 15px; background: white; border-radius: 4px; border-left: 4px solid #667eea; }\n    .review-item.valid { border-left-color: #28a745; }\n    .review-item.needs-review { border-left-color: #ffc107; }\n    .review-item.invalid { border-left-color: #dc3545; }\n    .review-item h3 { margin-top: 0; }\n    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin: 5px; }\n    .status-valid { background: #d4edda; color: #155724; }\n    .status-needs-review { background: #fff3cd; color: #856404; }\n    .status-invalid { background: #f8d7da; color: #721c24; }\n    .risk-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; margin: 5px; }\n    .risk-low { background: #d4edda; color: #155724; }\n    .risk-medium { background: #fff3cd; color: #856404; }\n    .risk-high { background: #f8d7da; color: #721c24; }\n    .loading { text-align: center; padding: 20px; color: #667eea; }\n    .success-msg { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .error-msg { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 12px; border-radius: 4px; margin: 10px 0; }\n    .summary-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0; }\n    .stat-card { background: white; padding: 20px; border-radius: 5px; text-align: center; }\n    .stat-card h3 { margin: 0; font-size: 32px; color: #667eea; }\n    .stat-card p { margin: 5px 0 0 0; color: #666; }\n  </style>\n  <script>\n    function reviewFinding() {\n      const findingJson = document.getElementById('finding-json').value;\n      if (!findingJson) {\n        alert('Please enter finding JSON');\n        return;\n      }\n      \n      let finding;\n      try {\n        finding = JSON.parse(findingJson);\n      } catch (e) {\n        alert('Invalid JSON: ' + e.message);\n        return;\n      }\n      \n      const updateStatus = document.getElementById('update-status').checked;\n      \n      const resultsDiv = document.getElementById('results');\n      resultsDiv.classList.add('show');\n      resultsDiv.innerHTML = '<div class=\"loading\">Reviewing finding with AI... This may take a minute.</div>';\n      \n      fetch('/webhook/review-finding', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ finding: finding, update_status: updateStatus })\n      })\n        .then(r => r.json())\n        .then(d => {\n          if (d.success) {\n            displayReviewResult(d.result);\n          } else {\n            resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${d.error || 'Review failed'}</div>`;\n          }\n        })\n        .catch(e => {\n          resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function reviewBatch() {\n      const findingsJson = document.getElementById('findings-json').value;\n      if (!findingsJson) {\n        alert('Please enter findings JSON array');\n        return;\n      }\n      \n      let findings;\n      try {\n        findings = JSON.parse(findingsJson);\n      } catch (e) {\n        alert('Invalid JSON: ' + e.message);\n        return;\n      }\n      \n      const updateStatus = document.getElementById('update-status-batch').checked;\n      const batchSize = parseInt(document.getElementById('batch-size').value) || 10;\n      \n      const resultsDiv = document.getElementById('results');\n      resultsDiv.classList.add('show');\n      resultsDiv.innerHTML = '<div class=\"loading\">Reviewing findings with AI... This may take several minutes.</div>';\n      \n      fetch('/webhook/review-findings-batch', {\n        method: 'POST',\n        headers: { 'Content-Type': 'application/json' },\n        body: JSON.stringify({ findings: findings, update_status: updateStatus, batch_size: batchSize })\n      })\n        .then(r => r.json())\n        .then(d => {\n          if (d.success) {\n            displayBatchReviewResult(d.result);\n          } else {\n            resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${d.error || 'Review failed'}</div>`;\n          }\n        })\n        .catch(e => {\n          resultsDiv.innerHTML = `<div class=\"error-msg\">Error: ${e.message}</div>`;\n        });\n    }\n    \n    function displayReviewResult(result) {\n      const resultsDiv = document.getElementById('results');\n      const validation = result.validation || {};\n      const status = result.recommended_status || 'unknown';\n      const risk = result.false_positive_risk || 'unknown';\n      \n      let html = '<h2>Review Result</h2>';\n      html += `<div class=\"review-item ${status}\">`;\n      html += `<h3>Finding: ${result.finding_id || 'N/A'}</h3>`;\n      html += `<p><strong>Status:</strong> <span class=\"status-badge status-${status}\">${status}</span></p>`;\n      html += `<p><strong>False Positive Risk:</strong> <span class=\"risk-badge risk-${risk}\">${risk}</span></p>`;\n      html += `<p><strong>Validation Status:</strong> ${validation.validation_status || 'N/A'}</p>`;\n      if (validation.confidence_assessment) {\n        html += `<p><strong>Confidence:</strong> ${validation.confidence_assessment.current || 'N/A'} → ${validation.confidence_assessment.recommended || 'N/A'}</p>`;\n      }\n      if (validation.severity_assessment) {\n        html += `<p><strong>Severity:</strong> ${validation.severity_assessment.current || 'N/A'} → ${validation.severity_assessment.recommended || 'N/A'}</p>`;\n      }\n      html += '</div>';\n      \n      resultsDiv.innerHTML = html;\n    }\n    \n    function displayBatchReviewResult(result) {\n      const resultsDiv = document.getElementById('results');\n      const summary = result.summary || {};\n      const results = result.results || [];\n      \n      let html = '<h2>Batch Review Results</h2>';\n      \n      // Summary statistics\n      html += '<div class=\"summary-stats\">';\n      html += `<div class=\"stat-card\"><h3>${summary.reviewed || 0}</h3><p>Reviewed</p></div>`;\n      html += `<div class=\"stat-card\"><h3>${summary.valid || 0}</h3><p>Valid</p></div>`;\n      html += `<div class=\"stat-card\"><h3>${summary.needs_review || 0}</h3><p>Needs Review</p></div>`;\n      html += `<div class=\"stat-card\"><h3>${summary.invalid || 0}</h3><p>Invalid</p></div>`;\n      html += `<div class=\"stat-card\"><h3>${summary.high_risk_false_positive || 0}</h3><p>High Risk FP</p></div>`;\n      html += '</div>';\n      \n      // Review results\n      html += '<h3>Review Details</h3>';\n      for (const review of results.slice(0, 20)) { // Limit to first 20\n        const status = review.recommended_status || 'unknown';\n        const risk = review.false_positive_risk || 'unknown';\n        html += `<div class=\"review-item ${status}\">`;\n        html += `<h3>${review.finding_id || 'N/A'}</h3>`;\n        html += `<p><strong>Status:</strong> <span class=\"status-badge status-${status}\">${status}</span></p>`;\n        html += `<p><strong>Risk:</strong> <span class=\"risk-badge risk-${risk}\">${risk}</span></p>`;\n        html += '</div>';\n      }\n      \n      if (results.length > 20) {\n        html += `<p><em>Showing first 20 of ${results.length} results</em></p>`;\n      }\n      \n      resultsDiv.innerHTML = html;\n    }\n  </script>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>🤖 AI Review Dashboard</h1>\n      <p>Automated AI-powered review of threat hunting findings</p>\n    </div>\n    \n    <div class=\"section\">\n      <h2>Review Single Finding</h2>\n      <div class=\"form-group\">\n        <label>Finding JSON:</label>\n        <textarea id=\"finding-json\" rows=\"10\" placeholder='{\"finding_id\": \"...\", \"technique_id\": \"T1566\", ...}'></textarea>\n      </div>\n      <div class=\"form-group\">\n        <label><input type=\"checkbox\" id=\"update-status\" checked> Update finding status based on review</label>\n      </div>\n      <button type=\"button\" class=\"btn btn-primary\" onclick=\"reviewFinding()\">🔍 Review Finding</button>\n    </div>\n    \n    <div class=\"section\">\n      <h2>Review Findings Batch</h2>\n      <div class=\"form-group\">\n        <label>Findings JSON Array:</label>\n        <textarea id=\"findings-json\" rows=\"10\" placeholder='[{\"finding_id\": \"...\", ...}, ...]'></textarea>\n      </div>\n      <div class=\"form-group\">\n        <label>Batch Size:</label>\n        <input type=\"number\" id=\"batch-size\" value=\"10\" min=\"1\" max=\"50\">\n      </div>\n      <div class=\"form-group\">\n        <label><input type=\"checkbox\" id=\"update-status-batch\" checked> Update finding status based on review</label>\n      </div>\n      <button type=\"button\" class=\"btn btn-success\" onclick=\"reviewBatch()\">🔍 Review Findings Batch</button>\n    </div>\n    \n    <div id=\"results\" class=\"results\"></div>\n  </div>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-ai-review",
+      "name": "Respond AI Review",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 100]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"result\": $json.result, \"error\": $json.error } }}",
+        "options": {}
+      },
+      "id": "respond-review-finding",
+      "name": "Respond Review Finding",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"result\": $json.result, \"error\": $json.error } }}",
+        "options": {}
+      },
+      "id": "respond-review-batch",
+      "name": "Respond Review Batch",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { \"success\": $json.success, \"result\": $json.result, \"error\": $json.error } }}",
+        "options": {}
+      },
+      "id": "respond-review-execution",
+      "name": "Respond Review Execution",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [650, 700]
+    }
+  ],
+  "connections": {
+    "AI Review Dashboard": {
+      "main": [
+        [
+          {
+            "node": "Respond AI Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Finding": {
+      "main": [
+        [
+          {
+            "node": "Review Finding API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Findings Batch": {
+      "main": [
+        [
+          {
+            "node": "Review Batch API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Playbook Execution": {
+      "main": [
+        [
+          {
+            "node": "Review Execution API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Finding API": {
+      "main": [
+        [
+          {
+            "node": "Respond Review Finding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Batch API": {
+      "main": [
+        [
+          {
+            "node": "Respond Review Batch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Execution API": {
+      "main": [
+        [
+          {
+            "node": "Respond Review Execution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}
+

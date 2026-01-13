@@ -500,6 +500,108 @@ curl -X POST http://VM04_IP:5678/webhook/test-playbook \
   -d '{"playbook_id": "T1566-phishing"}'
 ```
 
+## AI Review Workflow
+
+### Installation
+
+1. Import workflow `ai-review-workflow.json` into n8n
+2. Activate workflow
+3. Access dashboard: `http://VM04_IP:5678/webhook/ai-review`
+
+### Features
+
+- **Single Finding Review**: Review individual findings with AI
+- **Batch Review**: Review multiple findings in batch
+- **Playbook Execution Review**: Review all findings from a playbook execution
+- **Status Updates**: Automatic status updates based on AI validation
+- **Review Dashboard**: HTML dashboard for reviewing findings
+
+### Webhook Endpoints
+
+- `GET /webhook/ai-review` - AI Review Dashboard (HTML)
+- `POST /webhook/review-finding` - Review single finding (JSON)
+- `POST /webhook/review-findings-batch` - Review findings batch (JSON)
+- `POST /webhook/review-execution` - Review playbook execution (JSON)
+
+### Usage
+
+#### Access Dashboard
+
+1. Open in browser: `http://VM04_IP:5678/webhook/ai-review`
+2. Dashboard provides interface for:
+   - Reviewing single findings
+   - Reviewing batches of findings
+   - Viewing review results
+
+#### Review Single Finding
+
+1. **Enter Finding JSON**: Paste finding JSON in textarea
+2. **Set Options**: Check "Update finding status based on review"
+3. **Click "Review Finding"**: System will review finding with AI
+4. **View Results**: Review result displayed with validation status
+
+#### Review Findings Batch
+
+1. **Enter Findings JSON**: Paste array of findings JSON
+2. **Set Batch Size**: Number of findings to process in parallel (default: 10)
+3. **Set Options**: Check "Update finding status based on review"
+4. **Click "Review Findings Batch"**: System will review all findings
+5. **View Results**: Summary statistics and review details
+
+### Integration
+
+- **PHASE3-01**: Uses AIService for AI validation
+- **PHASE2-03**: Uses Findings structure for review
+- **PHASE1-03**: Uses DeterministicAnonymizer for data anonymization
+- **PHASE2-01**: Can review findings from Playbook Engine execution
+
+### Review Process
+
+1. **Anonymization**: Data is anonymized before AI processing
+2. **AI Validation**: Finding is validated by AI
+3. **Status Determination**: Status is determined based on validation
+4. **Description Enhancement**: Description may be enhanced if needed
+5. **Status Update**: Finding status is updated if requested
+
+### Review Results
+
+- **Validation Status**: valid, needs_review, invalid
+- **Recommended Status**: confirmed, investigating, false_positive
+- **False Positive Risk**: low, medium, high
+- **Confidence Assessment**: Current and recommended confidence
+- **Severity Assessment**: Current and recommended severity
+- **Evidence Quality**: Assessment of evidence quality
+
+### Examples
+
+#### Review Single Finding
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/review-finding \
+  -H "Content-Type: application/json" \
+  -d '{
+    "finding": {
+      "finding_id": "T1566_001",
+      "technique_id": "T1566",
+      "severity": "high",
+      "confidence": 0.85
+    },
+    "update_status": true
+  }'
+```
+
+#### Review Findings Batch
+
+```bash
+curl -X POST http://VM04_IP:5678/webhook/review-findings-batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "findings": [finding1, finding2, finding3],
+    "update_status": true,
+    "batch_size": 10
+  }'
+```
+
 ## Data Ingest Pipeline Workflow
 
 ### Installation
