@@ -1,0 +1,177 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Threat Hunting Finding Schema",
+  "description": "Schema for threat hunting findings with evidence references",
+  "type": "object",
+  "required": [
+    "finding_id",
+    "technique_id",
+    "severity",
+    "title",
+    "timestamp",
+    "confidence"
+  ],
+  "properties": {
+    "finding_id": {
+      "type": "string",
+      "description": "Unique identifier for the finding",
+      "pattern": "^[A-Z0-9_-]+$"
+    },
+    "technique_id": {
+      "type": "string",
+      "description": "MITRE ATT&CK technique ID (e.g., T1566)",
+      "pattern": "^T[0-9]{4}(\\.[0-9]{3})?$"
+    },
+    "technique_name": {
+      "type": "string",
+      "description": "MITRE ATT&CK technique name"
+    },
+    "tactic": {
+      "type": "string",
+      "description": "MITRE ATT&CK tactic name",
+      "enum": [
+        "Reconnaissance",
+        "Resource Development",
+        "Initial Access",
+        "Execution",
+        "Persistence",
+        "Privilege Escalation",
+        "Defense Evasion",
+        "Credential Access",
+        "Discovery",
+        "Lateral Movement",
+        "Collection",
+        "Command and Control",
+        "Exfiltration",
+        "Impact"
+      ]
+    },
+    "severity": {
+      "type": "string",
+      "description": "Severity level of the finding",
+      "enum": ["low", "medium", "high", "critical"],
+      "default": "low"
+    },
+    "title": {
+      "type": "string",
+      "description": "Title of the finding",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "description": {
+      "type": "string",
+      "description": "Detailed description of the finding",
+      "minLength": 1
+    },
+    "confidence": {
+      "type": "number",
+      "description": "Confidence score (0.0 to 1.0)",
+      "minimum": 0.0,
+      "maximum": 1.0
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the finding was detected",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "string",
+      "description": "Data source where the finding was detected"
+    },
+    "playbook_id": {
+      "type": "string",
+      "description": "ID of the playbook that generated this finding"
+    },
+    "execution_id": {
+      "type": "string",
+      "description": "ID of the playbook execution that generated this finding"
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Array of evidence records (inline evidence for backward compatibility)",
+      "items": {
+        "type": "object",
+        "description": "Evidence record"
+      },
+      "maxItems": 100
+    },
+    "evidence_count": {
+      "type": "integer",
+      "description": "Total number of evidence records",
+      "minimum": 0
+    },
+    "evidence_references": {
+      "type": "array",
+      "description": "References to evidence records stored separately",
+      "items": {
+        "type": "object",
+        "required": ["evidence_id", "evidence_type"],
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "description": "Unique identifier of the evidence record"
+          },
+          "evidence_type": {
+            "type": "string",
+            "description": "Type of evidence",
+            "enum": ["log_entry", "file", "process", "network", "registry", "other"]
+          },
+          "relevance_score": {
+            "type": "number",
+            "description": "Relevance score of this evidence to the finding (0.0 to 1.0)",
+            "minimum": 0.0,
+            "maximum": 1.0
+          }
+        }
+      }
+    },
+    "indicators": {
+      "type": "array",
+      "description": "List of indicators of compromise (IOCs)",
+      "items": {
+        "type": "string"
+      }
+    },
+    "recommendations": {
+      "type": "array",
+      "description": "List of recommendations for investigation",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "description": "Status of the finding",
+      "enum": ["new", "investigating", "confirmed", "false_positive", "resolved"],
+      "default": "new"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "User or team assigned to investigate this finding"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Tags for categorization",
+      "items": {
+        "type": "string"
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata",
+      "additionalProperties": true
+    },
+    "created_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the finding was created",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "description": "ISO 8601 timestamp when the finding was last updated",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
+
