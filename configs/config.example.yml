@@ -92,6 +92,28 @@ security:
   ssl_cert_path: ""  # Path to SSL certificate
   ssl_key_path: ""   # Path to SSL private key
 
+# AI Configuration
+ai:
+  # OpenAI API Configuration
+  openai:
+    # API key: Set in .env file as OPENAI_API_KEY or pass directly
+    # api_key: "sk-..."  # DO NOT COMMIT API KEY!
+    model: "gpt-4"  # Model to use: gpt-4, gpt-4-turbo, gpt-3.5-turbo
+    temperature: 0.3  # Temperature for generation (0.0-2.0, lower = more deterministic)
+    max_tokens: 2000  # Maximum tokens for response
+    timeout: 30  # Request timeout in seconds
+  
+  # Anonymization before AI
+  anonymize_before_ai: true  # Anonymize data before sending to AI (recommended)
+  
+  # AI Service Features
+  features:
+    validate_findings: true  # Enable AI validation of findings
+    generate_executive_summary: true  # Enable executive summary generation
+    analyze_evidence: true  # Enable AI evidence analysis
+    correlate_findings: true  # Enable finding correlation
+    enhance_descriptions: true  # Enable description enhancement
+
 # Backup Configuration
 backup:
   enabled: true
