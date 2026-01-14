@@ -31,8 +31,9 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 COPY . /app/
 
 # Set environment variables
-# PYTHONPATH should include both /app and /app/automation-scripts for imports to work
-ENV PYTHONPATH=/app:/app/automation-scripts
+# PYTHONPATH must include /app for automation-scripts to be importable
+# The automation-scripts directory will be accessible via sys.path manipulation in dashboard_api.py
+ENV PYTHONPATH=/app
 ENV CONFIG_PATH=/app/configs/config.yml
 ENV PYTHONUNBUFFERED=1
 
@@ -44,6 +45,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
 
 # Run API
-# Change to automation-scripts directory where the api module is located
+# Change to automation-scripts directory and run from there
+# This allows relative imports (from ..services) to work correctly
 WORKDIR /app/automation-scripts
 CMD ["python3", "-m", "uvicorn", "api.dashboard_api:app", "--host", "0.0.0.0", "--port", "8000"]
