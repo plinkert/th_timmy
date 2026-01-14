@@ -16,11 +16,25 @@ import yaml
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-from automation_scripts.utils.data_package import DataPackage, DataPackageError
-from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
-from automation_scripts.utils.playbook_validator import PlaybookValidator
+# Try relative imports first (preferred), then fallback to absolute
+try:
+    from ..utils.data_package import DataPackage, DataPackageError
+except (ImportError, ValueError):
+    # Fallback to absolute imports if relative imports fail
+    from automation_scripts.utils.data_package import DataPackage, DataPackageError
+
+try:
+    from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+except (ImportError, ValueError):
+    from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+
+try:
+    from ..utils.playbook_validator import PlaybookValidator
+except (ImportError, ValueError):
+    from automation_scripts.utils.playbook_validator import PlaybookValidator
 
 
 class PlaybookEngineError(Exception):

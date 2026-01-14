@@ -26,11 +26,29 @@ import types
 
 # Create full package structure
 if "automation_scripts" not in sys.modules:
-    sys.modules["automation_scripts"] = types.ModuleType("automation_scripts")
-    sys.modules["automation_scripts"].__path__ = [str(automation_scripts_path)]
+    automation_scripts_module = types.ModuleType("automation_scripts")
+    automation_scripts_module.__path__ = [str(automation_scripts_path)]
+    sys.modules["automation_scripts"] = automation_scripts_module
+else:
+    automation_scripts_module = sys.modules["automation_scripts"]
+
 if "automation_scripts.services" not in sys.modules:
-    sys.modules["automation_scripts.services"] = types.ModuleType("automation_scripts.services")
-    sys.modules["automation_scripts.services"].__path__ = [str(automation_scripts_path / "services")]
+    services_module = types.ModuleType("automation_scripts.services")
+    services_module.__path__ = [str(automation_scripts_path / "services")]
+    sys.modules["automation_scripts.services"] = services_module
+    automation_scripts_module.services = services_module
+
+if "automation_scripts.utils" not in sys.modules:
+    utils_module = types.ModuleType("automation_scripts.utils")
+    utils_module.__path__ = [str(automation_scripts_path / "utils")]
+    sys.modules["automation_scripts.utils"] = utils_module
+    automation_scripts_module.utils = utils_module
+
+if "automation_scripts.orchestrators" not in sys.modules:
+    orchestrators_module = types.ModuleType("automation_scripts.orchestrators")
+    orchestrators_module.__path__ = [str(automation_scripts_path / "orchestrators")]
+    sys.modules["automation_scripts.orchestrators"] = orchestrators_module
+    automation_scripts_module.orchestrators = orchestrators_module
 
 # Load ssh_client first (no dependencies on other services)
 ssh_client_path = automation_scripts_path / "services" / "ssh_client.py"
@@ -685,6 +703,50 @@ def dashboard_client(test_config, remote_executor, health_monitor, repo_sync_ser
     playbook_validator_module = importlib.util.module_from_spec(playbook_validator_spec)
     sys.modules["automation_scripts.utils.playbook_validator"] = playbook_validator_module
     playbook_validator_spec.loader.exec_module(playbook_validator_module)
+    
+    # Load data_package (dependency for playbook_engine and pipeline_orchestrator)
+    data_package_path = automation_scripts_path / "utils" / "data_package.py"
+    data_package_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.data_package", data_package_path
+    )
+    data_package_module = importlib.util.module_from_spec(data_package_spec)
+    sys.modules["automation_scripts.utils.data_package"] = data_package_module
+    data_package_spec.loader.exec_module(data_package_module)
+    # Make data_package available as attribute
+    if "automation_scripts.utils" in sys.modules:
+        sys.modules["automation_scripts.utils"].data_package = data_package_module
+    
+    # Load deterministic_anonymizer (dependency for playbook_engine and pipeline_orchestrator)
+    deterministic_anonymizer_path = automation_scripts_path / "utils" / "deterministic_anonymizer.py"
+    deterministic_anonymizer_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.utils.deterministic_anonymizer", deterministic_anonymizer_path
+    )
+    deterministic_anonymizer_module = importlib.util.module_from_spec(deterministic_anonymizer_spec)
+    sys.modules["automation_scripts.utils.deterministic_anonymizer"] = deterministic_anonymizer_module
+    deterministic_anonymizer_spec.loader.exec_module(deterministic_anonymizer_module)
+    
+    # Create orchestrators package structure
+    if "automation_scripts.orchestrators" not in sys.modules:
+        sys.modules["automation_scripts.orchestrators"] = types.ModuleType("automation_scripts.orchestrators")
+        sys.modules["automation_scripts.orchestrators"].__path__ = [str(automation_scripts_path / "orchestrators")]
+    
+    # Load playbook_engine (dependency for pipeline_orchestrator)
+    playbook_engine_path = automation_scripts_path / "orchestrators" / "playbook_engine.py"
+    playbook_engine_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.orchestrators.playbook_engine", playbook_engine_path
+    )
+    playbook_engine_module = importlib.util.module_from_spec(playbook_engine_spec)
+    sys.modules["automation_scripts.orchestrators.playbook_engine"] = playbook_engine_module
+    playbook_engine_spec.loader.exec_module(playbook_engine_module)
+    
+    # Load pipeline_orchestrator (dependency for dashboard_api)
+    pipeline_orchestrator_path = automation_scripts_path / "orchestrators" / "pipeline_orchestrator.py"
+    pipeline_orchestrator_spec = importlib.util.spec_from_file_location(
+        "automation_scripts.orchestrators.pipeline_orchestrator", pipeline_orchestrator_path
+    )
+    pipeline_orchestrator_module = importlib.util.module_from_spec(pipeline_orchestrator_spec)
+    sys.modules["automation_scripts.orchestrators.pipeline_orchestrator"] = pipeline_orchestrator_module
+    pipeline_orchestrator_spec.loader.exec_module(pipeline_orchestrator_module)
     
     # Load playbook_manager (dependency for dashboard_api)
     playbook_manager_path = automation_scripts_path / "services" / "playbook_manager.py"

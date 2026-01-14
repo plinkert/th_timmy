@@ -16,13 +16,34 @@ from datetime import datetime
 
 # Add project root to path
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
-from automation_scripts.services.remote_executor import RemoteExecutor, RemoteExecutorError
-from automation_scripts.utils.data_package import DataPackage, DataPackageError
-from automation_scripts.utils.query_generator import QueryGenerator, QueryGeneratorError
-from automation_scripts.orchestrators.playbook_engine import PlaybookEngine, PlaybookExecutionError
-from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+# Try relative imports first (preferred), then fallback to absolute
+try:
+    from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
+except (ImportError, ValueError):
+    from automation_scripts.services.remote_executor import RemoteExecutor, RemoteExecutorError
+
+try:
+    from ..utils.data_package import DataPackage, DataPackageError
+except (ImportError, ValueError):
+    from automation_scripts.utils.data_package import DataPackage, DataPackageError
+
+try:
+    from ..utils.query_generator import QueryGenerator, QueryGeneratorError
+except (ImportError, ValueError):
+    from automation_scripts.utils.query_generator import QueryGenerator, QueryGeneratorError
+
+try:
+    from .playbook_engine import PlaybookEngine, PlaybookExecutionError
+except (ImportError, ValueError):
+    from automation_scripts.orchestrators.playbook_engine import PlaybookEngine, PlaybookExecutionError
+
+try:
+    from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+except (ImportError, ValueError):
+    from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 
 class PipelineOrchestratorError(Exception):
