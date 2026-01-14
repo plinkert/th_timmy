@@ -42,17 +42,18 @@ try:
 except (ImportError, ValueError):
     # Fallback to absolute imports if relative imports fail
     # This happens when module is imported as top-level (e.g., 'api.dashboard_api')
-    from automation_scripts.services.health_monitor import HealthMonitor, HealthMonitorError
-    from automation_scripts.services.repo_sync import RepoSyncService, RepoSyncError
-    from automation_scripts.services.config_manager import ConfigManager, ConfigManagerError
-    from automation_scripts.services.remote_executor import RemoteExecutor, RemoteExecutorError
-    from automation_scripts.services.test_runner import TestRunner, TestRunnerError
-    from automation_scripts.services.deployment_manager import DeploymentManager, DeploymentManagerError
-    from automation_scripts.services.hardening_manager import HardeningManager, HardeningManagerError
-    from automation_scripts.services.playbook_manager import PlaybookManager, PlaybookManagerError
-    from automation_scripts.utils.query_generator import QueryGenerator, QueryGeneratorError
-    from automation_scripts.orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
-    from automation_scripts.orchestrators.ai_reviewer import AIReviewer, AIReviewerError
+    # Since automation-scripts is in sys.path, we can import directly from services, utils, orchestrators
+    from services.health_monitor import HealthMonitor, HealthMonitorError
+    from services.repo_sync import RepoSyncService, RepoSyncError
+    from services.config_manager import ConfigManager, ConfigManagerError
+    from services.remote_executor import RemoteExecutor, RemoteExecutorError
+    from services.test_runner import TestRunner, TestRunnerError
+    from services.deployment_manager import DeploymentManager, DeploymentManagerError
+    from services.hardening_manager import HardeningManager, HardeningManagerError
+    from services.playbook_manager import PlaybookManager, PlaybookManagerError
+    from utils.query_generator import QueryGenerator, QueryGeneratorError
+    from orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
+    from orchestrators.ai_reviewer import AIReviewer, AIReviewerError
 
 
 # Security
