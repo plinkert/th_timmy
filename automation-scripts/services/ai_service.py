@@ -21,7 +21,12 @@ except ImportError:
     OPENAI_AVAILABLE = False
 
 from .ai_prompts import AIPrompts
-from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+
+# Try relative import first, fallback to direct import if relative import fails
+try:
+    from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+except (ImportError, ValueError):
+    from utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 
 class AIServiceError(Exception):
