@@ -16,8 +16,13 @@ from datetime import datetime
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from automation_scripts.services.ai_service import AIService, AIServiceError
-from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+# Try relative imports first, fallback to direct imports if relative imports fail
+try:
+    from ..services.ai_service import AIService, AIServiceError
+    from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+except (ImportError, ValueError):
+    from services.ai_service import AIService, AIServiceError
+    from utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 
 class AIReviewerError(Exception):
