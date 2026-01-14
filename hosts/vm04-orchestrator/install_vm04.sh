@@ -377,37 +377,44 @@ if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
     if groups $SUDO_USER | grep -q docker; then
         log_info "User $SUDO_USER is in docker group, proceeding with docker compose..."
         
-        # Use su -l to get a login shell with docker group active
-        # This ensures docker group is properly activated
-        BUILD_OUTPUT=$(su -l $SUDO_USER -c "
-            cd $VM04_DIR
-            export PATH=\$PATH:/usr/bin:/usr/local/bin
-            echo '[INFO] Stopping existing containers...'
-            docker compose down 2>/dev/null || true
-            echo '[INFO] Building dashboard-api image...'
-            docker compose build dashboard-api 2>&1
-        " 2>&1)
+        # Use runuser to execute commands as the user with proper group context
+        # This is more reliable than su -l and doesn't require interactive shell
+        log_info "Stopping existing containers..."
+        runuser -l $SUDO_USER -c "cd $VM04_DIR && docker compose down 2>/dev/null || true" 2>&1 | while IFS= read -r line; do
+            [ -n "$line" ] && log_info "$line" || true
+        done || true
         
-        BUILD_EXIT_CODE=$?
-        echo "$BUILD_OUTPUT" | tee /tmp/docker-build.log
+        log_info "Building dashboard-api image (this may take a few minutes)..."
+        BUILD_EXIT_CODE=0
+        runuser -l $SUDO_USER -c "cd $VM04_DIR && docker compose build dashboard-api" > /tmp/docker-build.log 2>&1 || BUILD_EXIT_CODE=$?
+        
+        # Display build output in real-time style
+        if [ -f /tmp/docker-build.log ]; then
+            log_info "Build output:"
+            tail -50 /tmp/docker-build.log | while IFS= read -r line; do
+                echo "  $line"
+            done
+        fi
         
         if [ $BUILD_EXIT_CODE -ne 0 ]; then
             log_warn "Build failed, but will try to start anyway"
-            log_info "Build logs saved to /tmp/docker-build.log"
+            log_info "Full build logs saved to /tmp/docker-build.log"
         else
             log_success "Build completed successfully"
         fi
         
         # Start services
-        UP_OUTPUT=$(su -l $SUDO_USER -c "
-            cd $VM04_DIR
-            export PATH=\$PATH:/usr/bin:/usr/local/bin
-            echo '[INFO] Starting docker compose services...'
-            docker compose up -d 2>&1
-        " 2>&1)
+        log_info "Starting docker compose services..."
+        UP_EXIT_CODE=0
+        runuser -l $SUDO_USER -c "cd $VM04_DIR && docker compose up -d" > /tmp/docker-up.log 2>&1 || UP_EXIT_CODE=$?
         
-        UP_EXIT_CODE=$?
-        echo "$UP_OUTPUT" | tee /tmp/docker-up.log
+        # Display startup output
+        if [ -f /tmp/docker-up.log ]; then
+            log_info "Startup output:"
+            cat /tmp/docker-up.log | while IFS= read -r line; do
+                echo "  $line"
+            done
+        fi
         
         if [ $UP_EXIT_CODE -ne 0 ]; then
             log_error "Failed to start docker compose services"
@@ -426,14 +433,15 @@ if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
     
     # Check status after a moment
     sleep 8
-    if su -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-n8n.*Up"; then
+    log_info "Checking container status..."
+    if runuser -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-n8n.*Up"; then
         log_success "n8n started in Docker container"
     else
         log_warn "n8n may not be running yet"
         log_info "Check logs: cd $VM04_DIR && docker compose logs n8n"
     fi
     
-    if su -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-dashboard-api.*Up"; then
+    if runuser -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-dashboard-api.*Up"; then
         log_success "dashboard-api started in Docker container"
     else
         log_warn "dashboard-api may not be running yet"
