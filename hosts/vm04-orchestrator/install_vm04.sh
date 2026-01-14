@@ -100,9 +100,12 @@ parse_config() {
 N8N_USER=$(parse_config "d.get('n8n', {}).get('basic_auth_user', 'admin')" "admin")
 N8N_PASSWORD=$(parse_config "d.get('n8n', {}).get('basic_auth_password', '')" "")
 N8N_PORT=$(parse_config "d.get('n8n', {}).get('port', 5678)" "5678")
+DASHBOARD_API_PORT=$(parse_config "d.get('dashboard_api', {}).get('port', 8000)" "8000")
+API_KEY=$(parse_config "d.get('dashboard_api', {}).get('api_key', '')" "")
+API_BASE_URL=$(parse_config "d.get('dashboard_api', {}).get('base_url', 'http://localhost:8000')" "http://localhost:8000")
 AUTO_START=$(parse_config "d.get('docker', {}).get('auto_start', True)" "True")
 
-log_info "Read from config.yml: N8N_USER=$N8N_USER, N8N_PORT=$N8N_PORT"
+log_info "Read from config.yml: N8N_USER=$N8N_USER, N8N_PORT=$N8N_PORT, DASHBOARD_API_PORT=$DASHBOARD_API_PORT"
 
 # Validate required values
 if [ "$N8N_PASSWORD" = "CHANGE_ME_STRONG_PASSWORD" ] || [ -z "$N8N_PASSWORD" ]; then
@@ -334,6 +337,11 @@ cat > "$ENV_FILE" << EOF
 N8N_BASIC_AUTH_USER=$N8N_USER
 N8N_BASIC_AUTH_PASSWORD=$N8N_PASSWORD
 N8N_SECURE_COOKIE=false
+
+# Dashboard API Environment Variables
+DASHBOARD_API_PORT=$DASHBOARD_API_PORT
+API_KEY=$API_KEY
+API_BASE_URL=$API_BASE_URL
 EOF
 chown $SUDO_USER:$SUDO_USER "$ENV_FILE"
 chmod 600 "$ENV_FILE"
@@ -344,14 +352,17 @@ log_success ".env file created"
 # ============================================
 log_info "Configuring firewall..."
 N8N_PORT_FW=$(parse_config "d.get('network', {}).get('n8n_port', 5678)" "5678")
+DASHBOARD_API_PORT_FW=$(parse_config "d.get('network', {}).get('dashboard_api_port', 8000)" "8000")
 ufw allow ${N8N_PORT_FW}/tcp
+ufw allow ${DASHBOARD_API_PORT_FW}/tcp
 ufw reload
+log_success "Firewall configured: n8n port $N8N_PORT_FW, dashboard-api port $DASHBOARD_API_PORT_FW"
 
 # ============================================
-# 10. Start n8n (if auto_start=true)
+# 10. Build and Start Docker Services (if auto_start=true)
 # ============================================
 if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
-    log_info "Starting n8n in Docker container..."
+    log_info "Building and starting Docker services (n8n + dashboard-api)..."
     
     # User must be in docker group - use newgrp or su
     cd "$VM04_DIR"
@@ -360,25 +371,34 @@ if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
     sudo -u $SUDO_USER bash -c "
         cd $VM04_DIR
         docker compose down 2>/dev/null || true
+        log_info 'Building dashboard-api image...'
+        docker compose build dashboard-api || log_warn 'Build failed, will try to start anyway'
         docker compose up -d
     " || {
-        log_warn "Failed to start n8n automatically"
-        log_info "You can start manually: cd $VM04_DIR && docker compose up -d"
+        log_warn "Failed to start Docker services automatically"
+        log_info "You can start manually: cd $VM04_DIR && docker compose up -d --build"
         log_info "Note: You may need to log out and log back in after adding to docker group"
     }
     
     # Check status after a moment
-    sleep 3
+    sleep 5
     if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "threat-hunting-n8n.*Up"; then
         log_success "n8n started in Docker container"
     else
         log_warn "n8n may not be running yet"
-        log_info "Check status: cd $VM04_DIR && docker compose ps"
-        log_info "Check logs: cd $VM04_DIR && docker compose logs"
     fi
+    
+    if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "threat-hunting-dashboard-api.*Up"; then
+        log_success "dashboard-api started in Docker container"
+    else
+        log_warn "dashboard-api may not be running yet"
+    fi
+    
+    log_info "Check status: cd $VM04_DIR && docker compose ps"
+    log_info "Check logs: cd $VM04_DIR && docker compose logs"
 else
-    log_info "Automatic n8n startup is disabled"
-    log_info "To start n8n: cd $VM04_DIR && docker compose up -d"
+    log_info "Automatic Docker services startup is disabled"
+    log_info "To start services: cd $VM04_DIR && docker compose up -d --build"
 fi
 
 # ============================================
@@ -403,15 +423,19 @@ echo ""
 echo "Next steps:"
 echo "1. Run health_check.sh script to verify installation"
 echo "2. Activate virtual environment: source $VENV_DIR/bin/activate"
-echo "3. Check n8n status: cd $VM04_DIR && docker compose ps"
-echo "4. Open in browser: http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "3. Check Docker services status: cd $VM04_DIR && docker compose ps"
+echo "4. Open n8n in browser: http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "5. Open Dashboard API docs: http://$(hostname -I | awk '{print $1}'):$DASHBOARD_API_PORT/docs"
 echo ""
 echo "IMPORTANT:"
 echo "- You may need to log out and log back in to access Docker without sudo"
-echo "- Check n8n logs: cd $VM04_DIR && docker compose logs -f n8n"
-echo "- n8n management:"
+echo "- Check Docker logs:"
+echo "  n8n:           cd $VM04_DIR && docker compose logs -f n8n"
+echo "  dashboard-api: cd $VM04_DIR && docker compose logs -f dashboard-api"
+echo "- Docker services management:"
 echo "  Start:   cd $VM04_DIR && docker compose up -d"
 echo "  Stop:    cd $VM04_DIR && docker compose down"
 echo "  Restart: cd $VM04_DIR && docker compose restart"
+echo "  Rebuild: cd $VM04_DIR && docker compose up -d --build"
 echo ""
 

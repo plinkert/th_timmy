@@ -22,6 +22,38 @@ services:
     networks:
       - threat-hunting-net
 
+  dashboard-api:
+    build:
+      context: ../..
+      dockerfile: hosts/vm04-orchestrator/Dockerfile.dashboard-api
+    container_name: threat-hunting-dashboard-api
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_API_PORT:-8000}:8000"
+    environment:
+      - CONFIG_PATH=/app/configs/config.yml
+      - API_KEY=${API_KEY:-}
+      - API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount config directory (read-only)
+      - ../../configs:/app/configs:ro
+      # Mount logs directory (read-write)
+      - ../../logs:/app/logs
+      # Mount automation-scripts for hot-reload (optional, for development)
+      - ../../automation-scripts:/app/automation-scripts
+    networks:
+      - threat-hunting-net
+    depends_on:
+      - n8n
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
 networks:
   threat-hunting-net:
     driver: bridge

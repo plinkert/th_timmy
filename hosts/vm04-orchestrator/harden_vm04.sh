@@ -57,8 +57,14 @@ if [ -f "$CENTRAL_CONFIG" ] && command -v python3 &> /dev/null && python3 -c "im
     ALLOWED_NETWORK=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('firewall', {}).get('allowed_network', ''))" 2>/dev/null || echo "")
     ENABLE_AUDITD=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('hardening', {}).get('vm04', {}).get('enable_auditd', False))" 2>/dev/null || echo "False")
     
-    # Read n8n port from config
+    # Read n8n and dashboard-api ports from config
     N8N_PORT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('services', {}).get('n8n', {}).get('port', 5678))" 2>/dev/null || echo "5678")
+    DASHBOARD_API_PORT=$(python3 -c "import yaml; f=open('$CENTRAL_CONFIG'); d=yaml.safe_load(f); print(d.get('services', {}).get('dashboard_api', {}).get('port', 8000))" 2>/dev/null || echo "8000")
+    
+    # Try to get from vm04 config if not in central config
+    if [ "$DASHBOARD_API_PORT" = "8000" ] && [ -f "$VM04_DIR/config.yml" ]; then
+        DASHBOARD_API_PORT=$(python3 -c "import yaml; f=open('$VM04_DIR/config.yml'); d=yaml.safe_load(f); print(d.get('dashboard_api', {}).get('port', 8000))" 2>/dev/null || echo "8000")
+    fi
     
     log_info "Configuration loaded from: $CENTRAL_CONFIG"
 else
@@ -70,10 +76,11 @@ else
     ALLOWED_NETWORK="${ALLOWED_NETWORK:-}"
     ENABLE_AUDITD="${ENABLE_AUDITD:-false}"
     N8N_PORT="${N8N_PORT:-5678}"
+    DASHBOARD_API_PORT="${DASHBOARD_API_PORT:-8000}"
 fi
 
-# Build firewall ports list (SSH + n8n)
-FIREWALL_PORTS="$SSH_PORT,$N8N_PORT"
+# Build firewall ports list (SSH + n8n + dashboard-api)
+FIREWALL_PORTS="$SSH_PORT,$N8N_PORT,$DASHBOARD_API_PORT"
 
 echo ""
 echo "=========================================="
@@ -179,19 +186,19 @@ fi
 echo ""
 
 # ============================================
-# 4. n8n Container Security Configuration
+# 4. Docker Containers Security Configuration
 # ============================================
 echo "=========================================="
-echo "  4. n8n Container Security Configuration"
+echo "  4. Docker Containers Security Configuration"
 echo "=========================================="
-log_info "Updating docker-compose.yml with security settings"
+log_info "Updating docker-compose.yml with security settings for all services"
 
-configure_n8n_container_security() {
+configure_docker_containers_security() {
     local compose_file="$VM04_DIR/docker-compose.yml"
     
     if [ ! -f "$compose_file" ]; then
         log_warn "docker-compose.yml not found at $compose_file"
-        log_info "Skipping n8n container security configuration"
+        log_info "Skipping container security configuration"
         return
     fi
     
@@ -199,12 +206,6 @@ configure_n8n_container_security() {
     backup_file "$compose_file"
     
     log_info "Updating docker-compose.yml with security options..."
-    
-    # Check if security options are already present
-    if grep -q "security_opt:" "$compose_file" 2>/dev/null; then
-        log_info "Security options already present in docker-compose.yml"
-        return
-    fi
     
     # Use Python to safely update docker-compose.yml
     python3 << PYTHON_EOF
@@ -222,25 +223,53 @@ try:
     if 'services' not in compose_data:
         compose_data['services'] = {}
     
-    # Ensure n8n service exists
-    if 'n8n' not in compose_data['services']:
-        compose_data['services']['n8n'] = {}
+    # Configure n8n security
+    if 'n8n' in compose_data['services']:
+        n8n_service = compose_data['services']['n8n']
+        
+        # Add security options if not present
+        if 'security_opt' not in n8n_service:
+            n8n_service['security_opt'] = ['no-new-privileges:true']
+        
+        # Add resource limits if not present
+        if 'mem_limit' not in n8n_service:
+            n8n_service['mem_limit'] = '2g'
+        if 'cpus' not in n8n_service:
+            n8n_service['cpus'] = '1.0'
+        
+        # Add tmpfs for temporary directories
+        if 'tmpfs' not in n8n_service:
+            n8n_service['tmpfs'] = ['/tmp', '/run']
+        
+        # Add user (non-root) - n8n runs as node user (UID 1000)
+        if 'user' not in n8n_service:
+            n8n_service['user'] = '1000:1000'
     
-    n8n_service = compose_data['services']['n8n']
-    
-    # Add security options
-    n8n_service['security_opt'] = ['no-new-privileges:true']
-    
-    # Add resource limits
-    n8n_service['mem_limit'] = '2g'
-    n8n_service['cpus'] = '1.0'
-    
-    # Add tmpfs for temporary directories (n8n needs write access to /home/node/.n8n, so read_only: false)
-    if 'tmpfs' not in n8n_service:
-        n8n_service['tmpfs'] = ['/tmp', '/run']
-    
-    # Add user (non-root) - n8n runs as node user (UID 1000)
-    n8n_service['user'] = '1000:1000'
+    # Configure dashboard-api security
+    if 'dashboard-api' in compose_data['services']:
+        api_service = compose_data['services']['dashboard-api']
+        
+        # Add security options if not present
+        if 'security_opt' not in api_service:
+            api_service['security_opt'] = ['no-new-privileges:true']
+        
+        # Add resource limits if not present
+        if 'mem_limit' not in api_service:
+            api_service['mem_limit'] = '1g'
+        if 'cpus' not in api_service:
+            api_service['cpus'] = '0.5'
+        
+        # Add tmpfs for temporary directories
+        if 'tmpfs' not in api_service:
+            api_service['tmpfs'] = ['/tmp', '/run']
+        
+        # Add read-only root filesystem (except for volumes)
+        if 'read_only' not in api_service:
+            api_service['read_only'] = True
+        
+        # Add tmpfs for writable directories
+        if 'tmpfs' not in api_service:
+            api_service['tmpfs'] = ['/tmp', '/run', '/app/logs']
     
     # Write updated docker-compose.yml
     with open(compose_file, 'w') as f:
@@ -255,14 +284,14 @@ PYTHON_EOF
     
     if [ $? -eq 0 ]; then
         log_success "docker-compose.yml updated with security settings"
-        log_info "Security options added: security_opt, mem_limit, cpus, tmpfs, user"
+        log_info "Security options added for n8n and dashboard-api: security_opt, mem_limit, cpus, tmpfs"
     else
         log_warn "Failed to update docker-compose.yml automatically"
         log_info "You may need to manually add security options to docker-compose.yml"
     fi
 }
 
-configure_n8n_container_security
+configure_docker_containers_security
 
 echo ""
 
@@ -355,21 +384,21 @@ if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
 fi
 
 # ============================================
-# 9. n8n Security Verification
+# 9. Docker Services Security Verification
 # ============================================
 echo "=========================================="
-echo "  9. n8n Security Verification"
+echo "  9. Docker Services Security Verification"
 echo "=========================================="
-log_info "Verifying n8n security configuration"
+log_info "Verifying security configuration for all Docker services"
 
-verify_n8n_security() {
+verify_docker_services_security() {
     local compose_file="$VM04_DIR/docker-compose.yml"
     local env_file="$VM04_DIR/.env"
     
     if [ -f "$compose_file" ]; then
         log_info "Checking docker-compose.yml security settings..."
         
-        # Check if security_opt is present
+        # Check if security_opt is present for any service
         if grep -q "security_opt:" "$compose_file" 2>/dev/null; then
             log_success "docker-compose.yml has security_opt configured"
         else
@@ -383,24 +412,44 @@ verify_n8n_security() {
             log_warn "docker-compose.yml missing resource limits (mem_limit, cpus)"
         fi
         
-        # Check if user is set (non-root)
-        if grep -qE "user:\s*['\"]?1000" "$compose_file" 2>/dev/null; then
-            log_success "docker-compose.yml configured to run as non-root user"
-        else
-            log_warn "docker-compose.yml may not be configured to run as non-root user"
+        # Check n8n specific settings
+        if grep -qE "n8n:" "$compose_file" 2>/dev/null; then
+            if grep -A 20 "n8n:" "$compose_file" | grep -qE "user:\s*['\"]?1000"; then
+                log_success "n8n configured to run as non-root user"
+            else
+                log_warn "n8n may not be configured to run as non-root user"
+            fi
+        fi
+        
+        # Check dashboard-api specific settings
+        if grep -qE "dashboard-api:" "$compose_file" 2>/dev/null; then
+            if grep -A 20 "dashboard-api:" "$compose_file" | grep -q "read_only: true"; then
+                log_success "dashboard-api configured with read-only root filesystem"
+            else
+                log_warn "dashboard-api may not have read-only root filesystem"
+            fi
         fi
     else
         log_warn "docker-compose.yml not found: $compose_file"
     fi
     
-    # Check if .env exists and has basic auth configured
+    # Check if .env exists and has authentication configured
     if [ -f "$env_file" ]; then
-        log_info "Checking .env file for basic auth..."
+        log_info "Checking .env file for authentication..."
+        
+        # Check n8n basic auth
         if grep -q "N8N_BASIC_AUTH_ACTIVE=true" "$env_file" 2>/dev/null || \
            grep -q "N8N_BASIC_AUTH_USER" "$env_file" 2>/dev/null; then
             log_success "n8n basic authentication is configured in .env"
         else
             log_warn "n8n basic authentication may not be configured in .env"
+        fi
+        
+        # Check API key
+        if grep -q "API_KEY=" "$env_file" 2>/dev/null && ! grep -q "API_KEY=$" "$env_file" 2>/dev/null; then
+            log_success "Dashboard API key is configured in .env"
+        else
+            log_warn "Dashboard API key may not be configured in .env (API will work without auth in dev mode)"
         fi
     else
         log_warn ".env file not found: $env_file"
@@ -408,7 +457,7 @@ verify_n8n_security() {
     fi
 }
 
-verify_n8n_security
+verify_docker_services_security
 
 echo ""
 
@@ -421,21 +470,24 @@ echo "=========================================="
 log_success "VM-04 hardening completed successfully!"
 echo ""
 echo "Applied configurations:"
-echo "  ✓ Firewall (ufw): SSH ($SSH_PORT), n8n ($N8N_PORT)"
+echo "  ✓ Firewall (ufw): SSH ($SSH_PORT), n8n ($N8N_PORT), dashboard-api ($DASHBOARD_API_PORT)"
 echo "  ✓ SSH hardening: port=$SSH_PORT, timeout=$SSH_TIMEOUT, disable_root=$DISABLE_ROOT_LOGIN"
 echo "  ✓ Docker security: log rotation, no-new-privileges"
 echo "  ✓ n8n container security: security_opt, resource limits, non-root user"
+echo "  ✓ dashboard-api container security: security_opt, resource limits, read-only filesystem"
 echo "  ✓ Fail2ban: SSH protection"
-echo "  ✓ Logrotate: Docker and n8n logs"
+echo "  ✓ Logrotate: Docker, n8n and dashboard-api logs"
 echo "  ✓ Automatic security updates"
 if [ "$ENABLE_AUDITD" = "True" ] || [ "$ENABLE_AUDITD" = "true" ]; then
     echo "  ✓ Auditd: System auditing enabled"
 fi
 echo ""
 echo "Next steps:"
-echo "  1. Restart n8n container to apply security settings:"
+echo "  1. Restart Docker services to apply security settings:"
 echo "     cd $VM04_DIR && docker compose down && docker compose up -d"
-echo "  2. Verify n8n is still accessible: http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "  2. Verify services are still accessible:"
+echo "     n8n:           http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "     dashboard-api: http://$(hostname -I | awk '{print $1}'):$DASHBOARD_API_PORT/docs"
 echo "  3. Test SSH connection from another machine"
 echo "  4. Check firewall status: sudo ufw status"
 echo "  5. Check Fail2ban status: sudo fail2ban-client status sshd"

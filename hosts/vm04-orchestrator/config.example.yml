@@ -19,12 +19,30 @@ n8n:
   # Protocol (http or https)
   protocol: "http"
 
+# Dashboard API Configuration
+dashboard_api:
+  # Dashboard API port (default 8000)
+  port: 8000
+  
+  # API Key for authentication (optional, but recommended for production)
+  # If not set, API will work without authentication (development mode)
+  # Generate with: python3 -c "from secrets import token_urlsafe; print(token_urlsafe(32))"
+  api_key: ""  # Optional: Set in .env file as API_KEY
+  
+  # Base URL for API (used by n8n workflows)
+  base_url: "http://localhost:8000"
+  
+  # Automatically start dashboard-api after installation (true/false)
+  auto_start: true
+
 # Network Configuration
 network:
-  # Port to open in firewall
+  # Port to open in firewall for n8n
   n8n_port: 5678
+  # Port to open in firewall for dashboard-api
+  dashboard_api_port: 8000
 
 # Docker Configuration
 docker:
-  # Automatically start n8n after installation (true/false)
+  # Automatically start all services after installation (true/false)
   auto_start: true

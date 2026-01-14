@@ -307,6 +307,9 @@ else
         "requests"
         "loguru"
         "docker"
+        "fastapi"
+        "uvicorn"
+        "pydantic"
     )
     
     for package in "${PACKAGES[@]}"; do
@@ -347,17 +350,82 @@ check_n8n_container
 echo ""
 
 # ============================================
-# 9. Firewall and n8n Port Check
+# 8b. Dashboard API Container Check
 # ============================================
-echo "--- Firewall and n8n Port ---"
-TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
-log_info "Checking: n8n port and firewall"
+echo "--- Dashboard API Container ---"
+check_dashboard_api_container() {
+    TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+    log_info "Checking: Dashboard API Docker container"
+    
+    if [ ! -f "$VM04_DIR/docker-compose.yml" ]; then
+        log_error "docker-compose.yml not found in $VM04_DIR"
+        FAILED_CHECKS=$((FAILED_CHECKS + 1))
+        return
+    fi
+    
+    # Get port from config.yml or use default
+    if [ -f "$CONFIG_FILE" ]; then
+        api_port=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('dashboard_api', {}).get('port', 8000))" 2>/dev/null || echo "8000")
+    else
+        api_port="8000"
+    fi
+    
+    # Check if port is listening (most reliable check)
+    port_listening=false
+    if command -v ss &> /dev/null; then
+        if ss -tlnp 2>/dev/null | grep -q ":${api_port} "; then
+            port_listening=true
+        fi
+    elif command -v netstat &> /dev/null; then
+        if netstat -tlnp 2>/dev/null | grep -q ":${api_port} "; then
+            port_listening=true
+        fi
+    fi
+    
+    if [ "$port_listening" = true ]; then
+        log_success "Dashboard API container: running (port $api_port is listening)"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        
+        # Test health endpoint
+        TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+        log_info "Testing Dashboard API health endpoint..."
+        if command -v curl &> /dev/null; then
+            http_code=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 3 "http://localhost:$api_port/health" 2>/dev/null || echo "000")
+            if [ "$http_code" = "200" ]; then
+                log_success "Dashboard API health check: OK (HTTP $http_code)"
+                PASSED_CHECKS=$((PASSED_CHECKS + 1))
+            else
+                log_warn "Dashboard API health check: failed (HTTP $http_code)"
+                WARNINGS=$((WARNINGS + 1))
+            fi
+        else
+            log_warn "curl not available, skipping health check test"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    else
+        log_warn "Dashboard API container: port $api_port is not listening"
+        log_info "Run: cd $VM04_DIR && docker compose up -d"
+        WARNINGS=$((WARNINGS + 1))
+    fi
+}
 
-# Get port from config.yml or use default
+check_dashboard_api_container
+echo ""
+
+# ============================================
+# 9. Firewall and Ports Check
+# ============================================
+echo "--- Firewall and Ports ---"
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+log_info "Checking: n8n and dashboard-api ports and firewall"
+
+# Get ports from config.yml or use defaults
 if [ -f "$CONFIG_FILE" ]; then
     n8n_port=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('n8n', {}).get('port', 5678))" 2>/dev/null || echo "5678")
+    api_port=$(python3 -c "import yaml; f=open('$CONFIG_FILE'); d=yaml.safe_load(f); print(d.get('dashboard_api', {}).get('port', 8000))" 2>/dev/null || echo "8000")
 else
     n8n_port="5678"
+    api_port="8000"
 fi
 
 # Check if port is listening
@@ -372,41 +440,96 @@ elif command -v netstat &> /dev/null; then
     fi
 fi
 
-# Check firewall (ufw)
-firewall_open=false
+# Check firewall (ufw) for both ports
+n8n_firewall_open=false
+api_firewall_open=false
 if command -v ufw &> /dev/null; then
     if [ "$EUID" -eq 0 ]; then
         if ufw status 2>/dev/null | grep -qE "${n8n_port}/tcp|${n8n_port}\s+ALLOW"; then
-            firewall_open=true
+            n8n_firewall_open=true
+        fi
+        if ufw status 2>/dev/null | grep -qE "${api_port}/tcp|${api_port}\s+ALLOW"; then
+            api_firewall_open=true
         fi
     else
         if sudo ufw status 2>/dev/null | grep -qE "${n8n_port}/tcp|${n8n_port}\s+ALLOW"; then
-            firewall_open=true
+            n8n_firewall_open=true
+        fi
+        if sudo ufw status 2>/dev/null | grep -qE "${api_port}/tcp|${api_port}\s+ALLOW"; then
+            api_firewall_open=true
         fi
     fi
 fi
 
-# Evaluate results
-if [ "$port_listening" = true ]; then
-    if [ "$firewall_open" = true ]; then
-        log_success "Port $n8n_port/tcp is listening and open in firewall (ufw)"
+# Check n8n port
+n8n_port_listening=false
+if command -v ss &> /dev/null; then
+    if ss -tlnp 2>/dev/null | grep -q ":${n8n_port} "; then
+        n8n_port_listening=true
+    fi
+elif command -v netstat &> /dev/null; then
+    if netstat -tlnp 2>/dev/null | grep -q ":${n8n_port} "; then
+        n8n_port_listening=true
+    fi
+fi
+
+# Check API port
+api_port_listening=false
+if command -v ss &> /dev/null; then
+    if ss -tlnp 2>/dev/null | grep -q ":${api_port} "; then
+        api_port_listening=true
+    fi
+elif command -v netstat &> /dev/null; then
+    if netstat -tlnp 2>/dev/null | grep -q ":${api_port} "; then
+        api_port_listening=true
+    fi
+fi
+
+# Evaluate n8n port results
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if [ "$n8n_port_listening" = true ]; then
+    if [ "$n8n_firewall_open" = true ]; then
+        log_success "n8n port $n8n_port/tcp: listening and open in firewall"
         PASSED_CHECKS=$((PASSED_CHECKS + 1))
     elif command -v ufw &> /dev/null; then
         ufw_status=$(sudo ufw status 2>/dev/null | head -n1 || echo "")
         if echo "$ufw_status" | grep -qi "inactive\|disabled"; then
-            log_success "Port $n8n_port/tcp is listening (ufw is disabled - port accessible)"
+            log_success "n8n port $n8n_port/tcp: listening (ufw disabled)"
             PASSED_CHECKS=$((PASSED_CHECKS + 1))
         else
-            log_warn "Port $n8n_port/tcp is listening, but may not be open in firewall (ufw active)"
+            log_warn "n8n port $n8n_port/tcp: listening, but may not be open in firewall"
             WARNINGS=$((WARNINGS + 1))
         fi
     else
-        log_success "Port $n8n_port/tcp is listening (ufw not installed)"
+        log_success "n8n port $n8n_port/tcp: listening (ufw not installed)"
         PASSED_CHECKS=$((PASSED_CHECKS + 1))
     fi
 else
-    log_info "Port $n8n_port/tcp is not listening (n8n may not be running - this is OK)"
-    log_info "To start n8n: cd $VM04_DIR && docker compose up -d"
+    log_info "n8n port $n8n_port/tcp: not listening (n8n may not be running - this is OK)"
+    PASSED_CHECKS=$((PASSED_CHECKS + 1))
+fi
+
+# Evaluate API port results
+TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
+if [ "$api_port_listening" = true ]; then
+    if [ "$api_firewall_open" = true ]; then
+        log_success "Dashboard API port $api_port/tcp: listening and open in firewall"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    elif command -v ufw &> /dev/null; then
+        ufw_status=$(sudo ufw status 2>/dev/null | head -n1 || echo "")
+        if echo "$ufw_status" | grep -qi "inactive\|disabled"; then
+            log_success "Dashboard API port $api_port/tcp: listening (ufw disabled)"
+            PASSED_CHECKS=$((PASSED_CHECKS + 1))
+        else
+            log_warn "Dashboard API port $api_port/tcp: listening, but may not be open in firewall"
+            WARNINGS=$((WARNINGS + 1))
+        fi
+    else
+        log_success "Dashboard API port $api_port/tcp: listening (ufw not installed)"
+        PASSED_CHECKS=$((PASSED_CHECKS + 1))
+    fi
+else
+    log_info "Dashboard API port $api_port/tcp: not listening (API may not be running - this is OK)"
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
 fi
 echo ""
