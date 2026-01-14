@@ -24,7 +24,6 @@ try:
 except (ImportError, ValueError):
     from services.ai_service import AIService, AIServiceError
     from utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
-from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 
 class ExecutiveSummaryGeneratorError(Exception):
