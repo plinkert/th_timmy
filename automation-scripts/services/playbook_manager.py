@@ -17,8 +17,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime
 
-from ..utils.playbook_validator import PlaybookValidator, PlaybookValidationError
-from ..utils.query_generator import QueryGenerator
+# Try relative imports first, fallback to direct imports if relative imports fail
+try:
+    from ..utils.playbook_validator import PlaybookValidator, PlaybookValidationError
+    from ..utils.query_generator import QueryGenerator
+except (ImportError, ValueError):
+    from utils.playbook_validator import PlaybookValidator, PlaybookValidationError
+    from utils.query_generator import QueryGenerator
 
 
 class PlaybookManagerError(Exception):

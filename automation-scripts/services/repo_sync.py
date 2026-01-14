@@ -13,7 +13,11 @@ from datetime import datetime
 import yaml
 
 from .remote_executor import RemoteExecutor, RemoteExecutorError
-from ..utils.git_manager import GitManager, GitManagerError
+# Try relative import first, fallback to direct import if relative import fails
+try:
+    from ..utils.git_manager import GitManager, GitManagerError
+except (ImportError, ValueError):
+    from utils.git_manager import GitManager, GitManagerError
 
 
 class RepoSyncError(Exception):
