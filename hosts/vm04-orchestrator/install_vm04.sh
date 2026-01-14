@@ -377,6 +377,16 @@ if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
     if groups $SUDO_USER | grep -q docker; then
         log_info "User $SUDO_USER is in docker group, proceeding with docker compose..."
         
+        # Check available disk space before building
+        AVAILABLE_SPACE=$(df -BG /var/lib/docker 2>/dev/null | tail -1 | awk '{print $4}' | sed 's/G//' || echo "0")
+        if [ "$AVAILABLE_SPACE" -lt 5 ] && [ "$AVAILABLE_SPACE" != "0" ]; then
+            log_warn "Low disk space detected: ${AVAILABLE_SPACE}GB available"
+            log_info "Cleaning up Docker system..."
+            runuser -l $SUDO_USER -c "docker system prune -f --volumes" 2>/dev/null || true
+            AVAILABLE_SPACE=$(df -BG /var/lib/docker 2>/dev/null | tail -1 | awk '{print $4}' | sed 's/G//' || echo "0")
+            log_info "Available space after cleanup: ${AVAILABLE_SPACE}GB"
+        fi
+        
         # Use runuser to execute commands as the user with proper group context
         # This is more reliable than su -l and doesn't require interactive shell
         log_info "Stopping existing containers..."

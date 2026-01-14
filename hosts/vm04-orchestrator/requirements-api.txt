@@ -1,0 +1,35 @@
+# Dashboard API - Minimal Dependencies
+# Only packages required for FastAPI dashboard service
+# Excludes: Jupyter, ML/AI libraries, testing frameworks (not needed in container)
+
+# API Framework
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# Database
+psycopg2-binary>=2.9.0
+sqlalchemy>=2.0.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.0
+
+# HTTP Client
+requests>=2.31.0
+
+# Logging
+loguru>=0.7.0
+
+# Security & Remote Execution
+cryptography>=41.0.0
+paramiko>=3.0.0
+
+# Validation
+jsonschema>=4.0.0
+
+# AI Service (for AI review endpoints)
+openai>=1.0.0
+
+# Utilities
+python-dateutil>=2.8.0
