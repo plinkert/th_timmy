@@ -301,39 +301,21 @@ if [ ! -f "$REQUIREMENTS_FILE" ]; then
 else
     log_success "requirements.txt file exists: $REQUIREMENTS_FILE"
     
-    # Check packages that should be in venv (for local development)
     PACKAGES=(
         "pyyaml"
         "python-dotenv"
         "requests"
         "loguru"
         "docker"
+        "fastapi"
+        "uvicorn"
+        "pydantic"
     )
     
     for package in "${PACKAGES[@]}"; do
         package_name=$(echo "$package" | cut -d'>' -f1 | cut -d'=' -f1)
         check_python_package "$package_name"
     done
-    
-    # Check dashboard-api container packages (if container is running)
-    if docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^threat-hunting-dashboard-api$"; then
-        log_info "Checking Python packages in dashboard-api container..."
-        CONTAINER_PACKAGES=("fastapi" "uvicorn" "pydantic")
-        for package in "${CONTAINER_PACKAGES[@]}"; do
-            TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
-            if docker exec threat-hunting-dashboard-api python3 -c "import $package" 2>/dev/null; then
-                log_success "$package: INSTALLED (in container)"
-                PASSED_CHECKS=$((PASSED_CHECKS + 1))
-            else
-                log_error "$package: NOT INSTALLED (in container)"
-                FAILED_CHECKS=$((FAILED_CHECKS + 1))
-            fi
-        done
-    else
-        log_warn "dashboard-api container not running - skipping container package checks"
-        log_info "Packages (fastapi, uvicorn, pydantic) should be installed in container during build"
-        WARNINGS=$((WARNINGS + 1))
-    fi
 fi
 echo ""
 

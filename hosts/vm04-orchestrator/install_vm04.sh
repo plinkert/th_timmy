@@ -364,34 +364,83 @@ log_success "Firewall configured: n8n port $N8N_PORT_FW, dashboard-api port $DAS
 if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
     log_info "Building and starting Docker services (n8n + dashboard-api)..."
     
-    # User must be in docker group - use newgrp or su
     cd "$VM04_DIR"
     
-    # Run as user (docker requires docker group)
-    sudo -u $SUDO_USER bash -c "
-        cd $VM04_DIR
-        docker compose down 2>/dev/null || true
-        log_info 'Building dashboard-api image...'
-        docker compose build dashboard-api || log_warn 'Build failed, will try to start anyway'
-        docker compose up -d
-    " || {
-        log_warn "Failed to start Docker services automatically"
-        log_info "You can start manually: cd $VM04_DIR && docker compose up -d --build"
-        log_info "Note: You may need to log out and log back in after adding to docker group"
-    }
+    # Ensure Docker socket permissions are correct
+    if [ -S /var/run/docker.sock ]; then
+        chmod 666 /var/run/docker.sock 2>/dev/null || true
+    fi
+    
+    log_info "Activating docker group and building services..."
+    
+    # Check if user is in docker group
+    if groups $SUDO_USER | grep -q docker; then
+        log_info "User $SUDO_USER is in docker group, proceeding with docker compose..."
+        
+        # Use su -l to get a login shell with docker group active
+        # This ensures docker group is properly activated
+        BUILD_OUTPUT=$(su -l $SUDO_USER -c "
+            cd $VM04_DIR
+            export PATH=\$PATH:/usr/bin:/usr/local/bin
+            echo '[INFO] Stopping existing containers...'
+            docker compose down 2>/dev/null || true
+            echo '[INFO] Building dashboard-api image...'
+            docker compose build dashboard-api 2>&1
+        " 2>&1)
+        
+        BUILD_EXIT_CODE=$?
+        echo "$BUILD_OUTPUT" | tee /tmp/docker-build.log
+        
+        if [ $BUILD_EXIT_CODE -ne 0 ]; then
+            log_warn "Build failed, but will try to start anyway"
+            log_info "Build logs saved to /tmp/docker-build.log"
+        else
+            log_success "Build completed successfully"
+        fi
+        
+        # Start services
+        UP_OUTPUT=$(su -l $SUDO_USER -c "
+            cd $VM04_DIR
+            export PATH=\$PATH:/usr/bin:/usr/local/bin
+            echo '[INFO] Starting docker compose services...'
+            docker compose up -d 2>&1
+        " 2>&1)
+        
+        UP_EXIT_CODE=$?
+        echo "$UP_OUTPUT" | tee /tmp/docker-up.log
+        
+        if [ $UP_EXIT_CODE -ne 0 ]; then
+            log_error "Failed to start docker compose services"
+            log_info "Start logs saved to /tmp/docker-up.log"
+            log_warn "You can try manually: cd $VM04_DIR && docker compose up -d --build"
+        else
+            log_success "Docker compose services started"
+        fi
+    else
+        log_warn "User $SUDO_USER is not in docker group yet"
+        log_info "Trying to add user to docker group again..."
+        usermod -aG docker $SUDO_USER
+        log_warn "Please log out and log back in, then run: cd $VM04_DIR && docker compose up -d --build"
+        log_info "Or restart the installation script after logging out/in"
+    fi
     
     # Check status after a moment
-    sleep 5
-    if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "threat-hunting-n8n.*Up"; then
+    sleep 8
+    if su -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-n8n.*Up"; then
         log_success "n8n started in Docker container"
     else
         log_warn "n8n may not be running yet"
+        log_info "Check logs: cd $VM04_DIR && docker compose logs n8n"
     fi
     
-    if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "threat-hunting-dashboard-api.*Up"; then
+    if su -l $SUDO_USER -c "cd $VM04_DIR && docker compose ps 2>/dev/null" | grep -q "threat-hunting-dashboard-api.*Up"; then
         log_success "dashboard-api started in Docker container"
     else
         log_warn "dashboard-api may not be running yet"
+        log_info "Check logs: cd $VM04_DIR && docker compose logs dashboard-api"
+        if [ -f /tmp/docker-build.log ]; then
+            log_info "Check build logs: tail -50 /tmp/docker-build.log"
+        fi
     fi
     
     log_info "Check status: cd $VM04_DIR && docker compose ps"
