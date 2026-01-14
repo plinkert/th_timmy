@@ -44,8 +44,11 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()" || exit 1
 
-# Run API
-# Change to automation-scripts directory and run from there
-# This allows relative imports (from ..services) to work correctly
-WORKDIR /app/automation-scripts
-CMD ["python3", "-m", "uvicorn", "api.dashboard_api:app", "--host", "0.0.0.0", "--port", "8000"]
+# Copy entrypoint script
+COPY hosts/vm04-orchestrator/run_dashboard_api.py /app/run_dashboard_api.py
+RUN chmod +x /app/run_dashboard_api.py
+
+# Run API using entrypoint script
+# This script sets up Python path correctly to avoid relative import issues
+WORKDIR /app
+CMD ["python3", "/app/run_dashboard_api.py"]
