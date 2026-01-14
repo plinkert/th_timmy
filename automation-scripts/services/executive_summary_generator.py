@@ -17,7 +17,11 @@ import re
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from automation_scripts.services.ai_service import AIService, AIServiceError
+# Try relative import first, fallback to direct import if relative import fails
+try:
+    from .ai_service import AIService, AIServiceError
+except (ImportError, ValueError):
+    from services.ai_service import AIService, AIServiceError
 from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 
