@@ -17,21 +17,42 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 
 # Import services
+# Add project root to path for absolute imports fallback
 import sys
 project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root / "automation-scripts"))
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+if str(project_root / "automation-scripts") not in sys.path:
+    sys.path.insert(0, str(project_root / "automation-scripts"))
 
-from ..services.health_monitor import HealthMonitor, HealthMonitorError
-from ..services.repo_sync import RepoSyncService, RepoSyncError
-from ..services.config_manager import ConfigManager, ConfigManagerError
-from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
-from ..services.test_runner import TestRunner, TestRunnerError
-from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
-from ..services.hardening_manager import HardeningManager, HardeningManagerError
-from ..services.playbook_manager import PlaybookManager, PlaybookManagerError
-from ..utils.query_generator import QueryGenerator, QueryGeneratorError
-from ..orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
-from ..orchestrators.ai_reviewer import AIReviewer, AIReviewerError
+# Try relative imports first (preferred), then fallback to absolute
+# This pattern works both when imported as package and as top-level module
+try:
+    from ..services.health_monitor import HealthMonitor, HealthMonitorError
+    from ..services.repo_sync import RepoSyncService, RepoSyncError
+    from ..services.config_manager import ConfigManager, ConfigManagerError
+    from ..services.remote_executor import RemoteExecutor, RemoteExecutorError
+    from ..services.test_runner import TestRunner, TestRunnerError
+    from ..services.deployment_manager import DeploymentManager, DeploymentManagerError
+    from ..services.hardening_manager import HardeningManager, HardeningManagerError
+    from ..services.playbook_manager import PlaybookManager, PlaybookManagerError
+    from ..utils.query_generator import QueryGenerator, QueryGeneratorError
+    from ..orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
+    from ..orchestrators.ai_reviewer import AIReviewer, AIReviewerError
+except (ImportError, ValueError):
+    # Fallback to absolute imports if relative imports fail
+    # This happens when module is imported as top-level (e.g., 'api.dashboard_api')
+    from automation_scripts.services.health_monitor import HealthMonitor, HealthMonitorError
+    from automation_scripts.services.repo_sync import RepoSyncService, RepoSyncError
+    from automation_scripts.services.config_manager import ConfigManager, ConfigManagerError
+    from automation_scripts.services.remote_executor import RemoteExecutor, RemoteExecutorError
+    from automation_scripts.services.test_runner import TestRunner, TestRunnerError
+    from automation_scripts.services.deployment_manager import DeploymentManager, DeploymentManagerError
+    from automation_scripts.services.hardening_manager import HardeningManager, HardeningManagerError
+    from automation_scripts.services.playbook_manager import PlaybookManager, PlaybookManagerError
+    from automation_scripts.utils.query_generator import QueryGenerator, QueryGeneratorError
+    from automation_scripts.orchestrators.pipeline_orchestrator import PipelineOrchestrator, PipelineOrchestratorError, PipelineExecutionError
+    from automation_scripts.orchestrators.ai_reviewer import AIReviewer, AIReviewerError
 
 
 # Security

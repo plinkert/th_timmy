@@ -32,23 +32,28 @@ os.environ.setdefault('PYTHONPATH', f"{app_root}:{automation_scripts_dir}")
 os.environ.setdefault('CONFIG_PATH', str(app_root / "configs" / "config.yml"))
 os.environ.setdefault('PYTHONUNBUFFERED', '1')
 
-# Now import and run - relative imports will work because sys.path is set up
+# Now import and run - absolute imports will work because sys.path is set up
 if __name__ == "__main__":
     import uvicorn
     
-    # Import dashboard_api - this will work because sys.path includes automation-scripts
-    # Change to automation-scripts directory so 'api' package can be found
-    original_cwd = os.getcwd()
+    # Import dashboard_api using absolute import path
+    # This avoids relative import issues when 'api' is treated as top-level package
     try:
-        os.chdir(str(automation_scripts_dir))
-        from api.dashboard_api import app
-        
-        # Run uvicorn
-        uvicorn.run(
-            app,
-            host="0.0.0.0",
-            port=8000,
-            log_level="info"
-        )
-    finally:
-        os.chdir(original_cwd)
+        # Try importing as automation_scripts.api.dashboard_api (absolute)
+        from automation_scripts.api.dashboard_api import app
+    except ImportError:
+        # Fallback: change to automation-scripts directory and import as api.dashboard_api
+        original_cwd = os.getcwd()
+        try:
+            os.chdir(str(automation_scripts_dir))
+            from api.dashboard_api import app
+        finally:
+            os.chdir(original_cwd)
+    
+    # Run uvicorn
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info"
+    )
