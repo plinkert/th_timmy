@@ -16,7 +16,12 @@ import yaml
 
 from .remote_executor import RemoteExecutor, RemoteExecutorError
 from .metrics_collector import MetricsCollector, MetricsCollectorError
-from ..utils.alert_manager import AlertManager, AlertLevel
+
+# Try relative import first, fallback to direct import if relative import fails
+try:
+    from ..utils.alert_manager import AlertManager, AlertLevel
+except (ImportError, ValueError):
+    from utils.alert_manager import AlertManager, AlertLevel
 
 
 class HealthMonitorError(Exception):
