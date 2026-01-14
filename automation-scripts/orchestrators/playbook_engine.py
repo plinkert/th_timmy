@@ -19,22 +19,22 @@ project_root = Path(__file__).parent.parent.parent
 if str(project_root) not in sys.path:
     sys.path.insert(0, str(project_root))
 
-# Try relative imports first (preferred), then fallback to absolute
+# Try relative imports first (preferred), then fallback to direct imports
 try:
     from ..utils.data_package import DataPackage, DataPackageError
 except (ImportError, ValueError):
-    # Fallback to absolute imports if relative imports fail
-    from automation_scripts.utils.data_package import DataPackage, DataPackageError
+    # Fallback to direct imports if relative imports fail
+    from utils.data_package import DataPackage, DataPackageError
 
 try:
     from ..utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 except (ImportError, ValueError):
-    from automation_scripts.utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
+    from utils.deterministic_anonymizer import DeterministicAnonymizer, DeterministicAnonymizerError
 
 try:
     from ..utils.playbook_validator import PlaybookValidator
 except (ImportError, ValueError):
-    from automation_scripts.utils.playbook_validator import PlaybookValidator
+    from utils.playbook_validator import PlaybookValidator
 
 
 class PlaybookEngineError(Exception):
