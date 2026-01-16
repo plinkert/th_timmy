@@ -253,18 +253,18 @@ check "pkg-config" "pkg-config --version" ""
 echo ""
 
 # ============================================
-# 6. Sprawdzenie virtual environment
+# 6. Virtual Environment Check
 # ============================================
 echo "--- Virtual Environment ---"
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 if [ -d "$PROJECT_ROOT/venv" ]; then
-    log_success "Virtual environment istnieje w $PROJECT_ROOT/venv"
+    log_success "Virtual environment exists at $PROJECT_ROOT/venv"
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
     
     if [ -f "$PROJECT_ROOT/venv/bin/activate" ]; then
-        log_success "Plik activate istnieje"
+        log_success "activate file exists"
     else
-        log_error "Plik activate nie istnieje"
+        log_error "activate file does not exist"
         FAILED_CHECKS=$((FAILED_CHECKS + 1))
     fi
 else
@@ -276,15 +276,15 @@ echo ""
 # ============================================
 # 7. Python Packages Check
 # ============================================
-echo "--- Pakiety Python ---"
+echo "--- Python Packages ---"
 
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
-    log_error "Nie znaleziono pliku requirements.txt"
-    log_error "Szukano w: $SCRIPT_DIR/requirements.txt"
-    log_error "Szukano w: $PROJECT_ROOT/requirements.txt"
+    log_error "requirements.txt file not found"
+    log_error "Searched in: $SCRIPT_DIR/requirements.txt"
+    log_error "Searched in: $PROJECT_ROOT/requirements.txt"
     FAILED_CHECKS=$((FAILED_CHECKS + 1))
 else
-    log_success "Plik requirements.txt istnieje: $REQUIREMENTS_FILE"
+    log_success "requirements.txt file exists: $REQUIREMENTS_FILE"
     
     PACKAGES=(
         "pandas"
@@ -325,7 +325,7 @@ check_jupyter
 TOTAL_CHECKS=$((TOTAL_CHECKS + 1))
 JUPYTER_CONFIG="$USER_HOME/.jupyter/jupyter_lab_config.py"
 if [ -f "$JUPYTER_CONFIG" ]; then
-    log_success "Konfiguracja JupyterLab istnieje: $JUPYTER_CONFIG"
+    log_success "JupyterLab configuration exists: $JUPYTER_CONFIG"
     PASSED_CHECKS=$((PASSED_CHECKS + 1))
 else
     log_warn "JupyterLab configuration does not exist (can generate: jupyter lab --generate-config)"

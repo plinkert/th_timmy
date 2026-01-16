@@ -183,6 +183,7 @@ These tests only run if `configs/config.yml` exists with VM IP addresses configu
 
 ## Documentation
 
-Detailed requirements can be found in:
-- `../../project plan/VM01_TOOLS_REQUIREMENTS.md`
+For detailed system documentation, see:
+- [Architecture Documentation](../../docs/ARCHITECTURE_ENHANCED.md)
+- [Configuration Guide](../../docs/CONFIGURATION.md)
 

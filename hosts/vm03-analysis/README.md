@@ -179,8 +179,10 @@ If using a token, you can find it in:
 
 ## Documentation
 
-Detailed requirements can be found in:
-- `../../INPUT/VM03_TOOLS_REQUIREMENTS.md`
+For detailed system documentation, see:
+- [Architecture Documentation](../../docs/ARCHITECTURE_ENHANCED.md)
+- [User Guide for Hunters](../../docs/USER_GUIDE_HUNTER.md)
+- [Configuration Guide](../../docs/CONFIGURATION.md)
 
 ## Hardening
 

@@ -268,8 +268,10 @@ If the file is not found, it falls back to environment variables or defaults.
 
 ## Documentation
 
-Detailed requirements can be found in:
-- `../../project plan/VM02_TOOLS_REQUIREMENTS.md`
+For detailed system documentation, see:
+- [Architecture Documentation](../../docs/ARCHITECTURE_ENHANCED.md)
+- [Configuration Guide](../../docs/CONFIGURATION.md)
+- [Data Flow Documentation](../../docs/DATA_FLOW.md)
 
 ## Security
 

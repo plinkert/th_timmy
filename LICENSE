@@ -1,0 +1,106 @@
+MIT License
+
+Copyright (c) 2024 Threat Hunting Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+---
+
+## Additional Terms and Conditions
+
+### Security and Privacy
+
+This software is designed for threat hunting operations in a lab environment.
+Users are responsible for:
+
+- Implementing appropriate security measures
+- Complying with data protection and privacy regulations
+- Proper handling of sensitive data
+- Following security best practices
+
+### Data Protection
+
+This software includes anonymization features for protecting personally
+identifiable information (PII). Users must:
+
+- Comply with applicable data protection regulations (GDPR, CCPA, etc.)
+- Implement appropriate data retention policies
+- Follow anonymization procedures as documented
+- Respect privacy and confidentiality requirements
+
+### Use Restrictions
+
+This software is intended for:
+
+- Threat hunting operations
+- Security research and analysis
+- Educational purposes
+- Authorized security testing
+
+Users must not use this software for:
+
+- Unauthorized access to systems
+- Malicious activities
+- Violation of laws or regulations
+- Any illegal purposes
+
+### No Warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+### Limitation of Liability
+
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+### Compliance
+
+Users are responsible for ensuring compliance with:
+
+- Applicable laws and regulations
+- Organizational policies
+- Security standards
+- Data protection requirements
+
+### Support
+
+This software is provided without formal support. Users may:
+
+- Review documentation
+- Contribute improvements
+- Report issues
+- Seek community assistance
+
+### Contributions
+
+Contributions to this software are welcome. Contributors agree to:
+
+- License contributions under the same MIT License
+- Follow code quality standards
+- Provide appropriate documentation
+- Respect security and privacy requirements
+
+---
+
+For questions or concerns regarding this license, please contact the Threat
+Hunting Team.

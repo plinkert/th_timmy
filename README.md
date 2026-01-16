@@ -61,15 +61,17 @@ th_timmy/
 
 ### Installation
 
-See [docs/PHASE1_DEPLOYMENT.md](docs/PHASE1_DEPLOYMENT.md) for detailed installation instructions.
+See individual VM README files in `hosts/vmXX-*/README.md` for detailed installation instructions for each component.
 
 ## Documentation
 
-- [Phase 1 Deployment Guide](docs/PHASE1_DEPLOYMENT.md) - Installation and setup
-- [Architecture Documentation](docs/ARCHITECTURE.md) - System architecture
-- [User Interface Guide](docs/USER_INTERFACE.md) - UI documentation
-
-**Note**: Planning documents are located in `project plan/` directory (excluded from Git).
+- [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) - Comprehensive system architecture
+- [Data Flow Documentation](docs/DATA_FLOW.md) - Data flow through the system
+- [Anonymization Policy](docs/ANONYMIZATION.md) - Data anonymization and privacy policy
+- [User Guide for Hunters](docs/USER_GUIDE_HUNTER.md) - Guide for threat hunters
+- [Configuration Guide](docs/CONFIGURATION.md) - System configuration
+- [Hardening Guide](docs/HARDENING.md) - Security hardening procedures
+- [Testing Guide](docs/TESTING.md) - Testing and validation procedures
 
 ## Development
 
@@ -114,7 +116,9 @@ See [Configuration Documentation](docs/CONFIGURATION.md) for detailed instructio
 
 ## License
 
-[To be determined]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Important**: This software is designed for threat hunting operations in a lab environment. Users are responsible for implementing appropriate security measures and complying with data protection regulations.
 
 ## Authors
 

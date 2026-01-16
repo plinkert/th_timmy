@@ -204,8 +204,9 @@ Login using:
 
 ## Documentation
 
-Detailed requirements can be found in:
-- `../../INPUT/VM04_TOOLS_REQUIREMENTS.md`
+For detailed system documentation, see:
+- [Architecture Documentation](../../docs/ARCHITECTURE_ENHANCED.md)
+- [Configuration Guide](../../docs/CONFIGURATION.md)
 
 ## Hardening
 
