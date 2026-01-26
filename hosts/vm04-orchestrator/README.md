@@ -237,7 +237,7 @@ hardening:
     timeout: 300
     disable_root_login: true
   firewall:
-    allowed_network: "192.168.244.0/24"  # Optional: restrict access
+    allowed_network: "10.0.0.0/24"  # Optional: restrict access
   vm04:
     enable_auditd: false  # Optional: enable system auditing
 ```
@@ -278,15 +278,15 @@ The script reads VM configuration from `configs/config.yml`:
 ```yaml
 vms:
   vm01:
-    ip: "192.168.244.143"
+    ip: "10.0.0.10"
     ssh_user: "thadmin"
     ssh_port: 22
   vm02:
-    ip: "192.168.244.144"
+    ip: "10.0.0.11"
     ssh_user: "thadmin"
     ssh_port: 22
   vm03:
-    ip: "192.168.244.145"
+    ip: "10.0.0.12"
     ssh_user: "thadmin"
     ssh_port: 22
 ```
@@ -320,7 +320,7 @@ sudo ./setup_ssh_keys.sh
 6. **Creates local SSH config** (`~/.ssh/config`) with host aliases:
    ```
    Host vm01
-       HostName 192.168.244.143
+       HostName 10.0.0.10
        User thadmin
        IdentityFile ~/.ssh/th_timmy_keys/id_ed25519_vm01
        IdentitiesOnly yes
