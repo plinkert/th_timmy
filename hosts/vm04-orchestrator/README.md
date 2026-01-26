@@ -7,6 +7,7 @@ Installation and verification scripts for VM-04 (Orchestrator - n8n in Docker).
 - `install_vm04.sh` - Installation script for all required tools
 - `health_check.sh` - Installation verification script (includes optional connection tests)
 - `harden_vm04.sh` - Security hardening script
+- `setup_ssh_keys.sh` - Automatic SSH key generation and configuration for VM01-VM03
 - `requirements.txt` - List of Python packages required for VM-04
 - `docker-compose.yml` - n8n configuration in Docker container
 - `config.example.yml` - Example configuration file
@@ -249,6 +250,123 @@ docker compose up -d
 ```
 
 **Note:** The hardening script sources `hosts/shared/hardening_common.sh` for common functions.
+
+## SSH Key Management
+
+The `setup_ssh_keys.sh` script automates SSH key generation and configuration for secure communication between VM04 (orchestrator) and VM01-VM03.
+
+### Purpose
+
+This script:
+- Generates SSH keys (ed25519) for each target VM (VM01, VM02, VM03)
+- Copies public keys to remote hosts
+- Configures SSH servers to require key-based authentication (disables password authentication)
+- Creates local `~/.ssh/config` file for easy connection using host aliases
+
+### Requirements
+
+- Python 3 with PyYAML (`pip3 install pyyaml`)
+- SSH tools: `ssh`, `ssh-keygen`, `ssh-copy-id`
+- Access to remote hosts (VM01-VM03) via SSH
+- Sudo privileges on remote hosts (for SSH server configuration)
+- Valid `configs/config.yml` file with VM configuration
+
+### Configuration
+
+The script reads VM configuration from `configs/config.yml`:
+
+```yaml
+vms:
+  vm01:
+    ip: "192.168.244.143"
+    ssh_user: "thadmin"
+    ssh_port: 22
+  vm02:
+    ip: "192.168.244.144"
+    ssh_user: "thadmin"
+    ssh_port: 22
+  vm03:
+    ip: "192.168.244.145"
+    ssh_user: "thadmin"
+    ssh_port: 22
+```
+
+### Usage
+
+**Basic usage (recommended - without sudo):**
+```bash
+cd /path/to/th_timmy/hosts/vm04-orchestrator
+./setup_ssh_keys.sh
+```
+
+**With sudo (if needed for file permissions):**
+```bash
+sudo ./setup_ssh_keys.sh
+```
+
+**Note:** The script automatically fixes file ownership if run with sudo, ensuring files belong to the correct user.
+
+### What the script does
+
+1. **Reads configuration** from `configs/config.yml`
+2. **Generates SSH keys** for each VM (stored in `~/.ssh/th_timmy_keys/`)
+3. **Copies public keys** to remote hosts using `ssh-copy-id` or manual method
+4. **Tests SSH connections** to verify key-based authentication works
+5. **Configures remote SSH servers** (requires sudo on remote hosts):
+   - Disables password authentication (`PasswordAuthentication no`)
+   - Enables public key authentication (`PubkeyAuthentication yes`)
+   - Disables root login (`PermitRootLogin no`)
+   - Applies additional security settings
+6. **Creates local SSH config** (`~/.ssh/config`) with host aliases:
+   ```
+   Host vm01
+       HostName 192.168.244.143
+       User thadmin
+       IdentityFile ~/.ssh/th_timmy_keys/id_ed25519_vm01
+       IdentitiesOnly yes
+   ```
+
+### After running the script
+
+You can connect to hosts using simple aliases:
+```bash
+ssh vm01
+ssh vm02
+ssh vm03
+```
+
+### Troubleshooting
+
+**Problem: "SUDO_USER: unbound variable"**
+- Solution: The script now handles this automatically. If you see this error, update to the latest version.
+
+**Problem: "Files belong to root"**
+- Solution: The script automatically fixes file ownership. If files still belong to root, run:
+  ```bash
+  sudo chown -R $USER:$USER ~/.ssh/config ~/.ssh/th_timmy_keys
+  ```
+
+**Problem: "Could not resolve hostname vm01"**
+- Solution: Check that `~/.ssh/config` exists and has correct permissions:
+  ```bash
+  ls -la ~/.ssh/config
+  chmod 600 ~/.ssh/config
+  ```
+
+**Problem: "Sudo requires password on remote hosts"**
+- Solution: The script will prompt for sudo password interactively. For automation, configure passwordless sudo on remote hosts or use SSH keys with sudo NOPASSWD.
+
+**Problem: "Cannot copy key to remote host"**
+- Solution: Ensure you can connect to the host with password first. The script will prompt for password during initial key copy.
+
+### Security Notes
+
+⚠️ **IMPORTANT:**
+- After running this script, password authentication is **disabled** on remote hosts
+- Ensure SSH key-based authentication works before the script modifies remote SSH configuration
+- Keep your private keys secure (`~/.ssh/th_timmy_keys/` should have 600 permissions)
+- The script creates backups of remote SSH configurations before modification
+- Keys are generated with ed25519 algorithm (recommended for security and performance)
 
 ## Security
 
