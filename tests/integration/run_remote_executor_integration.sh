@@ -1,5 +1,5 @@
 #!/bin/bash
-# Integration test for Remote Execution Service (Krok 0.1).
+# Integration test for Remote Execution Service (Step 0.1).
 # Run on VM04 (orchestrator). Ensures env is ready, runs Python tests, collects results.
 # Usage: copy this script to VM04, chmod +x, run from project root or set PROJECT_ROOT.
 # Results: exit 0 = success, exit 1 = failure; stdout/stderr and results file for DEV.

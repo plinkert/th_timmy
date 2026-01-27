@@ -1,6 +1,36 @@
 # Testing Guide
 
-This guide explains how to use the testing scripts for connectivity and data flow validation.
+This guide explains how to use the testing scripts for connectivity, data flow validation, and the Remote Execution Service (Step 0.1).
+
+## Remote Execution Service tests (Step 0.1)
+
+### Unit tests
+
+Unit tests for the Remote Execution module (`audit_logger`, `remote_executor`, `ssh_client`, `ssh_key_manager`) are run via the VM04 Python entrypoint so the same venv and bootstrap guarantees apply as in n8n:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+Do not call `python` or `pytest` directly; always use `run_python.sh`.
+
+### Integration test
+
+The script `tests/integration/run_remote_executor_integration.sh` runs bootstrap (via `run_python.sh`), unit tests, and sanity checks. Run it from the project root on VM04 (or a host with access to the project and config).
+
+**Requirements:** VM04 context, `configs/config.yml` (or copy from `configs/config.example.yml` and edit), SSH keys in `~/.ssh/th_timmy_keys` (see `hosts/vm04-orchestrator/setup_ssh_keys.sh`).
+
+**What it does:** Ensures the environment is ready, runs unit tests, performs a short sanity check, and writes results under `results/` (e.g. `remote_executor_integration_YYYYMMDD_HHMMSS.txt`).
+
+```bash
+cd /path/to/th_timmy
+./tests/integration/run_remote_executor_integration.sh
+```
+
+**Details:** [automation_scripts/orchestrators/remote_executor/README.md](../automation_scripts/orchestrators/remote_executor/README.md) (usage, troubleshooting, security).
+
+---
 
 ## Overview
 

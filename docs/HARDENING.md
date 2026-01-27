@@ -8,8 +8,34 @@ Hardening is the process of securing systems by reducing their attack surface. T
 
 - Common hardening functions
 - VM-specific hardening procedures
+- SSH key management (Remote Execution, Step 0.1)
 - Testing before and after hardening
 - Best practices
+
+## SSH key management (Remote Execution, Step 0.1)
+
+The Remote Execution Service on VM04 uses SSH keys to run commands and transfer files on VM01–VM04. The following applies to Step 0.1.
+
+### Key storage
+
+- **Path:** Keys are stored in `~/.ssh/th_timmy_keys` by default. This is configurable via `remote_execution.key_storage_path` in `configs/config.yml`.
+- **Generation and deployment:** Use `hosts/vm04-orchestrator/setup_ssh_keys.sh` to generate keys and deploy them to VM01–VM03 (and VM04 if needed). The script enforces key-only auth and updates `~/.ssh/config`.
+
+### Requirements
+
+- **Key-only authentication:** Password-based SSH login must be disabled for Remote Execution targets. Use only key-based auth; no passwords in config or scripts.
+- **Strong algorithms:** Use at least 2048-bit RSA, 256-bit ECDSA, or Ed25519. Weak algorithms (e.g. MD5, SHA1, DES, RC4) must be disabled.
+- **Host key verification:** Server host keys must be verified; do not disable StrictHostKeyChecking for production.
+
+### Key rotation
+
+- **Target:** Rotate SSH keys every **90 days** (aligned with `remote_execution.key_rotation_days` in config where supported). Document the procedure in runbooks or operational docs; automate where possible.
+- **Process:** Regenerate keys, deploy via `setup_ssh_keys.sh` (or equivalent), update any automation that references key paths, then revoke old keys.
+
+### Security rules
+
+- **No keys in repository or logs:** Never commit private keys, key material, or passwords to the repository. Do not log key paths, key names, or key content. Use `.gitignore` for any local key directories if they are under the project tree.
+- **Non-interactive commands only:** Remote Execution allows only non-interactive commands: use timeouts for all operations and do not feed stdin. Interactive commands (e.g. `sudo` prompting for a password) must be rejected or documented as out-of-scope. See [automation_scripts/orchestrators/remote_executor/README.md](../automation_scripts/orchestrators/remote_executor/README.md) (Troubleshooting / Security) for details.
 
 ## Common Hardening Functions
 

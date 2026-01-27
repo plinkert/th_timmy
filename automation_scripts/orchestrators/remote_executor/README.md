@@ -1,4 +1,4 @@
-# Remote Execution Service (Krok 0.1)
+# Remote Execution Service (Step 0.1)
 
 Secure remote command execution and file transfer from VM04 to VM01–VM04 via SSH (Paramiko), key-based auth, strong algorithms, and host key verification.
 

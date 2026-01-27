@@ -77,7 +77,7 @@ The Threat Hunting Lab is a comprehensive, automated threat hunting system desig
 
 4. **VM-04: Orchestrator**
    - n8n workflow automation
-   - Remote command execution
+   - Remote command execution (Remote Execution Service, Step 0.1)
    - Repository synchronization
    - Health monitoring
    - Configuration management
@@ -183,7 +183,7 @@ External Sources → Collectors → Parsers → Normalizers → Database (VM-02)
 
 **Key Components**:
 - **n8n**: Workflow automation platform
-- **Remote Executor**: Module for remote command execution on VMs
+- **Remote Execution Service (Step 0.1)**: Module for remote command execution and file transfer on VMs (VM01–VM04) from VM04 via SSH (Paramiko). Location: `automation_scripts.orchestrators.remote_executor`. Main functions: `execute_remote_command`, `execute_remote_script`, `upload_file`, `download_file`. Keys in `~/.ssh/th_timmy_keys` (configurable via `remote_execution.key_storage_path` in `configs/config.yml`). Bootstrap and Python entrypoint: `hosts/vm04-orchestrator/bootstrap_env.sh` and `hosts/vm04-orchestrator/run_python.sh` — n8n and automation must call `run_python.sh`, never `python` directly.
 - **Repository Sync**: Git synchronization across VMs
 - **Health Monitor**: System health monitoring and alerting
 - **Configuration Manager**: Centralized configuration management
@@ -379,14 +379,18 @@ th_timmy/
 │   ├── vm03-analysis/
 │   ├── vm04-orchestrator/
 │   └── shared/               # Shared scripts and utilities
-├── automation-scripts/       # Core automation modules
+├── automation_scripts/       # Core automation modules
+│   ├── orchestrators/
+│   │   └── remote_executor/   # Remote Execution Service (Step 0.1)
 │   ├── collectors/
 │   ├── parsers/
 │   ├── normalizers/
-│   ├── orchestrators/
 │   └── utils/
 ├── configs/                  # Configuration files
 ├── docs/                     # Documentation
+├── tests/                    # Unit and integration tests
+│   ├── unit/
+│   └── integration/
 └── results/                  # Analysis results (gitignored)
 ```
 

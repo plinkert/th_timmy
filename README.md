@@ -28,25 +28,26 @@ th_timmy/
 │   ├── vm02-database/
 │   ├── vm03-analysis/
 │   └── vm04-orchestrator/
-├── automation-scripts/       # Core automation modules
-│   ├── collectors/          # Data collection
-│   ├── parsers/             # Data parsing
-│   ├── normalizers/         # Data normalization
+├── automation_scripts/       # Core automation modules
 │   ├── orchestrators/       # Orchestration
-│   └── utils/               # Utility modules
-├── playbooks/               # Threat hunting playbooks
-│   └── template/            # Playbook template
-├── configs/                 # Configuration files
+│   │   └── remote_executor/ # Remote Execution Service (Step 0.1): remote commands & file transfer from VM04 via SSH
+│   └── ...                  # (collectors, parsers, normalizers, utils — as added)
+├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
-└── results/                 # Analysis results
+├── tests/                   # Unit and integration tests
+│   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
+│   └── integration/         # e.g. run_remote_executor_integration.sh
+├── pytest.ini               # pytest configuration
+└── results/                 # Analysis results (gitignored)
 ```
 
 ## Current Status
 
-**Phase 1: Deployment and Configuration** - In Progress
+**Phase 1: Deployment and Configuration** — In Progress
+
 - [x] Project structure created
 - [x] Git repository initialized
-- [x] **Krok 0.1 (Remote Execution, VM04 bootstrap)** – zamknięte; see [docs/KROK_0.1_ZAMKNIECIE.md](docs/KROK_0.1_ZAMKNIECIE.md)
+- [x] **Step 0.1 (Remote Execution, VM04 bootstrap)** — closed; see [docs/KROK_0.1_ZAMKNIECIE.md](docs/KROK_0.1_ZAMKNIECIE.md) and [automation_scripts/orchestrators/remote_executor/README.md](automation_scripts/orchestrators/remote_executor/README.md) (installation, usage, tests).
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -63,6 +64,14 @@ th_timmy/
 ### Installation
 
 See individual VM README files in `hosts/vmXX-*/README.md` for detailed installation instructions for each component.
+
+### Automation on VM04 (orchestrator)
+
+For running Python and automation from VM04 (including Remote Execution):
+
+- **Bootstrap environment:** `./hosts/vm04-orchestrator/bootstrap_env.sh` — prepares Python venv and dependencies (idempotent).
+- **Run Python / tests:** `./hosts/vm04-orchestrator/run_python.sh` — always use this script instead of calling `python` directly (ensures env is ready; used by n8n and CI).
+- **Configuration:** VM and Remote Execution settings are in `configs/config.yml`. Copy from `configs/config.example.yml` and replace placeholders (IPs, etc.). Never commit `config.yml`.
 
 ## Documentation
 

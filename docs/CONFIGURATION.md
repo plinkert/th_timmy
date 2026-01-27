@@ -21,6 +21,28 @@ The central configuration file (`configs/config.yml`) contains network settings,
 
 3. **Important**: Never commit `configs/config.yml` to the repository (it's in `.gitignore`)
 
+## Remote Execution (Step 0.1)
+
+The Remote Execution Service uses VM and SSH settings from the central config. Relevant sections:
+
+### `remote_execution` section
+
+In `configs/config.yml` (see `configs/config.example.yml`), the `remote_execution` section controls timeouts, retries, key storage, and checksums:
+
+```yaml
+remote_execution:
+  default_timeout: 30        # Command timeout (seconds)
+  default_retry: 3           # Retries on transient failure
+  key_storage_path: "~/.ssh/th_timmy_keys"  # SSH key directory (used by Remote Executor)
+  checksum_algorithm: "sha256" # For file transfer verification
+  # allowed_vm_ids: ["vm01", "vm02", "vm03", "vm04"]  # optional; default from vms.enabled
+```
+
+- **key_storage_path**: Directory where SSH keys for VM01–VM04 are stored. Use `hosts/vm04-orchestrator/setup_ssh_keys.sh` to generate and deploy keys; the script prepares keys for this path.
+- VM data (IP, user, port) is taken from the `vms` section: `vms.vm01.ip`, `vms.vm01.ssh_user`, `vms.vm01.ssh_port`, `vms.vm01.enabled`, and similarly for vm02, vm03, vm04.
+
+See [automation_scripts/orchestrators/remote_executor/README.md](../automation_scripts/orchestrators/remote_executor/README.md) for installation, usage, and troubleshooting.
+
 ### Configuration Structure
 
 ```yaml

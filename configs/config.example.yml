@@ -99,7 +99,7 @@ backup:
   retention_days: 30  # Keep backups for 30 days
   backup_dir: "/var/backups/threat-hunting"
 
-# Remote Execution Service (Krok 0.1 – VM04 orchestration)
+# Remote Execution Service (Step 0.1 – VM04 orchestration)
 remote_execution:
   default_timeout: 30
   default_retry: 3

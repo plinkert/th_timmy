@@ -11,6 +11,8 @@ VM-04 is the orchestrator node. It runs:
 - **Python** tooling and automation scripts
 - **SSH** access to VM01–VM03 for remote execution
 
+All Python-based automation on VM04, including the **Remote Execution Service (Step 0.1)** (remote commands and file transfer via `automation_scripts.orchestrators.remote_executor`), uses `run_python.sh` and `bootstrap_env.sh` as the single entrypoint — see sections below.
+
 Recommended order of actions:
 
 1. **Bootstrap environment** – `./bootstrap_env.sh` (Python venv, dependencies, sanity check)
