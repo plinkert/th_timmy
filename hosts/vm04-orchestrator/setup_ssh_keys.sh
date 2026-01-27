@@ -1,15 +1,13 @@
 #!/bin/bash
 
-# Skrypt do automatycznego tworzenia i konfigurowania kluczy SSH dla VM01-VM03
-# Uruchamiany na VM04 (orchestrator)
-# Autor: Auto-generated
-# Data: 2026-01-26
+# Automatic SSH key creation and configuration for VM01-VM03
+# Run on VM04 (orchestrator)
 
-# set -e  # Wyłączone - pozwalamy na kontynuację przy błędach w pętli
-set -u   # Sprawdzaj nieużywane zmienne
-set -o pipefail  # Sprawdzaj błędy w pipeline
+# set -e  # Disabled - allow loop to continue on per-host errors
+set -u   # Check for unset variables
+set -o pipefail  # Check pipeline errors
 
-# Kolory dla lepszej czytelności
+# Colors for readability
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -17,13 +15,13 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
-# Ścieżki
+# Paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CONFIG_FILE="$PROJECT_ROOT/configs/config.yml"
 
-# Użyj HOME użytkownika, który uruchomił skrypt (nie root jeśli uruchomiony z sudo)
-# Bezpieczne sprawdzenie SUDO_USER (może być niezdefiniowane)
+# Use HOME of user who ran the script (not root when run with sudo)
+# Safe check for SUDO_USER (may be unset)
 if [ -n "${SUDO_USER:-}" ]; then
     REAL_USER="$SUDO_USER"
     REAL_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
@@ -35,7 +33,7 @@ fi
 SSH_DIR="$REAL_HOME/.ssh"
 SSH_KEYS_DIR="$SSH_DIR/th_timmy_keys"
 
-# Funkcje pomocnicze
+# Helper functions
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -56,63 +54,63 @@ log_step() {
     echo -e "${CYAN}[STEP]${NC} $1"
 }
 
-# Funkcja do zmiany właściciela plików (jeśli skrypt uruchomiony z sudo)
+# Fix file ownership when script is run with sudo
 fix_file_ownership() {
     local file_or_dir="$1"
     if [ -n "${SUDO_USER:-}" ] && [ -e "$file_or_dir" ]; then
-        # Jeśli jesteśmy root (przez sudo), możemy użyć chown bezpośrednio
+        # When root (via sudo), we can chown directly
         if [ "$(id -u)" -eq 0 ]; then
             chown -R "$REAL_USER:$REAL_USER" "$file_or_dir" 2>/dev/null || {
-                log_warning "Nie można zmienić właściciela $file_or_dir na $REAL_USER"
+                log_warning "Could not change owner of $file_or_dir to $REAL_USER"
             }
         fi
     fi
 }
 
-# Sprawdź czy plik konfiguracyjny istnieje
+# Check that config file exists
 if [ ! -f "$CONFIG_FILE" ]; then
-    log_error "Plik konfiguracyjny nie istnieje: $CONFIG_FILE"
+    log_error "Config file not found: $CONFIG_FILE"
     exit 1
 fi
 
-log_info "Używam pliku konfiguracyjnego: $CONFIG_FILE"
+log_info "Using config file: $CONFIG_FILE"
 
-# Informacja o ścieżkach SSH
+# SSH path info
 if [ -n "${SUDO_USER:-}" ]; then
-    log_warning "Uwaga: Skrypt uruchomiony z sudo. Używam katalogu SSH użytkownika: $SSH_DIR"
-    log_warning "Pliki będą tworzone z właścicielem: $REAL_USER"
+    log_warning "Note: Script run with sudo. Using SSH dir for user: $SSH_DIR"
+    log_warning "Files will be owned by: $REAL_USER"
 else
-    log_info "Używam katalogu SSH: $SSH_DIR"
+    log_info "Using SSH directory: $SSH_DIR"
 fi
 
-# Sprawdź czy możemy tworzyć pliki w katalogu SSH
+# Check write access to SSH directory
 if [ ! -w "$SSH_DIR" ] && [ ! -w "$(dirname "$SSH_DIR")" ]; then
-    log_error "Brak uprawnień do zapisu w katalogu SSH: $SSH_DIR"
-    log_error "Uruchom skrypt jako użytkownik, który ma dostęp do ~/.ssh/"
+    log_error "No write permission for SSH directory: $SSH_DIR"
+    log_error "Run script as user with access to ~/.ssh/"
     exit 1
 fi
 
-# Sprawdź czy Python i PyYAML są dostępne
+# Check Python and PyYAML availability
 if ! command -v python3 &> /dev/null; then
-    log_error "python3 nie jest zainstalowany. Zainstaluj go: sudo apt-get install python3"
+    log_error "python3 not installed. Install: sudo apt-get install python3"
     exit 1
 fi
 
-# Sprawdź czy PyYAML jest dostępny
+# Check PyYAML availability
 if ! python3 -c "import yaml" 2>/dev/null; then
-    log_warning "PyYAML nie jest zainstalowany. Próbuję zainstalować..."
+    log_warning "PyYAML not installed. Attempting to install..."
     if command -v pip3 &> /dev/null; then
         pip3 install --user pyyaml 2>/dev/null || {
-            log_error "Nie można zainstalować PyYAML. Zainstaluj ręcznie: pip3 install pyyaml"
+            log_error "Could not install PyYAML. Install manually: pip3 install pyyaml"
             exit 1
         }
     else
-        log_error "pip3 nie jest dostępny. Zainstaluj PyYAML ręcznie: pip3 install pyyaml"
+        log_error "pip3 not available. Install PyYAML manually: pip3 install pyyaml"
         exit 1
     fi
 fi
 
-# Funkcja do parsowania YAML i wyciągnięcia informacji o VM
+# Parse YAML and extract VM info
 parse_vm_config() {
     local vm_id=$1
     local exit_code=0
@@ -139,7 +137,7 @@ try:
     enabled = vm.get('enabled', True)
     
     if not enabled:
-        print(f"ERROR: VM $vm_id jest wyłączony w konfiguracji", file=sys.stderr)
+        print(f"ERROR: VM $vm_id is disabled in config", file=sys.stderr)
         sys.exit(1)
     
     if not ip:
@@ -148,7 +146,7 @@ try:
     
     print(f"{ip}|{ssh_user}|{ssh_port}")
 except Exception as e:
-    print(f"ERROR: Błąd parsowania YAML: {e}", file=sys.stderr)
+    print(f"ERROR: YAML parse error: {e}", file=sys.stderr)
     sys.exit(1)
 EOF
 )
@@ -169,10 +167,10 @@ generate_ssh_key() {
     local key_file="$SSH_KEYS_DIR/id_ed25519_${vm_id}"
     
     if [ -f "${key_file}" ]; then
-        log_warning "Klucz już istnieje dla $vm_id: ${key_file}"
+        log_warning "Key already exists for $vm_id: ${key_file}"
         if [ -t 0 ]; then
-            # Tylko jeśli jest interaktywny terminal
-            read -p "Czy chcesz nadpisać istniejący klucz? (y/N): " -n 1 -r
+            # Only when interactive terminal
+            read -p "Overwrite existing key? (y/N): " -n 1 -r
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
                 log_info "Pomijam generowanie klucza dla $vm_id"
@@ -180,7 +178,7 @@ generate_ssh_key() {
             fi
         else
             # Tryb nieinteraktywny - nie nadpisuj
-            log_info "Tryb nieinteraktywny - pomijam generowanie klucza dla $vm_id (klucz już istnieje)"
+            log_info "Non-interactive mode - skipping key generation for $vm_id (key already exists)"
             return 0
         fi
         # Backup starego klucza
@@ -194,22 +192,22 @@ generate_ssh_key() {
     
     log_step "Generowanie klucza SSH dla $vm_id..."
     
-    # Utwórz katalog jeśli nie istnieje
+    # Create directory if it does not exist
     mkdir -p "$SSH_KEYS_DIR"
     chmod 700 "$SSH_KEYS_DIR"
     fix_file_ownership "$SSH_KEYS_DIR"
     
-    # Generuj klucz ed25519 (zalecany, bezpieczny i szybki)
+    # Generate ed25519 key (recommended, secure and fast)
     if ssh-keygen -t ed25519 -f "${key_file}" -N "" -C "th_timmy_${vm_id}_$(date +%Y%m%d)"; then
         chmod 600 "${key_file}"
         chmod 644 "${key_file}.pub"
-        # Zmień właściciela na właściwego użytkownika (jeśli uruchomione z sudo)
+        # Change owner to correct user (when run with sudo)
         fix_file_ownership "${key_file}"
         fix_file_ownership "${key_file}.pub"
         log_success "Klucz wygenerowany: ${key_file}"
         return 0
     else
-        log_error "Błąd podczas generowania klucza dla $vm_id"
+        log_error "Error generating key for $vm_id"
         return 1
     fi
 }
@@ -229,47 +227,47 @@ copy_public_key() {
     
     log_step "Kopiowanie klucza publicznego na $vm_id ($ssh_user@$ip:$ssh_port)..."
     
-    # Sprawdź czy ssh-copy-id jest dostępny
+    # Check if ssh-copy-id is available
     if command -v ssh-copy-id &> /dev/null; then
-        # Użyj ssh-copy-id (najprostsze rozwiązanie)
+        # Use ssh-copy-id (simplest)
         if ssh-copy-id -i "$key_file" -p "$ssh_port" "$ssh_user@$ip" 2>/dev/null; then
-            log_success "Klucz skopiowany używając ssh-copy-id"
+            log_success "Key copied using ssh-copy-id"
             return 0
         else
-            log_warning "ssh-copy-id nie zadziałał, próbuję ręcznie..."
+            log_warning "ssh-copy-id failed, trying manually..."
         fi
     fi
     
-    # Ręczne kopiowanie klucza (jeśli ssh-copy-id nie działa)
-    log_info "Próba ręcznego kopiowania klucza..."
+    # Manual key copy (when ssh-copy-id does not work)
+    log_info "Attempting manual key copy..."
     
-    # Sprawdź czy możemy połączyć się przez SSH (może wymagać hasła)
+    # Check if we can connect via SSH (may require password)
     if ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -p "$ssh_port" "$ssh_user@$ip" "mkdir -p ~/.ssh && chmod 700 ~/.ssh" 2>/dev/null; then
-        # Skopiuj klucz publiczny
+        # Copy public key
         if cat "$key_file" | ssh -o ConnectTimeout=5 -o StrictHostKeyChecking=no -p "$ssh_port" "$ssh_user@$ip" "cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"; then
-            log_success "Klucz skopiowany ręcznie"
+            log_success "Key copied manually"
             return 0
         fi
     fi
     
-    # Alternatywnie, użyj sshpass jeśli dostępny (dla automatycznego wprowadzania hasła)
+    # Or use sshpass if available (for automatic password entry)
     if command -v sshpass &> /dev/null && [ -t 0 ]; then
-        log_info "Używam sshpass do kopiowania klucza..."
-        read -sp "Wprowadź hasło dla $ssh_user@$ip: " password
+        log_info "Using sshpass to copy key..."
+        read -sp "Enter password for $ssh_user@$ip: " password
         echo
         if [ -n "$password" ] && sshpass -p "$password" ssh-copy-id -i "$key_file" -p "$ssh_port" -o StrictHostKeyChecking=no "$ssh_user@$ip" 2>/dev/null; then
-            log_success "Klucz skopiowany używając sshpass"
+            log_success "Key copied using sshpass"
             return 0
         fi
     fi
     
-    log_error "Nie udało się skopiować klucza na $vm_id"
-    log_warning "Możesz skopiować klucz ręcznie:"
+    log_error "Could not copy key to $vm_id"
+    log_warning "You can copy the key manually:"
     log_warning "  cat $key_file | ssh -p $ssh_port $ssh_user@$ip 'cat >> ~/.ssh/authorized_keys'"
     return 1
 }
 
-# Funkcja do testowania połączenia SSH
+# Test SSH connection
 test_ssh_connection() {
     local vm_id=$1
     local ip=$2
@@ -277,18 +275,18 @@ test_ssh_connection() {
     local ssh_port=$4
     local key_file="$SSH_KEYS_DIR/id_ed25519_${vm_id}"
     
-    log_step "Testowanie połączenia SSH z $vm_id..."
+    log_step "Testing SSH connection to $vm_id..."
     
     if ssh -i "$key_file" -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p "$ssh_port" "$ssh_user@$ip" "echo 'SSH connection successful'" 2>/dev/null; then
-        log_success "Połączenie SSH działa poprawnie dla $vm_id"
+        log_success "SSH connection OK for $vm_id"
         return 0
     else
-        log_error "Nie można nawiązać połączenia SSH z $vm_id"
+        log_error "Could not connect via SSH to $vm_id"
         return 1
     fi
 }
 
-# Funkcja do wymuszania logowania kluczami SSH i blokowania logowania hasłem
+# Enforce key-based SSH login and disable password login
 configure_ssh_server() {
     local vm_id=$1
     local ip=$2
@@ -296,22 +294,22 @@ configure_ssh_server() {
     local ssh_port=$4
     local key_file="$SSH_KEYS_DIR/id_ed25519_${vm_id}"
     
-    log_step "Konfigurowanie serwera SSH na $vm_id (wymuszanie kluczy, blokowanie hasła)..."
-    log_warning "UWAGA: Ta operacja wymaga uprawnień sudo na hoście docelowym!"
-    log_warning "Po tej operacji logowanie hasłem będzie zablokowane - upewnij się, że klucz działa!"
+    log_step "Configuring SSH server on $vm_id (enforce keys, disable password)..."
+    log_warning "WARNING: This operation requires sudo on the target host!"
+    log_warning "After this, password login will be disabled - ensure key auth works first!"
     
-    # Sprawdź czy możemy połączyć się używając klucza
+    # Check we can connect using the key
     if ! ssh -i "$key_file" -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p "$ssh_port" "$ssh_user@$ip" "true" 2>/dev/null; then
-        log_error "Nie można połączyć się z $vm_id używając klucza. Pomijam konfigurację serwera SSH."
-        log_error "WAŻNE: Nie można wymusić kluczy, jeśli połączenie kluczem nie działa!"
+        log_error "Cannot connect to $vm_id using key. Skipping SSH server configuration."
+        log_error "IMPORTANT: Cannot enforce keys if key-based connection does not work!"
         return 1
     fi
     
-    # Sprawdź czy użytkownik ma uprawnienia sudo
-    log_info "Sprawdzanie uprawnień sudo..."
+    # Check if user has sudo privileges
+    log_info "Checking sudo privileges..."
     if ! ssh -i "$key_file" -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p "$ssh_port" "$ssh_user@$ip" "sudo -n true" 2>/dev/null; then
-        log_warning "Użytkownik $ssh_user może nie mieć uprawnień sudo lub wymagane jest hasło."
-        log_warning "Próba wykonania konfiguracji (może wymagać wprowadzenia hasła sudo)..."
+        log_warning "User $ssh_user may lack sudo or a password may be required."
+        log_warning "Attempting configuration (may prompt for sudo password)..."
     else
         log_success "Uprawnienia sudo potwierdzone"
     fi
@@ -320,115 +318,115 @@ configure_ssh_server() {
     log_info "Tworzenie kopii zapasowej /etc/ssh/sshd_config..."
     ssh -i "$key_file" -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p "$ssh_port" "$ssh_user@$ip" \
         "sudo cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)" 2>/dev/null || {
-        log_warning "Nie można utworzyć kopii zapasowej (może brakować uprawnień sudo)"
+        log_warning "Could not create backup (may lack sudo privileges)"
     }
     
-    # Modyfikuj konfigurację SSH
-    log_info "Modyfikowanie konfiguracji SSH..."
+    # Modify SSH configuration
+    log_info "Modifying SSH configuration..."
     
-    # Utwórz skrypt do wykonania na zdalnym hoście
+    # Build script to run on remote host
     local remote_script=$(cat << 'REMOTE_SCRIPT_END'
 #!/bin/bash
 set -e
 
-# Backup konfiguracji
+# Backup configuration
 SSHD_CONFIG="/etc/ssh/sshd_config"
 BACKUP_FILE="${SSHD_CONFIG}.backup.$(date +%Y%m%d_%H%M%S)"
 cp "$SSHD_CONFIG" "$BACKUP_FILE"
-echo "Backup utworzony: $BACKUP_FILE"
+echo "Backup created: $BACKUP_FILE"
 
-# Funkcja do ustawienia wartości w konfiguracji
+# Set option in config file
 set_ssh_option() {
     local option="$1"
     local value="$2"
     local config_file="$3"
     
-    # Sprawdź czy opcja już istnieje (niezależnie od komentarza)
+    # Check if option already exists (commented or not)
     if grep -qE "^[[:space:]]*#?[[:space:]]*${option}[[:space:]]+" "$config_file" 2>/dev/null; then
-        # Zaktualizuj istniejącą opcję (usuń komentarz jeśli był)
+        # Update existing option (uncomment if needed)
         sed -i "s/^[[:space:]]*#\?[[:space:]]*${option}[[:space:]]*.*/${option} ${value}/" "$config_file"
-        echo "Zaktualizowano: ${option} ${value}"
+        echo "Updated: ${option} ${value}"
     else
-        # Dodaj nową opcję na końcu pliku
+        # Append new option at end of file
         echo "${option} ${value}" >> "$config_file"
-        echo "Dodano: ${option} ${value}"
+        echo "Added: ${option} ${value}"
     fi
 }
 
-# Ustaw opcje bezpieczeństwa SSH
+# Set SSH security options
 set_ssh_option "PasswordAuthentication" "no" "$SSHD_CONFIG"
 set_ssh_option "PubkeyAuthentication" "yes" "$SSHD_CONFIG"
 set_ssh_option "ChallengeResponseAuthentication" "no" "$SSHD_CONFIG"
 set_ssh_option "UsePAM" "no" "$SSHD_CONFIG"
 set_ssh_option "PermitRootLogin" "no" "$SSHD_CONFIG"
 
-# Opcjonalne: dodatkowe opcje bezpieczeństwa
+# Optional: additional security options
 set_ssh_option "X11Forwarding" "no" "$SSHD_CONFIG"
 set_ssh_option "MaxAuthTries" "3" "$SSHD_CONFIG"
 set_ssh_option "ClientAliveInterval" "300" "$SSHD_CONFIG"
 set_ssh_option "ClientAliveCountMax" "2" "$SSHD_CONFIG"
 
-# Sprawdź składnię konfiguracji przed przeładowaniem
-echo "Sprawdzanie składni konfiguracji SSH..."
+# Check config syntax before reload
+echo "Checking SSH config syntax..."
 if sshd -t 2>/dev/null; then
-    echo "Konfiguracja SSH jest poprawna"
-    # Przeładuj konfigurację SSH (nie restartuj, aby nie przerwać połączenia)
+    echo "SSH config is valid"
+    # Reload SSH (do not restart to avoid dropping connection)
     if command -v systemctl &> /dev/null; then
-        systemctl reload sshd 2>/dev/null && echo "SSH przeładowany (systemctl)" || {
-            echo "Nie można przeładować przez systemctl, próbuję service..."
+        systemctl reload sshd 2>/dev/null && echo "SSH reloaded (systemctl)" || {
+            echo "Could not reload via systemctl, trying service..."
             service ssh reload 2>/dev/null || service sshd reload 2>/dev/null || {
-                echo "UWAGA: Nie można przeładować SSH. Może być wymagany restart: sudo systemctl restart sshd"
+                echo "WARNING: Could not reload SSH. Restart may be needed: sudo systemctl restart sshd"
             }
         }
     else
         service ssh reload 2>/dev/null || service sshd reload 2>/dev/null || {
-            echo "UWAGA: Nie można przeładować SSH. Może być wymagany restart."
+            echo "WARNING: Could not reload SSH. Restart may be needed."
         }
     fi
-    echo "Konfiguracja SSH została zaktualizowana i przeładowana"
+    echo "SSH config updated and reloaded"
     exit 0
 else
-    echo "BŁĄD: Konfiguracja SSH zawiera błędy! Przywracam kopię zapasową..."
+    echo "ERROR: SSH config has errors! Restoring backup..."
     cp "$BACKUP_FILE" "$SSHD_CONFIG"
     exit 1
 fi
 REMOTE_SCRIPT_END
 )
     
-    # Sprawdź czy sudo wymaga hasła
+    # Check if sudo requires password
     local ssh_base_flags="-i $key_file -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p $ssh_port"
     local sudo_password=""
     local needs_password=false
     
     if ! ssh $ssh_base_flags "$ssh_user@$ip" "sudo -n true" 2>/dev/null; then
         needs_password=true
-        log_warning "Sudo wymaga hasła na $vm_id"
+        log_warning "Sudo requires password on $vm_id"
         
         if [ -t 0 ]; then
-            # Terminal dostępny - poproś o hasło
-            read -sp "Wprowadź hasło sudo dla $ssh_user@$ip: " sudo_password
+            # Terminal available - prompt for password
+            read -sp "Enter sudo password for $ssh_user@$ip: " sudo_password
             echo
             if [ -z "$sudo_password" ]; then
-                log_error "Hasło nie zostało wprowadzone. Pomijam konfigurację serwera SSH dla $vm_id"
+                log_error "No password entered. Skipping SSH server config for $vm_id"
                 return 1
             fi
         else
-            log_error "Sudo wymaga hasła, ale terminal nie jest dostępny (tryb nieinteraktywny)"
-            log_error "Skonfiguruj sudo NOPASSWD dla $ssh_user na $ip lub uruchom skrypt w trybie interaktywnym"
+            log_error "Sudo requires password but terminal is not available (non-interactive)"
+            log_error "Configure sudo NOPASSWD for $ssh_user on $ip or run script interactively"
             return 1
         fi
     else
-        log_info "Sudo nie wymaga hasła, wykonuję konfigurację..."
+        log_info "Sudo does not require password, running configuration..."
     fi
     
-    # Wykonaj skrypt z odpowiednim sposobem przekazania hasła sudo
+    # Run script with appropriate sudo password handling
     local ssh_output
     if [ "$needs_password" = true ] && [ -n "$sudo_password" ]; then
-        # Utwórz tymczasowy skrypt na zdalnym hoście i wykonaj go z sudo
-        # To pozwala uniknąć problemów z przekazywaniem hasła przez stdin
+        # Create temporary script on remote host and run with sudo
+        # Avoids stdin/password piping issues
         local temp_script="/tmp/configure_ssh_$$.sh"
         
-        # Przekaż skrypt na zdalny host i wykonaj z sudo -S
+        # Send script to remote host and run with sudo -S
         ssh_output=$(ssh $ssh_base_flags "$ssh_user@$ip" bash << EOF 2>&1
 cat > $temp_script << 'SCRIPT_END'
 $remote_script
@@ -440,16 +438,16 @@ EOF
 )
         local ssh_exit_code=$?
         
-        # Wyczyść hasło z pamięci
+        # Clear password from memory
         sudo_password=""
     else
-        # Sudo nie wymaga hasła
+        # Sudo does not require password
         ssh_output=$(echo "$remote_script" | ssh $ssh_base_flags "$ssh_user@$ip" \
             "sudo bash" 2>&1)
         local ssh_exit_code=$?
     fi
     
-    # Wyświetl output (pomijając puste linie i niektóre komunikaty)
+    # Show output (skip blank lines and some prompts)
     echo "$ssh_output" | grep -v "^$" | while IFS= read -r line; do
         if [[ "$line" =~ ^\[sudo\].*password ]] || [[ "$line" =~ ^sudo:.*password ]]; then
             # Pomijamy prompt sudo
@@ -468,26 +466,26 @@ EOF
         log_info "  - PubkeyAuthentication: yes"
         log_info "  - PermitRootLogin: no"
         
-        # Testuj czy nadal możemy się połączyć (powinno działać tylko kluczem)
-        log_info "Testowanie połączenia po zmianach..."
+        # Test that we can still connect (key-only should work)
+        log_info "Testing connection after changes..."
         sleep 2
         if ssh -i "$key_file" -o ConnectTimeout=5 -o StrictHostKeyChecking=no -o BatchMode=yes -p "$ssh_port" "$ssh_user@$ip" "echo 'Connection test successful'" 2>/dev/null; then
-            log_success "Połączenie kluczem SSH działa poprawnie"
+            log_success "SSH key connection works"
             
-            # Próba połączenia hasłem powinna się nie powieść
-            log_info "Weryfikacja: próba połączenia hasłem powinna się nie powieść..."
+            # Password login attempt should fail
+            log_info "Verifying: password login attempt should fail..."
             if ssh -o ConnectTimeout=3 -o StrictHostKeyChecking=no -o PreferredAuthentications=password -o PubkeyAuthentication=no -p "$ssh_port" "$ssh_user@$ip" "true" 2>/dev/null; then
-                log_warning "UWAGA: Logowanie hasłem nadal działa! Może być wymagany restart SSH."
+                log_warning "WARNING: Password login still works! SSH restart may be required."
             else
-                log_success "Weryfikacja: logowanie hasłem jest zablokowane"
+                log_success "Verification: password login is disabled"
             fi
         else
-            log_error "UWAGA: Nie można połączyć się po zmianach! Sprawdź konfigurację ręcznie."
+            log_error "WARNING: Cannot connect after changes! Check configuration manually."
             return 1
         fi
         return 0
     else
-        log_error "Błąd podczas konfiguracji serwera SSH na $vm_id"
+        log_error "Error configuring SSH server on $vm_id"
         return 1
     fi
 }
@@ -503,42 +501,41 @@ configure_ssh_config() {
     
     log_step "Konfigurowanie ~/.ssh/config dla $vm_id..."
     
-    # Utwórz katalog .ssh jeśli nie istnieje
+    # Create .ssh directory if it does not exist
     mkdir -p "$SSH_DIR"
     chmod 700 "$SSH_DIR"
     fix_file_ownership "$SSH_DIR"
     
-    # Utwórz plik config jeśli nie istnieje
+    # Create config file if it does not exist
     touch "$ssh_config"
     chmod 600 "$ssh_config"
     fix_file_ownership "$ssh_config"
     
-    # Sprawdź czy wpis już istnieje
+    # Check if entry already exists
     if grep -q "Host $vm_id" "$ssh_config" 2>/dev/null; then
-        log_warning "Wpis dla $vm_id już istnieje w ~/.ssh/config"
+        log_warning "Entry for $vm_id already exists in ~/.ssh/config"
         if [ -t 0 ]; then
-            # Tylko jeśli jest interaktywny terminal
-            read -p "Czy chcesz zaktualizować istniejący wpis? (y/N): " -n 1 -r
+            # Only when interactive terminal
+            read -p "Update existing entry? (y/N): " -n 1 -r
             echo
             if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                log_info "Pomijam konfigurację SSH config dla $vm_id"
+                log_info "Skipping SSH config for $vm_id"
                 return 0
             fi
         else
-            # Tryb nieinteraktywny - zaktualizuj automatycznie
-            log_info "Tryb nieinteraktywny - aktualizuję istniejący wpis"
+            # Non-interactive - update automatically
+            log_info "Non-interactive mode - updating existing entry"
         fi
-        # Usuń stary wpis (wszystkie linie od "Host $vm_id" do pustej linii lub następnego "Host")
+        # Remove old entry (from "Host $vm_id" to blank or next "Host")
         sed -i "/^Host $vm_id$/,/^Host /{ /^Host $vm_id$/!{ /^Host /!d; }; }" "$ssh_config" 2>/dev/null || true
-        # Alternatywnie, usuń wszystkie linie od "Host $vm_id" do pustej linii
         sed -i "/^Host $vm_id$/,/^$/d" "$ssh_config" 2>/dev/null || true
     fi
     
-    # Oblicz względną ścieżkę do klucza (używając ~ zamiast pełnej ścieżki)
+    # Relative key path (use ~ instead of full path)
     local relative_key_path="~/.ssh/th_timmy_keys/id_ed25519_${vm_id}"
     
-    # Dodaj nowy wpis zgodnie z wymaganiami użytkownika
-    # Port dodajemy tylko jeśli jest inny niż domyślny (22)
+    # Add new entry per requirements
+    # Include Port only if not default (22)
     if [ "$ssh_port" != "22" ]; then
         cat >> "$ssh_config" << EOF
 
@@ -560,14 +557,14 @@ Host $vm_id
 EOF
     fi
     
-    # Zmień właściciela pliku config (jeśli uruchomione z sudo)
+    # Fix config file owner (when run with sudo)
     fix_file_ownership "$ssh_config"
     
-    log_success "Dodano wpis do ~/.ssh/config dla $vm_id"
-    log_info "  Konfiguracja: Host $vm_id -> $ssh_user@$ip"
+    log_success "Added entry to ~/.ssh/config for $vm_id"
+    log_info "  Config: Host $vm_id -> $ssh_user@$ip"
 }
 
-# Główna funkcja
+# Main
 main() {
     log_info "=========================================="
     log_info "Konfiguracja kluczy SSH dla VM01-VM03"
@@ -588,9 +585,9 @@ main() {
         log_info "Konfiguracja dla: $VM_ID"
         log_info "=========================================="
         
-        # Parsuj konfigurację
+        # Parse configuration
         VM_CONFIG=$(parse_vm_config "$VM_ID" 2>&1) || {
-            log_error "Błąd parsowania konfiguracji dla $VM_ID"
+            log_error "Config parse error for $VM_ID"
             ((FAILED_COUNT++))
             FAILED_VMS+=("$VM_ID")
             echo ""
@@ -607,7 +604,7 @@ main() {
         
         # Generuj klucz SSH
         if ! generate_ssh_key "$VM_ID"; then
-            log_error "Nie udało się wygenerować klucza dla $VM_ID"
+            log_error "Could not generate key for $VM_ID"
             ((FAILED_COUNT++))
             FAILED_VMS+=("$VM_ID")
             echo ""
@@ -616,34 +613,34 @@ main() {
         
         # Kopiuj klucz publiczny
         if ! copy_public_key "$VM_ID" "$IP" "$SSH_USER" "$SSH_PORT"; then
-            log_error "Nie udało się skopiować klucza dla $VM_ID"
+            log_error "Could not copy key to $VM_ID"
             ((FAILED_COUNT++))
             FAILED_VMS+=("$VM_ID")
             echo ""
             continue
         fi
         
-        # Testuj połączenie
+        # Test connection
         if ! test_ssh_connection "$VM_ID" "$IP" "$SSH_USER" "$SSH_PORT"; then
-            log_error "Test połączenia nie powiódł się dla $VM_ID"
+            log_error "Connection test failed for $VM_ID"
             ((FAILED_COUNT++))
             FAILED_VMS+=("$VM_ID")
             echo ""
             continue
         fi
         
-        # Konfiguruj serwer SSH (wymuszanie kluczy, blokowanie hasła)
+        # Configure SSH server (enforce keys, disable password)
         if ! configure_ssh_server "$VM_ID" "$IP" "$SSH_USER" "$SSH_PORT"; then
-            log_warning "Nie udało się skonfigurować serwera SSH dla $VM_ID, ale kontynuuję..."
-            # Nie traktujemy tego jako błąd krytyczny - może brakować uprawnień sudo
+            log_warning "Could not configure SSH server for $VM_ID, continuing..."
+            # Not critical - may lack sudo on remote
         fi
         
         # Konfiguruj SSH config lokalnie
         configure_ssh_config "$VM_ID" "$IP" "$SSH_USER" "$SSH_PORT" || {
-            log_warning "Nie udało się skonfigurować SSH config dla $VM_ID, ale kontynuuję..."
+            log_warning "Could not configure SSH config for $VM_ID, continuing..."
         }
         
-        log_success "Konfiguracja zakończona pomyślnie dla $VM_ID"
+        log_success "Configuration completed for $VM_ID"
         ((SUCCESS_COUNT++))
         echo ""
     done
@@ -654,40 +651,39 @@ main() {
     log_info "=========================================="
     log_success "Sukces: $SUCCESS_COUNT VM"
     if [ $FAILED_COUNT -gt 0 ]; then
-        log_error "Błędy: $FAILED_COUNT VM"
-        log_error "Nieudane VM: ${FAILED_VMS[*]}"
+        log_error "Failed: $FAILED_COUNT VM"
+        log_error "Failed VMs: ${FAILED_VMS[*]}"
         echo ""
-        log_info "Możesz uruchomić skrypt ponownie, aby spróbować ponownie dla nieudanych VM."
+        log_info "You can run the script again to retry failed VMs."
         exit 1
     else
-        # Na końcu upewnij się, że wszystkie pliki mają właściwego właściciela
+        # Ensure all files have correct owner when run with sudo
         if [ -n "${SUDO_USER:-}" ]; then
-            log_info "Korygowanie właściciela plików..."
+            log_info "Fixing file ownership..."
             fix_file_ownership "$SSH_DIR"
             fix_file_ownership "$SSH_KEYS_DIR"
-            log_success "Właściciel plików został skorygowany"
+            log_success "File ownership corrected"
         fi
         
-        log_success "Wszystkie konfiguracje zakończone pomyślnie!"
+        log_success "All configurations completed successfully!"
         echo ""
         log_info "=========================================="
-        log_info "INFORMACJE O KONFIGURACJI"
+        log_info "CONFIGURATION INFO"
         log_info "=========================================="
-        log_info "Plik konfiguracyjny SSH został utworzony:"
+        log_info "SSH config file created:"
         log_info "  $SSH_DIR/config"
         echo ""
-        log_info "Możesz teraz łączyć się z hostami używając:"
+        log_info "You can connect to hosts using:"
         for VM_ID in "${VMS[@]}"; do
             log_info "  ssh $VM_ID"
         done
         echo ""
-        log_info "Aby wyświetlić konfigurację, użyj:"
+        log_info "To view or edit config:"
         log_info "  cat $SSH_DIR/config"
-        log_info "lub"
         log_info "  nano $SSH_DIR/config"
         exit 0
     fi
 }
 
-# Uruchom główną funkcję
+# Run main
 main

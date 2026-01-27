@@ -265,7 +265,7 @@ if [ ! -f "$REQUIREMENTS_FILE" ]; then
 else
     log_success "requirements.txt file exists: $REQUIREMENTS_FILE"
     
-    # Lista pakietów do sprawdzenia
+    # List of packages to check
     PACKAGES=(
         "pandas"
         "numpy"
@@ -281,7 +281,7 @@ else
     )
     
     for package in "${PACKAGES[@]}"; do
-        # Usuń wersję z nazwy pakietu dla sprawdzenia
+        # Strip version from package name for check
         package_name=$(echo "$package" | cut -d'>' -f1 | cut -d'=' -f1)
         check_python_package "$package_name"
     done
