@@ -25,7 +25,8 @@ Recommended order of actions:
 
 | File / folder | Purpose |
 |---------------|--------|
-| **bootstrap_env.sh** | Single entrypoint to prepare Python env: checks python3/pip/ssh, creates/validates `.venv`, installs from `requirements.txt` (+ `requirements-dev.txt` if present), runs import and sanity checks. **Run this before any tests or automation.** Exit 0 = env ready; non‑zero = stop. |
+| **run_python.sh** | **Single entrypoint for all Python runs** (n8n, tests, automation). Runs bootstrap on demand (idempotent), then executes `.venv/bin/python` with the given args. **Rule: n8n must never call `python` directly; always call this script.** See *run_python.sh and n8n* below. |
+| **bootstrap_env.sh** | Prepares Python env (idempotent): checks python3/pip/ssh, creates/validates `.venv`, installs from `requirements.txt` (+ `requirements-dev.txt` if present), runs import and sanity checks. Used by `run_python.sh` on every run; can also be run manually. Exit 0 = env ready; non‑zero = stop. |
 | **install_vm04.sh** | Full VM-04 setup: system tools, Docker, Python 3.10+, pip, venv, n8n (Docker), firewall. Requires sudo. Use after bootstrap if you want install automation. |
 | **health_check.sh** | Verifies installed components: OS, Docker, Python, venv, packages, n8n container, ports, firewall. Run after install. |
 | **setup_ssh_keys.sh** | Generates SSH keys for VM01–VM03, copies them to targets, enforces key-only auth, writes `~/.ssh/config`. Run when you need passwordless SSH to VM01/02/03. |
@@ -180,6 +181,94 @@ BOOTSTRAP_PROJECT_ROOT=/path/to/th_timmy ./bootstrap_env.sh
 - **Exit ≠ 0:** Bootstrap failed. Do not run tests or automation until this passes.
 
 All messages are in English and deterministic so that CI and scripts can parse success/failure clearly.
+
+---
+
+## run_python.sh – single Python entrypoint (n8n / automation)
+
+### Rule
+
+**Every Python run from n8n (or automation) must use `.venv` and guarantee that `.venv` is correct.**
+
+- **n8n must never call `python` or `python3` directly.**  
+- **n8n always calls `run_python.sh`.**  
+
+This avoids “works only on one host”, “QA skipped bootstrap”, “after deploy something broke”: each run ensures bootstrap has been applied (idempotent; fast if env is OK, repairs if broken).
+
+### What run_python.sh does
+
+1. Resolves project root (`BOOTSTRAP_PROJECT_ROOT`, or `PROJECT_ROOT`, or two levels up from the script).
+2. Runs `bootstrap_env.sh` (idempotent: quick check if env is OK, full fix if not).
+3. `cd` to project root, sets `PYTHONPATH`, then `exec .venv/bin/python "$@"`.
+
+So: “run Python” = “ensure env, then run Python from .venv”.
+
+### Usage
+
+```bash
+# From project root (recommended)
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+
+# From this folder
+cd /path/to/th_timmy/hosts/vm04-orchestrator
+./run_python.sh -m pytest tests/unit/ -v
+
+# With explicit project root (e.g. from n8n when cwd is not project root)
+BOOTSTRAP_PROJECT_ROOT=/path/to/th_timmy ./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+### n8n: how to call Python
+
+In n8n “Execute Command” (or equivalent):
+
+- **Command:** absolute path to `run_python.sh`, e.g. `/home/thadmin/th_timmy/hosts/vm04-orchestrator/run_python.sh`
+- **Arguments:** the Python invocation, e.g. `-m pytest tests/unit/ -v` or `-c "from automation_scripts.orchestrators.remote_executor import execute_remote_command; ..."`
+- **Working directory:** project root, e.g. `/home/thadmin/th_timmy`, so that `tests/unit/` and imports resolve.
+
+If the node cannot set working directory, pass project root via env:
+
+```text
+BOOTSTRAP_PROJECT_ROOT=/home/thadmin/th_timmy /home/thadmin/th_timmy/hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+Ensure `run_python.sh` is executable: `chmod +x /path/to/th_timmy/hosts/vm04-orchestrator/run_python.sh`.
+
+---
+
+## Running tests via run_python.sh
+
+**All test runs go through `run_python.sh`** so the same `.venv` and bootstrap guarantees apply as for n8n. The integration script does not fall back to raw `python3` or `pip install --user`; if `run_python.sh` is missing, it skips Python steps with a clear message.
+
+### Unit tests (pytest)
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v --tb=short
+```
+
+With coverage:
+
+```bash
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v --tb=short --cov=automation_scripts --cov-report=term-missing
+```
+
+### Integration test script (Bash)
+
+The integration script (`tests/integration/run_remote_executor_integration.sh`) runs **all Python steps (unit tests and sanity check) only via `run_python.sh`**. There is no fallback to raw `python3` or `pip install --user`; if `run_python.sh` is missing or not executable, unit tests and the sanity check are skipped with a clear message. This keeps the same guarantee as n8n: one entrypoint, one venv, one set of requirements.
+
+```bash
+cd /path/to/th_timmy
+./tests/integration/run_remote_executor_integration.sh
+```
+
+The script expects a full project tree (including `hosts/vm04-orchestrator/run_python.sh` and `tests/unit/`). From a different location, set `PROJECT_ROOT` or `BOOTSTRAP_PROJECT_ROOT` to the project root.
+
+### One-liner from anywhere (with project root set)
+
+```bash
+BOOTSTRAP_PROJECT_ROOT=/home/thadmin/th_timmy /home/thadmin/th_timmy/hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
 
 ---
 

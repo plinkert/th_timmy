@@ -99,6 +99,19 @@ backup:
   retention_days: 30  # Keep backups for 30 days
   backup_dir: "/var/backups/threat-hunting"
 
+# Remote Execution Service (Krok 0.1 – VM04 orchestration)
+remote_execution:
+  default_timeout: 30
+  default_retry: 3
+  max_parallel_commands: 5
+  connection_pool_size: 10
+  key_storage_type: "encrypted_dir"   # or "vault" when integrated
+  key_storage_path: "~/.ssh/th_timmy_keys"
+  key_rotation_days: 90
+  audit_log_destination: "file"      # or "database"
+  checksum_algorithm: "sha256"
+  # allowed_vm_ids: ["vm01", "vm02", "vm03", "vm04"]  # optional; default from vms.enabled
+
 # Hardening Configuration (applies to all VMs)
 hardening:
   # SSH Configuration (common for all VMs)

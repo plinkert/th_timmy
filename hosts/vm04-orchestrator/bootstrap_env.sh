@@ -150,7 +150,7 @@ step "C. Dependencies installed."
 # ------------------------------------------------------------------------------
 step "D. Validating environment (import tests)..."
 
-python3 << 'PYVALIDATE'
+( python3 << 'PYVALIDATE'
 import sys
 errors = []
 for mod in ("paramiko", "pytest", "yaml", "requests"):
@@ -165,7 +165,7 @@ if errors:
     sys.exit(1)
 print("ENV VALIDATION OK")
 PYVALIDATE
-|| abort "Environment validation failed. One or more required imports (paramiko, pytest, yaml, requests) failed."
+) || abort "Environment validation failed. One or more required imports (paramiko, pytest, yaml, requests) failed."
 
 ok "All required imports (paramiko, pytest, yaml, requests) succeeded."
 step "D. Environment validation complete."
@@ -175,12 +175,12 @@ step "D. Environment validation complete."
 # ------------------------------------------------------------------------------
 step "E. Sanity self-test..."
 
-python3 - << 'PYEOF'
+( python3 - << 'PYEOF'
 import paramiko
 import sys
 print("ENV OK")
 PYEOF
-|| abort "Sanity self-test failed."
+) || abort "Sanity self-test failed."
 
 ok "Sanity self-test passed."
 step "E. Sanity self-test complete."
