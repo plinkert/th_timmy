@@ -46,6 +46,7 @@ th_timmy/
 **Phase 1: Deployment and Configuration** - In Progress
 - [x] Project structure created
 - [x] Git repository initialized
+- [x] **Krok 0.1 (Remote Execution, VM04 bootstrap)** – zamknięte; see [docs/KROK_0.1_ZAMKNIECIE.md](docs/KROK_0.1_ZAMKNIECIE.md)
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
