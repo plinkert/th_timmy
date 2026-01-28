@@ -144,6 +144,30 @@ repository:
       require_tests: true
       block_direct_push: true           # Configure in GitHub/GitLab; documented here
 
+# Configuration Management Service (Step 0.3 – central config sync, backup, rollback)
+config_management:
+  backup_location: "/var/backups/th_timmy/config"   # On VM04; create if missing. Use path under home to avoid sudo.
+  backup_retention_days: 90
+  encryption_method: "AES"
+  encryption_key_path: ""                            # Or set TH_TIMMY_CONFIG_BACKUP_KEY_PATH / TH_TIMMY_CONFIG_BACKUP_PASSPHRASE
+  backup_remote_path: ""                             # Optional: SCP/SFTP path for off-host copy; empty = local only
+  config_paths:                                      # (config_type, vm_id) -> remote path on VM
+    central:
+      default: "/opt/th_timmy/configs/central.yml"
+    vm_specific:
+      vm01: "/opt/th_timmy/configs/vm01.yml"
+      vm02: "/opt/th_timmy/configs/vm02.yml"
+      vm03: "/opt/th_timmy/configs/vm03.yml"
+      vm04: "/opt/th_timmy/configs/vm04.yml"
+      default: "/opt/th_timmy/configs/vm_specific.yml"
+    env:
+      default: "/opt/th_timmy/.env"
+  config_schemas:                                    # config_type -> schema file (relative to schema_dir)
+    central: "central_config.schema.json"
+    vm_specific: "vm_config.schema.json"
+    env: "env.schema.json"
+  schema_dir: "configs/schemas"
+
 # Hardening Configuration (applies to all VMs)
 hardening:
   # SSH Configuration (common for all VMs)

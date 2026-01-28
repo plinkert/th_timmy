@@ -9,6 +9,8 @@ Hardening is the process of securing systems by reducing their attack surface. T
 - Common hardening functions
 - VM-specific hardening procedures
 - SSH key management (Remote Execution, Step 0.1)
+- Repository Sync and secret scanning (Step 0.2)
+- Configuration Management and backups (Step 0.3)
 - Testing before and after hardening
 - Best practices
 
@@ -36,6 +38,14 @@ The Remote Execution Service on VM04 uses SSH keys to run commands and transfer 
 
 - **No keys in repository or logs:** Never commit private keys, key material, or passwords to the repository. Do not log key paths, key names, or key content. Use `.gitignore` for any local key directories if they are under the project tree.
 - **Non-interactive commands only:** Remote Execution allows only non-interactive commands: use timeouts for all operations and do not feed stdin. Interactive commands (e.g. `sudo` prompting for a password) must be rejected or documented as out-of-scope. See [automation_scripts/orchestrators/remote_executor/README.md](../automation_scripts/orchestrators/remote_executor/README.md) (Troubleshooting / Security) for details.
+
+## Repository Sync and secret scanning (Step 0.2)
+
+Before syncing the repository from VM04 to VM01–VM03, the Repository Sync Service runs a secret scan (e.g. gitleaks). If secrets are detected, sync is blocked and an alert is generated; secret content is never logged. Configure `repository.secret_scanning` in `configs/config.yml` (enabled, tool, config_path, block_on_secrets). Branch protection for main (e.g. require PR, reviews, tests, no direct push) is configured in the hosting system (GitHub/GitLab); it is documented in CONFIGURATION and in [automation_scripts/orchestrators/repo_sync/README.md](../automation_scripts/orchestrators/repo_sync/README.md). Recommend integrating gitleaks in CI (e.g. on push/PR).
+
+## Configuration Management and backups (Step 0.3)
+
+Configuration Management backs up config files in encrypted form (e.g. AES) with configurable retention (e.g. 90 days). Backup keys or passphrases must not be stored in the repository; use environment variables (e.g. TH_TIMMY_CONFIG_BACKUP_PASSPHRASE) or a secure key path. See [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) and the `config_management` section in `configs/config.example.yml`.
 
 ## Common Hardening Functions
 

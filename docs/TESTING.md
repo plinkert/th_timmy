@@ -69,6 +69,45 @@ Results are written to `results/repo_sync_integration_YYYYMMDD_HHMMSS.txt`.
 
 ---
 
+## Configuration Management Service tests (Step 0.3)
+
+### Unit tests
+
+Unit tests for the Configuration Management module (`config_validator`, `config_backup`, `config_manager`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_config_validator.py tests/unit/test_config_backup.py tests/unit/test_config_manager.py -v
+```
+
+Or run all unit tests:
+
+```bash
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+For backup tests, set `TH_TIMMY_CONFIG_BACKUP_PASSPHRASE` (or use the default in the integration script).
+
+### Integration test
+
+The script `tests/integration/run_config_manager_integration.sh` runs bootstrap (via `run_python.sh`), config_manager unit tests, and a sanity check (import + config_management). Run it from the project root on VM04.
+
+**Requirements:** VM04 context, `configs/config.yml` with `config_management` (backup_location, config_paths; see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live get/update tests; `TH_TIMMY_CONFIG_BACKUP_PASSPHRASE` for backup tests.
+
+**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_config_manager_integration.sh
+./tests/integration/run_config_manager_integration.sh
+```
+
+Results are written to `results/config_manager_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md).
+
+---
+
 ## Overview
 
 The testing suite includes three main scripts:

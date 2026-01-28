@@ -184,9 +184,9 @@ External Sources → Collectors → Parsers → Normalizers → Database (VM-02)
 **Key Components**:
 - **n8n**: Workflow automation platform
 - **Remote Execution Service (Step 0.1)**: Module for remote command execution and file transfer on VMs (VM01–VM04) from VM04 via SSH (Paramiko). Location: `automation_scripts.orchestrators.remote_executor`. Main functions: `execute_remote_command`, `execute_remote_script`, `upload_file`, `download_file`. Keys in `~/.ssh/th_timmy_keys` (configurable via `remote_execution.key_storage_path` in `configs/config.yml`). Bootstrap and Python entrypoint: `hosts/vm04-orchestrator/bootstrap_env.sh` and `hosts/vm04-orchestrator/run_python.sh` — n8n and automation must call `run_python.sh`, never `python` directly.
-- **Repository Sync**: Git synchronization across VMs
+- **Repository Sync (Step 0.2)**: Syncs the project from VM04 to VM01–VM03 (sync on VM04, then rsync push). Location: `automation_scripts.orchestrators.repo_sync`. Main functions: `sync_repository_to_vm`, `sync_repository_to_all_vms`, `check_repo_status`, `verify_sync`; uses `git_manager` and `secret_scanner` (gitleaks before sync; sync blocked if secrets are found). Depends on Step 0.1 for verification (e.g. reading `.sync_rev` on targets). Config: `repository` in `configs/config.yml`.
+- **Configuration Management (Step 0.3)**: Central config validation, backup (encrypted, 90-day retention), and sync to VMs. Location: `automation_scripts.orchestrators.config_manager`. Main functions: `get_config`, `update_config`, `backup_config`, `restore_config`, `sync_config_to_vm`; uses `config_validator` (JSON Schema) and `config_backup`. Config: `config_management` in `configs/config.yml`.
 - **Health Monitor**: System health monitoring and alerting
-- **Configuration Manager**: Centralized configuration management
 
 **Technologies**:
 - n8n (Docker container)
@@ -381,7 +381,9 @@ th_timmy/
 │   └── shared/               # Shared scripts and utilities
 ├── automation_scripts/       # Core automation modules
 │   ├── orchestrators/
-│   │   └── remote_executor/   # Remote Execution Service (Step 0.1)
+│   │   ├── remote_executor/   # Remote Execution Service (Step 0.1)
+│   │   ├── repo_sync/          # Repository Sync (Step 0.2)
+│   │   └── config_manager/    # Configuration Management (Step 0.3)
 │   ├── collectors/
 │   ├── parsers/
 │   ├── normalizers/

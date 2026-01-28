@@ -38,6 +38,18 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 ---
 
+## Step 0.3 — Configuration Management Service
+
+| | |
+|---|---|
+| **Status** | In place |
+| **What it does** | Central management and sync of config files on all VMs. Configs are validated (JSON Schema), backed up (encrypted, min. 90-day retention), and written atomically; on write failure, the previous version is restored from backup. |
+| **Module README** | [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) — requirements, config, usage, tests. |
+| **Configuration** | [Configuration Guide](CONFIGURATION.md): `config_management` section (backup_location, config_paths, config_schemas, schema_dir). |
+| **Testing** | [Testing Guide — Configuration Management tests](TESTING.md#configuration-management-service-tests-step-03): unit and integration tests. |
+
+---
+
 ## Upcoming steps
 
 Further steps (for example VM setup scripts, database configuration, and other components) will be added here as they are defined. Each new step will follow the same layout: status, short description, and links to the module README, configuration, and testing.

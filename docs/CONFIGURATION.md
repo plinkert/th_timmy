@@ -43,6 +43,32 @@ remote_execution:
 
 See [automation_scripts/orchestrators/remote_executor/README.md](../automation_scripts/orchestrators/remote_executor/README.md) for installation, usage, and troubleshooting.
 
+## Repository Sync (Step 0.2)
+
+The Repository Sync Service uses the `repository` section in `configs/config.yml` (see `configs/config.example.yml`). VM04 holds the main copy; sync runs on VM04 and the tree is pushed to VM01–VM03 via rsync over SSH (reusing `vms` and `remote_execution` for keys and hosts).
+
+Main options:
+- **main_repo_path** — path to the repo on VM04 (source of truth)
+- **vm_repo_paths** — per vm_id, path on the target where rsync writes
+- **default_branch**, **exclude_dot_git**, **rsync_excludes** — sync behaviour
+- **secret_scanning** — enabled, tool (e.g. gitleaks), config_path, block_on_secrets (sync blocked if secrets are found)
+- **branch_protection** — requirements for main (e.g. PR, reviews, tests); configured in the hosting system; documented here for reference
+
+See [automation_scripts/orchestrators/repo_sync/README.md](../automation_scripts/orchestrators/repo_sync/README.md) and [REPO_SYNC_DESIGN.md](REPO_SYNC_DESIGN.md) for details.
+
+## Configuration Management (Step 0.3)
+
+The Configuration Management Service uses the `config_management` section in `configs/config.yml` (see `configs/config.example.yml`).
+
+Main options:
+- **backup_location** — directory on VM04 for encrypted config backups
+- **backup_retention_days** — e.g. 90
+- **encryption_method**, **encryption_key_path** (or env vars TH_TIMMY_CONFIG_BACKUP_PASSPHRASE / TH_TIMMY_CONFIG_BACKUP_KEY_PATH)
+- **config_paths** — central, vm_specific, env and their paths per VM
+- **config_schemas**, **schema_dir** — JSON Schema files for validation
+
+See [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) for usage and tests.
+
 ### Configuration Structure
 
 ```yaml

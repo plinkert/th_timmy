@@ -33,6 +33,7 @@ paramiko>=2.12.0
 
 # Utilities
 pyyaml>=6.0
+jsonschema>=4.20.0
 python-dateutil>=2.8.0
 requests>=2.31.0
 

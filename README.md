@@ -31,7 +31,8 @@ th_timmy/
 ├── automation_scripts/       # Core automation modules
 │   ├── orchestrators/       # Orchestration
 │   │   ├── remote_executor/ # Remote Execution Service (Step 0.1): remote commands & file transfer from VM04 via SSH
-│   │   └── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
+│   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
+│   │   └── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   └── ...                  # (collectors, parsers, normalizers, utils — as added)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
@@ -50,6 +51,7 @@ th_timmy/
 - [x] Git repository initialized
 - [x] **Step 0.1 (Remote Execution)** — closed
 - [x] **Step 0.2 (Repository Sync)** — in place
+- [x] **Step 0.3 (Configuration Management)** — in place
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -71,7 +73,7 @@ See individual VM README files in `hosts/vmXX-*/README.md` for detailed installa
 
 ### Automation on VM04 (orchestrator)
 
-For running Python and automation from VM04 (including Remote Execution):
+For running Python and automation from VM04 (including Remote Execution, Repository Sync, and Configuration Management):
 
 - **Bootstrap environment:** `./hosts/vm04-orchestrator/bootstrap_env.sh` — prepares Python venv and dependencies (idempotent).
 - **Run Python / tests:** `./hosts/vm04-orchestrator/run_python.sh` — always use this script instead of calling `python` directly (ensures env is ready; used by n8n and CI).
