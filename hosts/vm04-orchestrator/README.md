@@ -11,7 +11,7 @@ VM-04 is the orchestrator node. It runs:
 - **Python** tooling and automation scripts
 - **SSH** access to VM01–VM03 for remote execution
 
-All Python-based automation on VM04, including the **Remote Execution Service (Step 0.1)** (remote commands and file transfer via `automation_scripts.orchestrators.remote_executor`), uses `run_python.sh` and `bootstrap_env.sh` as the single entrypoint — see sections below.
+All Python-based automation on VM04, including the **Remote Execution Service (Step 0.1)** (remote commands and file transfer via `automation_scripts.orchestrators.remote_executor`) and the **Repository Sync Service (Step 0.2)** (sync on VM04, rsync push to VM01–VM03), uses `run_python.sh` and `bootstrap_env.sh` as the single entrypoint — see sections below. **Repository Sync requires Git initialized on VM04** at the project path (`repository.main_repo_path` in config); see [automation_scripts/orchestrators/repo_sync/README.md](../../automation_scripts/orchestrators/repo_sync/README.md).
 
 Recommended order of actions:
 
