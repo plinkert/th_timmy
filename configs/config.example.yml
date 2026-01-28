@@ -112,6 +112,38 @@ remote_execution:
   checksum_algorithm: "sha256"
   # allowed_vm_ids: ["vm01", "vm02", "vm03", "vm04"]  # optional; default from vms.enabled
 
+# Repository Sync Service (Step 0.2 – sync on VM04, rsync push to VM01–VM03)
+repository:
+  main_repo_path: "/path/to/th_timmy"   # Path to repo on VM04 (source of truth)
+  default_branch: "main"
+  # Target paths per vm_id (where rsync writes; VM04 is source only)
+  vm_repo_paths:
+    vm01: "/home/thadmin/th_timmy"
+    vm02: "/home/thadmin/th_timmy"
+    vm03: "/home/thadmin/th_timmy"
+    vm04: "/path/to/th_timmy"           # Same as main_repo_path on VM04; no push to self
+  exclude_dot_git: true                 # Don't push .git to targets (tree-only)
+  rsync_excludes:                       # Same style as deploy_to_hosts.sh
+    - ".git"
+    - "__pycache__"
+    - "*.pyc"
+    - ".DS_Store"
+    - ".vscode"
+    - "*.swp"
+    - "*.swo"
+  auto_sync: false                      # Set true when cron/scheduler runs sync
+  secret_scanning:
+    enabled: true
+    tool: "gitleaks"
+    config_path: ".gitleaks.toml"       # Relative to main_repo_path
+    block_on_secrets: true
+  branch_protection:
+    main:
+      require_pr: true
+      require_reviews: 2
+      require_tests: true
+      block_direct_push: true           # Configure in GitHub/GitLab; documented here
+
 # Hardening Configuration (applies to all VMs)
 hardening:
   # SSH Configuration (common for all VMs)

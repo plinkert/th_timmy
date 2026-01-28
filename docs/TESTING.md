@@ -32,6 +32,43 @@ cd /path/to/th_timmy
 
 ---
 
+## Repository Sync Service tests (Step 0.2)
+
+### Unit tests
+
+Unit tests for the Repository Sync module (`git_manager`, `repo_sync`, `secret_scanner`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_git_manager.py tests/unit/test_secret_scanner.py tests/unit/test_repo_sync.py -v
+```
+
+Or run all unit tests including repo_sync:
+
+```bash
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+### Integration test
+
+The script `tests/integration/run_repo_sync_integration.sh` runs bootstrap (via `run_python.sh`), repo_sync unit tests, and a sanity check (import + config.repository). Run it from the project root on VM04.
+
+**Requirements:** VM04 context, `configs/config.yml` with `repository.main_repo_path` and `repository.vm_repo_paths` (see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live verify/check tests.
+
+**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_repo_sync_integration.sh
+./tests/integration/run_repo_sync_integration.sh
+```
+
+Results are written to `results/repo_sync_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/orchestrators/repo_sync/README.md](../automation_scripts/orchestrators/repo_sync/README.md), [docs/REPO_SYNC_DESIGN.md](REPO_SYNC_DESIGN.md).
+
+---
+
 ## Overview
 
 The testing suite includes three main scripts:

@@ -30,13 +30,14 @@ th_timmy/
 │   └── vm04-orchestrator/
 ├── automation_scripts/       # Core automation modules
 │   ├── orchestrators/       # Orchestration
-│   │   └── remote_executor/ # Remote Execution Service (Step 0.1): remote commands & file transfer from VM04 via SSH
+│   │   ├── remote_executor/ # Remote Execution Service (Step 0.1): remote commands & file transfer from VM04 via SSH
+│   │   └── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
 │   └── ...                  # (collectors, parsers, normalizers, utils — as added)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # e.g. run_remote_executor_integration.sh
+│   └── integration/         # e.g. run_remote_executor_integration.sh, run_repo_sync_integration.sh
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -47,7 +48,8 @@ th_timmy/
 
 - [x] Project structure created
 - [x] Git repository initialized
-- [x] **Step 0.1 (Remote Execution, VM04 bootstrap)** — closed; see [docs/KROK_0.1_ZAMKNIECIE.md](docs/KROK_0.1_ZAMKNIECIE.md) and [automation_scripts/orchestrators/remote_executor/README.md](automation_scripts/orchestrators/remote_executor/README.md) (installation, usage, tests).
+- [x] **Step 0.1 (Remote Execution, VM04 bootstrap)** — closed; see [docs/STEP_0.1_CLOSED.md](docs/STEP_0.1_CLOSED.md) and [automation_scripts/orchestrators/remote_executor/README.md](automation_scripts/orchestrators/remote_executor/README.md) (installation, usage, tests).
+- [x] **Step 0.2 (Repository Sync)** — see [docs/REPO_SYNC_DESIGN.md](docs/REPO_SYNC_DESIGN.md) and [automation_scripts/orchestrators/repo_sync/README.md](automation_scripts/orchestrators/repo_sync/README.md).
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -75,6 +77,8 @@ For running Python and automation from VM04 (including Remote Execution):
 
 ## Documentation
 
+- [Step 0.1 Closure](docs/STEP_0.1_CLOSED.md) - Remote Execution Service (Step 0.1) scope and verification
+- [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) - Repository Sync Service (Step 0.2) design
 - [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) - Comprehensive system architecture
 - [Data Flow Documentation](docs/DATA_FLOW.md) - Data flow through the system
 - [Anonymization Policy](docs/ANONYMIZATION.md) - Data anonymization and privacy policy
