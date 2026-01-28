@@ -1,106 +1,62 @@
-MIT License
+Business Source License 1.1
 
-Copyright (c) 2024 Threat Hunting Team
+Copyright (c) 2025 Pawel Linkert
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+Licensor: Pawel Linkert
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Licensed Work: Threat Hunting Automation Lab - th_timmy
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Additional Use Grant: None
 
----
+Change Date: 2029-01-01
 
-## Additional Terms and Conditions
+Change License: Apache License 2.0
 
-### Security and Privacy
+On the date specified above (the "Change Date"), the Licensed Work will become available under the terms of the Change License, subject to the additional use grant specified above.
 
-This software is designed for threat hunting operations in a lab environment.
-Users are responsible for:
+TERMS AND CONDITIONS
 
-- Implementing appropriate security measures
-- Complying with data protection and privacy regulations
-- Proper handling of sensitive data
-- Following security best practices
+1. Definitions.
 
-### Data Protection
+"License" means this Business Source License 1.1.
 
-This software includes anonymization features for protecting personally
-identifiable information (PII). Users must:
+"Licensed Work" means the software, documentation, and other material covered by this License.
 
-- Comply with applicable data protection regulations (GDPR, CCPA, etc.)
-- Implement appropriate data retention policies
-- Follow anonymization procedures as documented
-- Respect privacy and confidentiality requirements
+"Licensor" means the copyright owner or entity authorized by the copyright owner that is granting the License.
 
-### Use Restrictions
+"Additional Use Grant" means any use of the Licensed Work granted by the Licensor that is not included in the License.
 
-This software is intended for:
+"Change Date" means the date specified above on which the Licensed Work will become available under the Change License.
 
-- Threat hunting operations
-- Security research and analysis
-- Educational purposes
-- Authorized security testing
+"Change License" means the license specified above that will apply to the Licensed Work after the Change Date.
 
-Users must not use this software for:
+2. Grant of Copyright License. Subject to the terms and conditions of this License, Licensor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable copyright license to use, reproduce, distribute, prepare derivative works of, publicly display, publicly perform, sublicense, and distribute the Licensed Work and such derivative works in source or object form, provided that You do not use the Licensed Work for a Commercial Use.
 
-- Unauthorized access to systems
-- Malicious activities
-- Violation of laws or regulations
-- Any illegal purposes
+3. Grant of Patent License. Subject to the terms and conditions of this License, Licensor hereby grants to You a perpetual, worldwide, non-exclusive, no-charge, royalty-free, irrevocable (except as stated in this section) patent license to make, have made, use, offer to sell, sell, import, and otherwise transfer the Licensed Work, where such license applies only to those patent claims licensable by such Licensor that are necessarily infringed by their contribution(s) alone or by combination of their contribution(s) with the Licensed Work to which such contribution(s) was submitted. If You institute patent litigation against any entity (including a cross-claim or counterclaim in a lawsuit) alleging that the Licensed Work or a contribution incorporated within the Licensed Work constitutes direct or contributory patent infringement, then any patent licenses granted to You under this License for that Licensed Work shall terminate as of the date such litigation is filed.
 
-### No Warranty
+4. Commercial Use Restriction. You may not use the Licensed Work for Commercial Use. "Commercial Use" means any use of the Licensed Work that is intended for or directed toward commercial advantage or monetary compensation, including but not limited to:
+   a. Selling or licensing the Licensed Work or any derivative works thereof;
+   b. Using the Licensed Work to provide commercial services;
+   c. Incorporating the Licensed Work into a commercial product;
+   d. Any other use that generates revenue or commercial benefit from the Licensed Work.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+5. Exceptions. The Commercial Use restriction does not apply to:
+   a. Use for personal, educational, or research purposes;
+   b. Use for internal business operations that do not involve selling or licensing the Licensed Work;
+   c. Use that has been explicitly authorized in writing by the Licensor.
 
-### Limitation of Liability
+6. Redistribution. You may reproduce and distribute copies of the Licensed Work or derivative works thereof in any medium, with or without modifications, and in source or object form, provided that You meet the following conditions:
+   a. You must give any other recipients of the Licensed Work or derivative works a copy of this License;
+   b. You must cause any modified files to carry prominent notices stating that You changed the files;
+   c. You must retain, in the source form of any derivative works that You distribute, all copyright, patent, trademark, and attribution notices from the source form of the Licensed Work;
+   d. You may not use the Licensed Work for Commercial Use.
 
-IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-USE OR OTHER DEALINGS IN THE SOFTWARE.
+7. Termination. If You violate any term of this License, Your rights under this License will terminate automatically. Upon termination, You must destroy all copies of the Licensed Work in Your possession or control.
 
-### Compliance
+8. Change License. On the Change Date specified above, the Licensed Work will become available under the Change License. After the Change Date, You may use the Licensed Work under the terms of the Change License, subject to any additional use grant specified above.
 
-Users are responsible for ensuring compliance with:
+9. No Warranty. THE LICENSED WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE LICENSORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE LICENSED WORK OR THE USE OR OTHER DEALINGS IN THE LICENSED WORK.
 
-- Applicable laws and regulations
-- Organizational policies
-- Security standards
-- Data protection requirements
+10. Request for Commercial Use. If You wish to use the Licensed Work for Commercial Use, You must contact the Licensor at [contact information] to obtain written permission. The Licensor reserves the right to grant or deny such permission at their sole discretion, and may impose additional terms and conditions.
 
-### Support
-
-This software is provided without formal support. Users may:
-
-- Review documentation
-- Contribute improvements
-- Report issues
-- Seek community assistance
-
-### Contributions
-
-Contributions to this software are welcome. Contributors agree to:
-
-- License contributions under the same MIT License
-- Follow code quality standards
-- Provide appropriate documentation
-- Respect security and privacy requirements
-
----
-
-For questions or concerns regarding this license, please contact the Threat
-Hunting Team.
+END OF TERMS AND CONDITIONS
