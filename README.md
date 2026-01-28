@@ -50,8 +50,8 @@ th_timmy/
 - [x] Project structure created
 - [x] Git repository initialized
 - [x] **Step 0.1 (Remote Execution)** — closed
-- [x] **Step 0.2 (Repository Sync)** — in place
-- [x] **Step 0.3 (Configuration Management)** — in place
+- [x] **Step 0.2 (Repository Sync)** — closed
+- [x] **Step 0.3 (Configuration Management)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation

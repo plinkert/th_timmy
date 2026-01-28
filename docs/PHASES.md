@@ -29,7 +29,7 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | In place |
+| **Status** | Closed |
 | **What it does** | The project files are kept in sync from VM04 to the other machines (VM01–VM03). VM04 holds the main copy and pushes updates over the network. The other machines receive a copy of the files; they do not need to run version control themselves. This keeps everyone on the same version of scripts and config. |
 | **Module README** | [automation_scripts/orchestrators/repo_sync/README.md](../automation_scripts/orchestrators/repo_sync/README.md) — requirements, configuration, and usage. |
 | **Design and model** | [Repository Sync Design](REPO_SYNC_DESIGN.md): how sync works, what runs where, and how it fits with Step 0.1. |
@@ -42,7 +42,7 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | In place |
+| **Status** | Closed |
 | **What it does** | Central management and sync of config files on all VMs. Configs are validated (JSON Schema), backed up (encrypted, min. 90-day retention), and written atomically; on write failure, the previous version is restored from backup. |
 | **Module README** | [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) — requirements, config, usage, tests. |
 | **Configuration** | [Configuration Guide](CONFIGURATION.md): `config_management` section (backup_location, config_paths, config_schemas, schema_dir). |
