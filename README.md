@@ -48,11 +48,13 @@ th_timmy/
 
 - [x] Project structure created
 - [x] Git repository initialized
-- [x] **Step 0.1 (Remote Execution, VM04 bootstrap)** — closed; see [docs/STEP_0.1_CLOSED.md](docs/STEP_0.1_CLOSED.md) and [automation_scripts/orchestrators/remote_executor/README.md](automation_scripts/orchestrators/remote_executor/README.md) (installation, usage, tests).
-- [x] **Step 0.2 (Repository Sync)** — see [docs/REPO_SYNC_DESIGN.md](docs/REPO_SYNC_DESIGN.md) and [automation_scripts/orchestrators/repo_sync/README.md](automation_scripts/orchestrators/repo_sync/README.md).
+- [x] **Step 0.1 (Remote Execution)** — closed
+- [x] **Step 0.2 (Repository Sync)** — in place
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
+
+For a short summary of each step and links to setup, configuration, and testing, see **[docs/PHASES.md](docs/PHASES.md)**.
 
 ## Quick Start
 
@@ -77,9 +79,9 @@ For running Python and automation from VM04 (including Remote Execution):
 
 ## Documentation
 
-- [Step 0.1 Closure](docs/STEP_0.1_CLOSED.md) - Remote Execution Service (Step 0.1) scope and verification
-- [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) - Repository Sync Service (Step 0.2) design
-- [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) - Comprehensive system architecture
+- [Implementation phases and status](docs/PHASES.md) — Summary of each step (what it does, status) and links to setup, configuration, and testing
+- [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) — How Repository Sync (Step 0.2) works and how it fits with Remote Execution
+- [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) — System architecture
 - [Data Flow Documentation](docs/DATA_FLOW.md) - Data flow through the system
 - [Anonymization Policy](docs/ANONYMIZATION.md) - Data anonymization and privacy policy
 - [User Guide for Hunters](docs/USER_GUIDE_HUNTER.md) - Guide for threat hunters
