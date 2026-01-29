@@ -1,0 +1,1 @@
+{"Query": "DeviceProcessEvents | where Timestamp > ago(7d)"}

@@ -2,26 +2,128 @@
 # Copy and adapt for new threat hunting playbooks
 
 name: "Template Playbook"
-description: "Template for threat hunting playbooks"
+description: "Short high-level goal"
 version: "1.0"
+author: "TH Team"
+created_at: "YYYY-MM-DD"
+changelog: |
+  - 1.0 (YYYY-MM-DD): Initial release
+
 mitre_technique_id: ""
 mitre_technique_name: ""
 
-# Technique description - used as intro to technical section in hunt report
 technique_description: |
   Short description of the MITRE ATT&CK technique (goal, typical indicators, threat context).
   Text can be multiline. Used as introduction to the technical section in the hunt report.
 
+scope: |
+  - Systems in scope
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: APT, malware, etc.
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process events
+    SIEM: Security Information and Event Management - log aggregation
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "Condition that triggers this hunt"
+  statement: "Hypothesis to verify"
+  goal: "Goal of the hunt"
+  scope: "Scope of the hunt"
+
+methodology: "Query-based hunting with IOC/IOA matching"
+
+hunting_indicators: |
+  Key indicators, event types, process names, command patterns to hunt for.
+
+true_positive_conditions: |
+  Conditions that indicate confirmed malicious activity.
+
+false_positive_conditions: |
+  Conditions that indicate benign/legitimate activity.
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM data"
+    operation: "Run queries"
+    success_criteria: "Events returned"
+    outcome: "List of events"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check context"
+    success_criteria: "Exclude known benign"
+    outcome: "Filtered list"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate"
+    success_criteria: "Context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate or close as FP"
+
+decision_criteria:
+  high_risk: []
+  medium_risk: []
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident in ticket system"
+  notification_roles: ["SOC Lead", "Incident Response"]
+  ir_playbook_ref: "IR-XXX-Response"
+
+metrics:
+  - "Average hunt execution time (target: <2h)"
+  - "True positives per hunt"
+  - "False positive rate"
+
+checklist:
+  pre_hunt:
+    - "Verify data availability"
+    - "Confirm retention"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+
+use_cases:
+  - scenario: "Scenario name"
+    description: "Description"
+    data_source: "EDR/SIEM"
+
+# Minimum 5 queries per technique required. Add tool_class for analyst to filter by tool class.
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
     query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
     query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
     query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
     query_path: "queries/ms_defender_api.json"
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual_02.sql"

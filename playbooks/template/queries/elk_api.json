@@ -2,7 +2,7 @@
   "query": {
     "bool": {
       "filter": [
-        { "range": { "@timestamp": { "gte": "{{timestamp_start}}", "lte": "{{timestamp_end}}" } } },
+        { "range": { "@timestamp": { "gte": "now-7d", "lte": "now" } } },
         { "match": { "process.name": "powershell" } }
       ]
     }

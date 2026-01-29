@@ -1,0 +1,50 @@
+# T1486 Data Encrypted for Impact - Elk / Elasticsearch queries
+tool: elk
+tool_class: siem
+
+manual:
+  vssadmin_bcdedit:
+    description: "vssadmin delete, bcdedit, wbadmin, shadow - ransomware prep"
+    sql: |
+      -- T1486 Data Encrypted for Impact: ransomware indicators
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%vssadmin%delete%' OR command_line LIKE '%bcdedit%'
+         OR command_line LIKE '%wbadmin%' OR command_line LIKE '%shadow%'
+         OR event_type = 'FileCreate' AND file_extension IN ('.encrypted', '.locked', '.crypto'))
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  mass_file_extension:
+    description: "Mass file extension changes - .encrypted, .locked, .crypto, .ransom"
+    sql: |
+      -- T1486 Data Encrypted for Impact Query 2: Mass file extension changes
+      -- Hunts for file renames to ransomware extensions (.encrypted, .locked, .crypto)
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%.encrypted%' OR command_line LIKE '%.locked%' OR command_line LIKE '%.crypto%'
+         OR file_extension IN ('.encrypted', '.locked', '.crypto', '.ransom', '.enc'))
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+api:
+  vssadmin_bcdedit:
+    description: "Elasticsearch DSL - vssadmin, bcdedit, wbadmin, shadow delete"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - query_string: { "query": "vssadmin OR bcdedit OR wbadmin OR shadow delete" }
+
+  mass_file_extension:
+    description: "Elasticsearch DSL - file extensions .encrypted, .locked, .crypto"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - terms: { "file.extension": ["encrypted", "locked", "crypto", "ransom", "enc"] }
+            - terms: { "event.action": ["created", "renamed", "modified"] }

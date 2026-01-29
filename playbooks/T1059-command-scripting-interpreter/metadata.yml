@@ -1,25 +1,234 @@
 name: "Command and Scripting Interpreter"
 description: "Detect suspicious PowerShell, cmd, bash usage (encoded commands, download cradle)"
-version: "1.0"
+version: "1.2"
+author: "TH Team"
+created_at: "2025-01-29"
+changelog: |
+  - 1.2 (2025-01-27): Migrated queries to YAML format (elk.yml, ms_defender.yml) - one file per tool, query_id/query_ids
+  - 1.1 (2025-01-29): Added output, triage, response; required_indices; elk_manual_03, ms_defender_manual_03
+  - 1.0 (2025-01-29): Initial release with full structure
+
 mitre_technique_id: "T1059"
 mitre_technique_name: "Command and Scripting Interpreter"
 
 technique_description: |
   Adversaries abuse command and scripting interpreters to execute arbitrary commands. Common vectors:
-  PowerShell (encoded commands, download cradle, Invoke-Expression), cmd.exe, bash. Typical indicators:
+  PowerShell (encoded commands, download cradle, Invoke-Expression), cmd.exe, bash. Sub-techniques:
+  T1059.001 (PowerShell), T1059.003 (Windows Command Shell), T1059.004 (Unix Shell). Typical indicators:
   base64-encoded arguments, -EncodedCommand, IEX/Invoke-Expression, web requests from script hosts,
-  unusual parent processes spawning interpreters.
+  unusual parent processes spawning interpreters, bypass flags (-ExecutionPolicy Bypass, -WindowStyle Hidden).
+
+scope: |
+  - Windows/Linux endpoints with EDR or process logging
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: APT, malware, initial access, execution
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process creation, command line
+    SIEM: Security Information and Event Management - process logs, Sysmon
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "Suspicious script host execution (PowerShell, cmd) with encoded commands or download cradle"
+  statement: "Adversary uses scripting interpreters to execute malicious commands"
+  goal: "Identify T1059 abuse - encoded commands, download cradle, unusual parents"
+  scope: "All endpoints with process logging, last 7 days"
+
+methodology: "Query-based hunting with IOC matching on process command lines"
+
+hunting_indicators: |
+  - PowerShell: -EncodedCommand, -e, IEX, Invoke-Expression, Invoke-WebRequest, Invoke-RestMethod
+  - Download cradle: DownloadString, DownloadFile, WebClient, Net.WebClient
+  - Bypass flags: -ExecutionPolicy Bypass, -WindowStyle Hidden, -NoProfile, -NonInteractive
+  - Base64 in command line (indicator of encoded payload)
+  - cmd.exe: /c with suspicious commands, cmd /c powershell
+  - Unusual parents: Office apps, PDF readers, browsers spawning powershell/cmd
+  - Script hosts: wscript.exe, cscript.exe, mshta.exe with script content
+  - Bash: curl/wget to pipe to sh, base64 -d | sh
+
+true_positive_conditions: |
+  - PowerShell with -EncodedCommand or -e from non-admin/automation context
+  - IEX/Invoke-Expression with DownloadString or web URL (download cradle)
+  - PowerShell spawned by Office (winword, excel, outlook) or PDF reader
+  - cmd.exe /c powershell -NoProfile -EncodedCommand (nested invocation)
+  - Base64-encoded command in process command line (decoded contains malicious content)
+  - mshta/wscript/cscript executing remote script (http/https URL)
+  - bash -c with curl | sh or wget | sh pattern (remote script execution)
+  - Unusual parent: scheduled task, service, or user app spawning script host
+
+false_positive_conditions: |
+  - Legitimate admin scripts: GPO, SCCM, deployment, patch management
+  - DevOps/automation: Ansible, Chef, Puppet, CI/CD runners
+  - Security tools: EDR, AV scanning, vulnerability scanners
+  - Microsoft signed: OneDrive, Teams, Office update scripts
+  - Developer environment: VS Code, Azure CLI, AWS CLI, npm scripts
+  - System maintenance: Windows Update, DISM, sfc
+  - Single -NoProfile without -EncodedCommand (may be legitimate)
+  - Known benign download: winget, chocolatey, package managers
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM process data"
+    operation: "Run queries for PowerShell, cmd with EncodedCommand, IEX, DownloadString"
+    success_criteria: "Events returned"
+    outcome: "List of suspicious script executions"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check parent process, command line context"
+    success_criteria: "Exclude known benign"
+    outcome: "Filtered list"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate with user, asset"
+    success_criteria: "Context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate or close as FP"
+
+decision_criteria:
+  high_risk:
+    - "PowerShell -EncodedCommand from Office"
+    - "Download cradle (IEX + DownloadString)"
+  medium_risk:
+    - "PowerShell -NoProfile from unknown parent"
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident in ticket system"
+  notification_roles: ["SOC Lead", "Incident Response"]
+  ir_playbook_ref: "IR-001-Malware-Response"
+
+metrics:
+  - "Average hunt execution time (target: <2h)"
+  - "True positives per hunt"
+  - "False positive rate"
+
+checklist:
+  pre_hunt:
+    - "Verify EDR/SIEM process data availability"
+    - "Confirm 7-day retention"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+
+use_cases:
+  - scenario: "PowerShell download cradle"
+    description: "Malware downloads payload via IEX(DownloadString)"
+    data_source: "EDR DeviceProcessEvents"
+  - scenario: "Office macro to PowerShell"
+    description: "Macro spawns encoded PowerShell"
+    data_source: "EDR, Sysmon"
+
+# Expected output format - required columns for triage and correlation
+output:
+  siem:
+    required_columns:
+      - timestamp
+      - event_code
+      - process_name
+      - command_line
+      - parent_process
+    description: |
+      SIEM (Sysmon/process logs): Event 4688, Sysmon Event 1 (Process Create).
+      Adapt event_type/event_code to schema. Key: command_line, parent_process for context.
+  edr:
+    required_columns:
+      - Timestamp
+      - DeviceName
+      - FileName
+      - ProcessCommandLine
+      - InitiatingProcessFileName
+      - InitiatingProcessCommandLine
+    description: |
+      EDR (DeviceProcessEvents): Process creation with command line.
+      InitiatingProcessFileName/InitiatingProcessCommandLine for parent-child analysis.
+
+# Quick triage - fast verification before full analysis
+triage:
+  steps:
+    - step: 1
+      action: "Check InitiatingProcessFileName / parent process"
+      quick_reject: "Known benign: svchost, taskeng, services, GPO/SCCM, CI/CD"
+      escalate: "Office (winword, excel), PDF reader, browser, unknown"
+    - step: 2
+      action: "Decode -EncodedCommand if present"
+      quick_reject: "Decoded content is GPO script, patch script, known admin tool"
+      escalate: "Obfuscated, download URL, IEX(DownloadString), suspicious path"
+    - step: 3
+      action: "Check for download cradle"
+      quick_reject: "Microsoft CDN, winget, chocolatey, package manager"
+      escalate: "Unknown URL, pastebin, raw GitHub, suspicious domain"
+    - step: 4
+      action: "Correlate with bypass flags"
+      quick_reject: "Single -NoProfile without -EncodedCommand (may be admin)"
+      escalate: "-ExecutionPolicy Bypass + -WindowStyle Hidden + -EncodedCommand"
+  quick_fp_criteria:
+    - "Parent is GPO, SCCM, Ansible, Jenkins, Azure DevOps"
+    - "Decoded command is known admin/deployment script"
+    - "Download from Microsoft, winget, chocolatey"
+  quick_tp_criteria:
+    - "Office/PDF reader spawning PowerShell with -EncodedCommand"
+    - "IEX(DownloadString('http://...')) from unknown source"
+    - "cmd /c powershell -NoProfile -EncodedCommand (nested invocation)"
+
+# Response actions when threat confirmed
+response:
+  on_confirmed:
+    - "Open incident in ticket system (reference: escalation.ir_playbook_ref)"
+    - "Block/quarantine malicious process if EDR supports"
+    - "Collect artifacts: process memory, command line, script files, prefetch"
+    - "Notify SOC Lead and Incident Response per escalation.notification_roles"
+    - "Check for persistence: Run keys, scheduled tasks, services"
+  ir_playbook_ref: "IR-001-Malware-Response"
+  artifacts_to_collect:
+    - "Process command line (full)"
+    - "Decoded -EncodedCommand content if applicable"
+    - "Downloaded script/payload (if accessible)"
+    - "Parent process tree"
+    - "Relevant registry keys (Run, RunOnce)"
+  containment_notes: "Block process; isolate host if lateral movement suspected"
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
-    query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+    query_path: "queries/elk.yml"
+    query_ids: [encoded_commands, download_cradle, bypass_flags]
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
-    query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+    query_path: "queries/elk.yml"
+    query_id: encoded_commands
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "API"
+    query_path: "queries/elk.yml"
+    query_id: download_cradle
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
-    query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+    query_path: "queries/ms_defender.yml"
+    query_ids: [encoded_commands, download_cradle, bypass_flags]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
-    query_path: "queries/ms_defender_api.json"
+    query_path: "queries/ms_defender.yml"
+    query_id: encoded_commands

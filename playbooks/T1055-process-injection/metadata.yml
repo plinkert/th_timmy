@@ -1,25 +1,237 @@
 name: "Process Injection"
 description: "Detect code injection into processes (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)"
-version: "1.0"
+version: "1.2"
+author: "TH Team"
+created_at: "2025-01-29"
+changelog: |
+  - 1.2 (2025-01-27): Migrated queries to YAML format (elk.yml, ms_defender.yml) - one file per tool, query_id/query_ids
+  - 1.1 (2025-01-29): Added output, triage, response; required_indices in data_sources
+  - 1.0 (2025-01-29): Initial release with full structure
+
 mitre_technique_id: "T1055"
 mitre_technique_name: "Process Injection"
 
 technique_description: |
   Process Injection is a technique where adversaries inject malicious code into the address space of
   another process to evade defenses. Common APIs include VirtualAllocEx, WriteProcessMemory,
-  CreateRemoteThread. Typical indicators: suspicious cross-process memory writes, remote thread
-  creation from non-browser processes, unusual parent-child process relationships.
+  CreateRemoteThread. Sub-techniques: DLL Injection (T1055.001), PE Injection (T1055.002),
+  Thread Execution Hijacking (T1055.003), Process Hollowing (T1055.012). Typical indicators:
+  suspicious cross-process memory writes, remote thread creation from non-browser processes,
+  unusual parent-child process relationships, NtMapViewOfSection, VirtualAllocEx/WriteProcessMemory
+  sequence targeting another process.
+
+scope: |
+  - Windows endpoints with EDR or Sysmon
+  - Linux endpoints (ptrace, /proc) - optional
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: APT, malware, defense evasion
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process events, memory operations, CreateRemoteThread
+    SIEM: Security Information and Event Management - Sysmon logs, log aggregation, query interface
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "Suspicious cross-process memory operations or CreateRemoteThread from non-browser process"
+  statement: "Adversary injects code into another process to evade detection"
+  goal: "Identify process injection activity (T1055)"
+  scope: "All endpoints with EDR/Sysmon, last 7 days"
+
+methodology: "Query-based hunting with IOC/IOA matching on EDR and SIEM data"
+
+hunting_indicators: |
+  - Memory manipulation API calls: VirtualAllocEx, WriteProcessMemory, NtMapViewOfSection
+  - Remote thread creation: CreateRemoteThread, NtCreateThreadEx, RtlCreateUserThread
+  - Sysmon event codes: 10 (Process Access), 7 (Image Loaded), 8 (CreateRemoteThread)
+  - Cross-process memory operations (source process != target process)
+  - Unusual parent-child: e.g. Office spawning CreateRemoteThread to lsass, svchost
+  - DLL injection into high-value targets: lsass.exe, explorer.exe, browser processes
+  - Process hollowing: suspended process creation followed by memory overwrite
+
+true_positive_conditions: |
+  - CreateRemoteThread/NtCreateThreadEx from process A into process B where A is not a known
+    legitimate injector (browsers, AV, EDR, debuggers, dev tools)
+  - WriteProcessMemory or NtWriteVirtualMemory from untrusted process to lsass, csrss, winlogon
+  - VirtualAllocEx + WriteProcessMemory + CreateRemoteThread sequence in single process chain
+  - Process hollowing: CreateProcess(CREATE_SUSPENDED) + NtUnmapViewOfSection + WriteProcessMemory
+  - Injection from script host (powershell.exe, wscript.exe) into system process
+  - Unusual module load (DLL) in process context from non-standard path (Temp, AppData)
+
+false_positive_conditions: |
+  - Legitimate software: antivirus, EDR, DLP, browser sandbox (Chrome, Edge child processes)
+  - Debuggers and development tools: Visual Studio, WinDbg, Process Explorer, Process Hacker
+  - Windows components: WerFault, dwm.exe, font cache, Windows Update
+  - Known benign injectors: .NET runtime (clr.dll injection), Java (jvm.dll), legitimate plugins
+  - Browser extensions loading into browser process (expected behavior)
+  - Software installation/update: MSI, InstallShield, legitimate updaters
+  - Single VirtualAllocEx without subsequent WriteProcessMemory (may be normal allocation)
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM data"
+    operation: "Run queries for CreateRemoteThreadApiCall, ProcessMemoryAccess, Sysmon Event 10"
+    success_criteria: "Events returned"
+    outcome: "List of suspicious process injection events"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check parent process, target process, command line"
+    success_criteria: "Exclude known benign injectors"
+    outcome: "Filtered list for enrichment"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate with AD, threat intel"
+    success_criteria: "User/asset context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate to IR or close as FP"
+
+decision_criteria:
+  high_risk:
+    - "CreateRemoteThread from script host to lsass"
+    - "WriteProcessMemory to csrss/winlogon"
+  medium_risk:
+    - "CreateRemoteThread from unknown process"
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident in ticket system"
+  notification_roles: ["SOC Lead", "Incident Response"]
+  ir_playbook_ref: "IR-001-Malware-Response"
+
+metrics:
+  - "Average hunt execution time (target: <2h)"
+  - "True positives per hunt"
+  - "False positive rate"
+  - "Data coverage (endpoints with EDR)"
+
+checklist:
+  pre_hunt:
+    - "Verify EDR/SIEM data availability"
+    - "Confirm 7-day retention"
+    - "Check baseline for known benign injectors"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+
+use_cases:
+  - scenario: "Process injection from Office"
+    description: "Malware injected via macro into lsass"
+    data_source: "EDR DeviceEvents"
+  - scenario: "Process hollowing"
+    description: "Suspended process + memory overwrite"
+    data_source: "Sysmon Event 1, 10"
+
+# Expected output format - required columns for triage and correlation
+output:
+  siem:
+    required_columns:
+      - timestamp
+      - event_code
+      - process_name
+      - target_process
+      - command_line
+      - parent_process
+    description: |
+      SIEM (Sysmon): Event 8 (CreateRemoteThread), Event 10 (Process Access).
+      Adapt event_type/event_code to schema: Sysmon 8=CreateRemoteThread, 10=ProcessAccess.
+      For custom EDR ingest: VirtualAllocEx, WriteProcessMemory map to memory operations.
+  edr:
+    required_columns:
+      - Timestamp
+      - DeviceName
+      - ActionType
+      - FileName
+      - ProcessCommandLine
+      - InitiatingProcessFileName
+    description: |
+      EDR (DeviceEvents): CreateRemoteThreadApiCall, ProcessMemoryAccess.
+      Include InitiatingProcessFileName for parent-child analysis.
+
+# Quick triage - fast verification before full analysis
+triage:
+  steps:
+    - step: 1
+      action: "Check InitiatingProcessFileName / parent process"
+      quick_reject: "Known benign: svchost, SearchIndexer, browser child, AV/EDR process"
+      escalate: "Unknown or script host (powershell, wscript, mshta)"
+    - step: 2
+      action: "Check target process"
+      quick_reject: "Self-injection (same PID) or browser sandbox"
+      escalate: "lsass, csrss, winlogon, explorer, system process"
+    - step: 3
+      action: "Check command line for injection tooling"
+      quick_reject: "Legitimate: Visual Studio, WinDbg, Process Explorer"
+      escalate: "Obfuscated, encoded, or suspicious path (Temp, AppData)"
+    - step: 4
+      action: "Correlate with creation time"
+      quick_reject: "Single event, no sequence"
+      escalate: "VirtualAllocEx + WriteProcessMemory + CreateRemoteThread sequence"
+  quick_fp_criteria:
+    - "Parent is known AV/EDR/browser"
+    - "Target is same process (self)"
+    - "Single VirtualAllocEx without WriteProcessMemory"
+  quick_tp_criteria:
+    - "Script host (powershell, wscript) -> lsass/csrss/winlogon"
+    - "Office (winword, excel) -> CreateRemoteThread"
+    - "Process hollowing pattern (suspended + overwrite)"
+
+# Response actions when threat confirmed
+response:
+  on_confirmed:
+    - "Open incident in ticket system (reference: escalation.ir_playbook_ref)"
+    - "Isolate affected host from network (if policy allows)"
+    - "Collect artifacts: memory dump, process list, prefetch, MFT"
+    - "Notify SOC Lead and Incident Response per escalation.notification_roles"
+    - "Preserve timeline: do not reboot before forensic capture"
+  ir_playbook_ref: "IR-001-Malware-Response"
+  artifacts_to_collect:
+    - "Memory dump (if critical host)"
+    - "Process tree snapshot"
+    - "Relevant registry keys (Run, Services)"
+    - "Prefetch and recent files"
+  containment_notes: "Isolation decision per IR playbook; avoid alerting attacker"
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
-    query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+    query_path: "queries/elk.yml"
+    query_ids: [memory_ops, sysmon_event_10, sysmon_event_8]
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
-    query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+    query_path: "queries/elk.yml"
+    query_id: memory_ops
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "API"
+    query_path: "queries/elk.yml"
+    query_id: sysmon_event_10
+    required_indices: ["sysmon-*"]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
-    query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+    query_path: "queries/ms_defender.yml"
+    query_ids: [cross_process, script_hosts]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
-    query_path: "queries/ms_defender_api.json"
+    query_path: "queries/ms_defender.yml"
+    query_id: cross_process

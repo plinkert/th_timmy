@@ -1,0 +1,69 @@
+# T1059 Command and Scripting Interpreter - Elk / Elasticsearch queries
+tool: elk
+tool_class: siem
+
+manual:
+  encoded_commands:
+    description: "PowerShell -EncodedCommand, IEX, Invoke-Expression - suspicious script hosts"
+    sql: |
+      -- T1059 Command and Scripting Interpreter: suspicious PowerShell/cmd/bash
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (process_name LIKE '%powershell%' OR process_name LIKE '%cmd%' OR process_name LIKE '%bash%')
+        AND (command_line LIKE '%EncodedCommand%' OR command_line LIKE '%IEX%' OR command_line LIKE '%Invoke-Expression%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  download_cradle:
+    description: "IEX, DownloadString, Invoke-WebRequest, Net.WebClient - download cradle patterns"
+    sql: |
+      -- T1059 Command and Scripting Interpreter Query 2: PowerShell download cradle
+      -- Hunts for IEX, DownloadString, Invoke-WebRequest, Net.WebClient patterns
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE process_name LIKE '%powershell%'
+        AND (command_line LIKE '%DownloadString%' OR command_line LIKE '%Invoke-WebRequest%'
+         OR command_line LIKE '%Net.WebClient%' OR command_line LIKE '%IEX(%'
+         OR command_line LIKE '%Invoke-Expression%' OR command_line LIKE '%iex %')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  bypass_flags:
+    description: "-ExecutionPolicy Bypass, -WindowStyle Hidden, -NoProfile, cmd spawning powershell"
+    sql: |
+      -- T1059 Command and Scripting Interpreter Query 3: Bypass flags and unusual parents
+      -- Hunts for -ExecutionPolicy Bypass, -WindowStyle Hidden, -NoProfile, cmd spawning powershell
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (process_name LIKE '%powershell%' OR process_name LIKE '%pwsh%' OR process_name LIKE '%cmd%')
+        AND (command_line LIKE '%ExecutionPolicy%Bypass%' OR command_line LIKE '%WindowStyle%Hidden%'
+         OR command_line LIKE '%-NoProfile%' OR command_line LIKE '%-NonInteractive%'
+         OR (command_line LIKE '%cmd%' AND command_line LIKE '%powershell%'))
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+api:
+  encoded_commands:
+    description: "Elasticsearch DSL - EncodedCommand, IEX, Invoke-Expression"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - terms: { "process.name": ["powershell.exe", "cmd.exe", "bash"] }
+            - query_string: { "query": "EncodedCommand OR IEX OR Invoke-Expression" }
+
+  download_cradle:
+    description: "Elasticsearch DSL - DownloadString, Invoke-WebRequest, Net.WebClient"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - terms: { "process.name": ["powershell.exe", "pwsh.exe"] }
+            - query_string:
+                query: "DownloadString OR Invoke-WebRequest OR Net.WebClient OR IEX OR Invoke-Expression"
+                fields: ["process.command_line", "process.args"]

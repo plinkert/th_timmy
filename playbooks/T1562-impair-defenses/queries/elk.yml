@@ -1,0 +1,53 @@
+# T1562 Impair Defenses - Elk / Elasticsearch queries
+tool: elk
+tool_class: siem
+
+manual:
+  defender_disable:
+    description: "Disable-WindowsDefender, Set-MpPreference, auditpol, reg delete, DisableRealtimeMonitoring"
+    sql: |
+      -- T1562 Impair Defenses: disable AV, EDR, logs
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%Disable-WindowsDefender%' OR command_line LIKE '%Set-MpPreference%'
+         OR command_line LIKE '%auditpol%' OR command_line LIKE '%reg delete%'
+         OR command_line LIKE '%DisableRealtimeMonitoring%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  auditpol_wevtutil:
+    description: "auditpol clear/remove, wevtutil cl, Clear-EventLog, sc stop WinDefend"
+    sql: |
+      -- T1562 Impair Defenses Query 2: auditpol, wevtutil, service stop
+      -- Hunts for audit policy clearing, event log clearing, Defender service stop
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%auditpol%clear%' OR command_line LIKE '%auditpol%remove%'
+         OR command_line LIKE '%wevtutil%cl%' OR command_line LIKE '%Clear-EventLog%'
+         OR command_line LIKE '%sc stop%WinDefend%' OR command_line LIKE '%net stop%WinDefend%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+api:
+  defender_disable:
+    description: "Elasticsearch DSL - Disable-WindowsDefender, Set-MpPreference, auditpol"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - query_string:
+                query: "Disable-WindowsDefender OR Set-MpPreference OR auditpol OR DisableRealtimeMonitoring"
+
+  auditpol_wevtutil:
+    description: "Elasticsearch DSL - auditpol, wevtutil, Clear-EventLog, WinDefend"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - query_string:
+                query: "auditpol OR wevtutil OR Clear-EventLog OR WinDefend"
+                fields: ["process.command_line", "process.args"]

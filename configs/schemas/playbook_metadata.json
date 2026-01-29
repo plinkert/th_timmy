@@ -3,11 +3,14 @@
   "title": "Playbook Metadata",
   "description": "Metadata for threat hunting playbooks with data_sources",
   "type": "object",
-  "required": ["technique_description", "data_sources"],
+  "required": ["technique_description", "data_sources", "hunting_indicators", "true_positive_conditions", "false_positive_conditions"],
   "properties": {
     "name": { "type": "string", "description": "Playbook name" },
-    "description": { "type": "string", "description": "Playbook description" },
+    "description": { "type": "string", "description": "Short high-level goal" },
     "version": { "type": "string", "description": "Version string" },
+    "author": { "type": "string", "description": "Author / Maintainer" },
+    "created_at": { "type": "string", "description": "Creation date (YYYY-MM-DD)" },
+    "changelog": { "type": "string", "description": "Version history" },
     "mitre_technique_id": { "type": "string", "description": "MITRE ATT&CK technique ID" },
     "mitre_technique_name": { "type": "string", "description": "MITRE ATT&CK technique name" },
     "technique_description": {
@@ -17,17 +20,106 @@
     },
     "data_sources": {
       "type": "array",
-      "minItems": 1,
-      "description": "List of data source queries (tool, mode, query_path)",
+      "minItems": 5,
+      "description": "List of data source queries (tool_class, tool, mode, query_path)",
       "items": {
         "type": "object",
         "required": ["tool", "mode", "query_path"],
         "properties": {
-          "tool": { "type": "string", "minLength": 1, "description": "Tool identifier (elk, ms_defender, etc.)" },
+          "tool_class": { "type": "string", "enum": ["siem", "edr", "data_lake"], "description": "Tool class - analyst selects class to get queries for available implementation" },
+          "tool": { "type": "string", "minLength": 1, "description": "Tool implementation (elk, ms_defender, splunk, etc.)" },
           "mode": { "enum": ["manual", "API"], "description": "Execution mode" },
-          "query_path": { "type": "string", "minLength": 1, "description": "Relative path to query file" }
+          "query_path": { "type": "string", "minLength": 1, "description": "Relative path to query file" },
+          "query_id": { "type": "string", "description": "Id of query in YAML file (manual/api section) - required when query_path is .yml/.yaml" },
+          "query_ids": { "type": "array", "items": { "type": "string" }, "description": "List of query ids - loader expands to multiple QueryEntry" }
         }
       }
+    },
+    "scope": { "type": "string", "description": "Systems in scope, SLA, threat types" },
+    "environment_requirements": {
+      "type": "object",
+      "description": "Tool classes (EDR, SIEM) - not specific products",
+      "properties": {
+        "tool_classes": { "type": "array", "items": { "type": "string" }, "description": "Required tool classes: EDR, SIEM, Data Lake" },
+        "min_retention_days": { "type": "integer", "description": "Minimum data retention" },
+        "permissions": { "type": "string", "description": "Required permissions" },
+        "access_policies": { "type": "string", "description": "Access policy requirements" }
+      }
+    },
+    "hypothesis": {
+      "type": "object",
+      "description": "Hunt hypothesis",
+      "properties": {
+        "trigger": { "type": "string" },
+        "statement": { "type": "string" },
+        "goal": { "type": "string" },
+        "scope": { "type": "string" }
+      }
+    },
+    "methodology": { "type": "string", "description": "Query-based, anomaly-based, IOC matching" },
+    "operational_steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": { "type": "integer" },
+          "name": { "type": "string" },
+          "input": { "type": "string" },
+          "operation": { "type": "string" },
+          "success_criteria": { "type": "string" },
+          "outcome": { "type": "string" }
+        }
+      }
+    },
+    "decision_criteria": {
+      "type": "object",
+      "properties": {
+        "high_risk": { "type": "array", "items": { "type": "string" } },
+        "medium_risk": { "type": "array", "items": { "type": "string" } },
+        "escalation_threshold": { "type": "string" }
+      }
+    },
+    "escalation": {
+      "type": "object",
+      "properties": {
+        "on_confirmed": { "type": "string" },
+        "notification_roles": { "type": "array", "items": { "type": "string" } },
+        "ir_playbook_ref": { "type": "string" }
+      }
+    },
+    "metrics": { "type": "array", "items": { "type": "string" } },
+    "checklist": {
+      "type": "object",
+      "properties": {
+        "pre_hunt": { "type": "array", "items": { "type": "string" } },
+        "post_hunt": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "use_cases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "scenario": { "type": "string" },
+          "description": { "type": "string" },
+          "data_source": { "type": "string" }
+        }
+      }
+    },
+    "hunting_indicators": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What is being searched for - key indicators, event types, process names, command patterns (required)"
+    },
+    "true_positive_conditions": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Conditions that indicate confirmed malicious activity - when to treat finding as True Positive (required)"
+    },
+    "false_positive_conditions": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Conditions that indicate benign/legitimate activity - when to treat finding as False Positive (required)"
     }
   }
 }

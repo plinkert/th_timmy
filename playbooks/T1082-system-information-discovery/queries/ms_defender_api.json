@@ -1,3 +1,0 @@
-{
-  "Query": "DeviceProcessEvents | where Timestamp > ago(24h) | where FileName in ('systeminfo.exe', 'hostname.exe', 'whoami.exe', 'ipconfig.exe') | project Timestamp, DeviceName, FileName, ProcessCommandLine"
-}

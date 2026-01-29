@@ -1,0 +1,2 @@
+// Fixture - relative time (last 7 days)
+DeviceProcessEvents | where Timestamp > ago(7d)

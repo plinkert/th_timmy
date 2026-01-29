@@ -1,6 +1,12 @@
 name: "System Information Discovery"
 description: "Detect system info gathering (systeminfo, hostname, whoami, env)"
-version: "1.0"
+version: "1.1"
+author: "TH Team"
+created_at: "2025-01-29"
+changelog: |
+  - 1.1 (2025-01-27): Added output, triage, response; migrated to YAML format (elk.yml, ms_defender.yml)
+  - 1.0 (2025-01-29): Initial release with full structure
+
 mitre_technique_id: "T1082"
 mitre_technique_name: "System Information Discovery"
 
@@ -8,18 +14,149 @@ technique_description: |
   Adversaries gather system information to understand the environment before further actions.
   Common commands: systeminfo, hostname, whoami, ipconfig, set (env vars), uname. Typical
   indicators: rapid succession of discovery commands, discovery from unusual parent processes,
-  batch execution of systeminfo/whoami/hostname in a single session.
+  batch execution of systeminfo/whoami/hostname in a single session. Often precedes lateral
+  movement or privilege escalation.
+
+scope: |
+  - Windows/Linux endpoints with EDR or process logging
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: APT, recon, lateral movement prep
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process creation, command line
+    SIEM: Security Information and Event Management - process logs
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "Rapid succession of discovery commands or discovery from unusual parent"
+  statement: "Adversary gathers system info for recon before lateral movement"
+  goal: "Identify T1082 - systeminfo, whoami, hostname abuse"
+  scope: "All endpoints with process logging, last 7 days"
+
+methodology: "Query-based hunting with IOC matching on process command lines"
+
+hunting_indicators: |
+  - Windows: systeminfo, hostname, whoami, ipconfig /all, net user, net group
+  - Environment: set, echo %PATH%, Get-ChildItem Env:
+  - Linux/macOS: uname -a, hostname, id, ifconfig, env
+  - Rapid sequence: multiple discovery commands within short time window
+  - Unusual parent: Office, browser, script host spawning discovery tools
+  - Batch execution: cmd /c systeminfo & whoami & hostname
+  - PowerShell: Get-ComputerInfo, Get-WmiObject Win32_OperatingSystem
+
+true_positive_conditions: |
+  - Rapid succession of systeminfo, whoami, hostname from same process/session (< 5 min)
+  - Discovery commands spawned by Office (winword, excel), PDF reader, or browser
+  - systeminfo/whoami from script host (powershell, wscript, mshta)
+  - Batch of discovery commands: systeminfo & whoami & ipconfig in single cmd invocation
+  - Discovery from unusual context: scheduled task, service account, non-interactive
+  - whoami /all or net user from non-admin workstation (recon before privilege escalation)
+  - Get-ComputerInfo or Get-WmiObject from script with no legitimate automation context
+
+false_positive_conditions: |
+  - Admin troubleshooting: legitimate sysadmin running systeminfo for diagnostics
+  - Scripted deployment: GPO, SCCM, Ansible gathering inventory
+  - Monitoring tools: Zabbix, Nagios, SCOM health checks
+  - Single systeminfo from RDP session (user checking system)
+  - Developer: uname, hostname in build scripts, CI/CD
+  - Help desk: whoami to verify user identity
+  - Asset management: inventory scripts (known, scheduled)
+  - systeminfo from Windows Update or patch management
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM process data"
+    operation: "Run queries for systeminfo, hostname, whoami, ipconfig"
+    success_criteria: "Events returned"
+    outcome: "List of discovery command executions"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check parent process, rapid succession"
+    success_criteria: "Exclude known benign"
+    outcome: "Filtered list"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate with user, asset"
+    success_criteria: "Context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate or close as FP"
+
+decision_criteria:
+  high_risk:
+    - "Discovery from Office/PDF reader"
+    - "Rapid batch: systeminfo & whoami & ipconfig"
+  medium_risk:
+    - "Discovery from script host"
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident in ticket system"
+  notification_roles: ["SOC Lead", "Incident Response"]
+  ir_playbook_ref: "IR-001-Malware-Response"
+
+metrics:
+  - "Average hunt execution time (target: <2h)"
+  - "True positives per hunt"
+  - "False positive rate"
+
+checklist:
+  pre_hunt:
+    - "Verify EDR/SIEM process data availability"
+    - "Confirm 7-day retention"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+
+use_cases:
+  - scenario: "Recon before lateral movement"
+    description: "Attacker gathers system info after initial access"
+    data_source: "EDR DeviceProcessEvents"
+  - scenario: "Discovery from phishing"
+    description: "Office macro runs systeminfo, whoami"
+    data_source: "EDR, Sysmon"
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
-    query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+    query_path: "queries/elk.yml"
+    query_ids: [system_discovery, net_user_wmi]
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
-    query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+    query_path: "queries/elk.yml"
+    query_id: system_discovery
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "API"
+    query_path: "queries/elk.yml"
+    query_id: net_user_wmi
+    required_indices: ["sysmon-*"]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
-    query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+    query_path: "queries/ms_defender.yml"
+    query_ids: [system_discovery, unusual_parent]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
-    query_path: "queries/ms_defender_api.json"
+    query_path: "queries/ms_defender.yml"
+    query_id: system_discovery

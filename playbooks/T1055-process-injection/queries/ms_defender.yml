@@ -1,0 +1,37 @@
+# T1055 Process Injection - Microsoft Defender Advanced Hunting
+tool: ms_defender
+tool_class: edr
+
+manual:
+  cross_process:
+    description: "CreateRemoteThreadApiCall, ProcessMemoryAccess - cross-process memory operations"
+    kql: |
+      // T1055 Process Injection - Microsoft Defender Advanced Hunting
+      // Detect cross-process memory operations and remote thread creation
+      // Relative time: last 7 days (change to ago(30d) for last 30 days)
+      DeviceEvents
+      | where Timestamp > ago(7d)
+      | where ActionType in ("CreateRemoteThreadApiCall", "ProcessMemoryAccess")
+      | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine, InitiatingProcessFileName
+
+  script_hosts:
+    description: "CreateRemoteThread from script hosts (powershell, wscript, mshta, rundll32)"
+    kql: |
+      // T1055 Process Injection Query 2: Suspicious parent-child for injection patterns
+      // Hunts for CreateRemoteThread from script hosts or unusual parents
+      // Relative time: last 7 days
+      DeviceEvents
+      | where Timestamp > ago(7d)
+      | where ActionType == "CreateRemoteThreadApiCall"
+      | where InitiatingProcessFileName in ("powershell.exe", "wscript.exe", "cscript.exe", "mshta.exe", "rundll32.exe")
+      | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+api:
+  cross_process:
+    description: "MS Defender API - CreateRemoteThreadApiCall, ProcessMemoryAccess"
+    body:
+      Query: |
+        DeviceEvents
+        | where Timestamp > ago(7d)
+        | where ActionType in ('CreateRemoteThreadApiCall', 'ProcessMemoryAccess')
+        | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine, InitiatingProcessFileName

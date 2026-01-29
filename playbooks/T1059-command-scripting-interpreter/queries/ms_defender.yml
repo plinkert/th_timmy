@@ -1,0 +1,57 @@
+# T1059 Command and Scripting Interpreter - Microsoft Defender Advanced Hunting
+tool: ms_defender
+tool_class: edr
+
+manual:
+  encoded_commands:
+    description: "PowerShell -EncodedCommand, IEX, Invoke-Expression"
+    kql: |
+      // T1059 Command and Scripting Interpreter - Microsoft Defender Advanced Hunting
+      // Detect suspicious PowerShell, cmd with encoded commands
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where FileName in ("powershell.exe", "cmd.exe")
+      | where ProcessCommandLine contains "EncodedCommand" or ProcessCommandLine contains "IEX" or ProcessCommandLine contains "Invoke-Expression"
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName
+
+  download_cradle:
+    description: "DownloadString, IEX, Invoke-WebRequest, Net.WebClient"
+    kql: |
+      // T1059 Command and Scripting Interpreter Query 2: PowerShell download cradle
+      // Hunts for DownloadString, IEX, Invoke-WebRequest, Net.WebClient
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where FileName in ("powershell.exe", "pwsh.exe")
+      | where ProcessCommandLine contains "DownloadString" or ProcessCommandLine contains "Invoke-WebRequest"
+         or ProcessCommandLine contains "Net.WebClient" or ProcessCommandLine contains "IEX("
+         or ProcessCommandLine contains "Invoke-Expression"
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+  bypass_flags:
+    description: "-ExecutionPolicy Bypass, -WindowStyle Hidden, -NoProfile, cmd spawning powershell"
+    kql: |
+      // T1059 Command and Scripting Interpreter Query 3: Bypass flags and unusual parents
+      // Hunts for -ExecutionPolicy Bypass, -WindowStyle Hidden, -NoProfile, cmd spawning powershell
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where FileName in ("powershell.exe", "pwsh.exe", "cmd.exe")
+      | where ProcessCommandLine contains "ExecutionPolicy" and ProcessCommandLine contains "Bypass"
+         or ProcessCommandLine contains "WindowStyle" and ProcessCommandLine contains "Hidden"
+         or ProcessCommandLine contains "-NoProfile"
+         or ProcessCommandLine contains "-NonInteractive"
+         or (ProcessCommandLine contains "cmd" and ProcessCommandLine contains "powershell")
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+api:
+  encoded_commands:
+    description: "MS Defender API - EncodedCommand, IEX, Invoke-Expression"
+    body:
+      Query: |
+        DeviceProcessEvents
+        | where Timestamp > ago(7d)
+        | where FileName in ('powershell.exe', 'cmd.exe')
+        | where ProcessCommandLine contains 'EncodedCommand' or ProcessCommandLine contains 'IEX' or ProcessCommandLine contains 'Invoke-Expression'
+        | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

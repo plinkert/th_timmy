@@ -1,0 +1,52 @@
+# T1082 System Information Discovery - Elk / Elasticsearch queries
+tool: elk
+tool_class: siem
+
+manual:
+  system_discovery:
+    description: "systeminfo, hostname, whoami, ipconfig, uname"
+    sql: |
+      -- T1082 System Information Discovery: systeminfo, hostname, whoami, env
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%systeminfo%' OR command_line LIKE '%hostname%'
+         OR command_line LIKE '%whoami%' OR command_line LIKE '%ipconfig%'
+         OR command_line LIKE '%uname%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  net_user_wmi:
+    description: "net user, net group, Get-ComputerInfo, Get-WmiObject Win32_OperatingSystem"
+    sql: |
+      -- T1082 System Information Discovery Query 2: net user, net group, Get-ComputerInfo
+      -- Hunts for additional discovery commands (user/group enumeration, WMI)
+      -- Relative time: last 7 days
+      SELECT *
+      FROM events
+      WHERE (command_line LIKE '%net user%' OR command_line LIKE '%net group%'
+         OR command_line LIKE '%Get-ComputerInfo%' OR command_line LIKE '%Get-WmiObject%'
+         OR command_line LIKE '%Win32_OperatingSystem%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+api:
+  system_discovery:
+    description: "Elasticsearch DSL - systeminfo, hostname, whoami, ipconfig"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - terms: { "process.name": ["systeminfo.exe", "hostname.exe", "whoami.exe", "ipconfig.exe"] }
+
+  net_user_wmi:
+    description: "Elasticsearch DSL - net user, Get-ComputerInfo, Get-WmiObject"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - query_string:
+                query: "net user OR net group OR Get-ComputerInfo OR Get-WmiObject"
+                fields: ["process.command_line", "process.args"]

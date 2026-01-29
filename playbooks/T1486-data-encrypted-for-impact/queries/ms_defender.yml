@@ -1,0 +1,39 @@
+# T1486 Data Encrypted for Impact - Microsoft Defender Advanced Hunting
+tool: ms_defender
+tool_class: edr
+
+manual:
+  vssadmin_bcdedit:
+    description: "vssadmin delete, bcdedit, wbadmin - ransomware prep"
+    kql: |
+      // T1486 Data Encrypted for Impact - Microsoft Defender Advanced Hunting
+      // Detect ransomware: vssadmin delete, bcdedit, mass file changes
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where ProcessCommandLine contains "vssadmin" and ProcessCommandLine contains "delete"
+         or ProcessCommandLine contains "bcdedit"
+         or ProcessCommandLine contains "wbadmin"
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName
+
+  mass_file_extension:
+    description: "Mass file modifications - .encrypted, .locked, .crypto, .ransom"
+    kql: |
+      // T1486 Data Encrypted for Impact Query 2: Mass file modifications
+      // Hunts for file modifications with ransomware extensions (.encrypted, .locked, .crypto)
+      // Relative time: last 7 days
+      DeviceFileEvents
+      | where Timestamp > ago(7d)
+      | where ActionType in ("FileModified", "FileCreated")
+      | where FileName endswith ".encrypted" or FileName endswith ".locked" or FileName endswith ".crypto" or FileName endswith ".ransom"
+      | project Timestamp, DeviceName, FileName, ActionType, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+api:
+  vssadmin_bcdedit:
+    description: "MS Defender API - vssadmin delete, bcdedit, wbadmin"
+    body:
+      Query: |
+        DeviceProcessEvents
+        | where Timestamp > ago(7d)
+        | where ProcessCommandLine contains 'vssadmin' and ProcessCommandLine contains 'delete' or ProcessCommandLine contains 'bcdedit' or ProcessCommandLine contains 'wbadmin'
+        | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

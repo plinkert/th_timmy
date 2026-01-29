@@ -1,7 +1,0 @@
-// T1562 Impair Defenses - Microsoft Defender Advanced Hunting
-// Detect attempts to disable security tools
-DeviceProcessEvents
-| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
-| where ProcessCommandLine contains "Disable-WindowsDefender" or ProcessCommandLine contains "Set-MpPreference"
-   or ProcessCommandLine contains "auditpol" or ProcessCommandLine contains "DisableRealtimeMonitoring"
-| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

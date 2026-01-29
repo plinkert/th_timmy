@@ -3,12 +3,38 @@ description: "Fixture for integration tests"
 version: "1.0"
 technique_description: |
   Valid playbook fixture for integration testing.
-  Contains technique_description and data_sources.
+  Contains technique_description, data_sources, hunting_indicators, TP/FP conditions.
+
+hunting_indicators: |
+  - Test indicators for hunt
+  - Process names, event codes
+
+true_positive_conditions: |
+  - Confirmed malicious activity
+  - Unusual process behavior
+
+false_positive_conditions: |
+  - Legitimate admin tools
+  - Known benign software
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
     query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
     query_path: "queries/elk_api.json"
+  - tool_class: "edr"
+    tool: "ms_defender"
+    mode: "manual"
+    query_path: "queries/ms_defender.kql"
+  - tool_class: "edr"
+    tool: "ms_defender"
+    mode: "API"
+    query_path: "queries/ms_defender_api.json"
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual_02.sql"

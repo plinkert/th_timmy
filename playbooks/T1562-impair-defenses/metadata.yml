@@ -1,6 +1,12 @@
 name: "Impair Defenses"
 description: "Detect disabling AV, EDR, logs (Disable-WindowsDefender, auditpol, reg delete)"
-version: "1.0"
+version: "1.1"
+author: "TH Team"
+created_at: "2025-01-29"
+changelog: |
+  - 1.1 (2025-01-27): Added output, triage, response; migrated to YAML format (elk.yml, ms_defender.yml)
+  - 1.0 (2025-01-29): Initial release with full structure
+
 mitre_technique_id: "T1562"
 mitre_technique_name: "Impair Defenses"
 
@@ -8,18 +14,216 @@ technique_description: |
   Adversaries impair or disable security tools and logging to avoid detection. Common actions:
   Disable-WindowsDefender, Set-MpPreference, auditpol /clear, reg delete for security services,
   stopping Windows Defender, tampering with event logs. Typical indicators: processes modifying
-  security registry keys, audit policy changes, defender service stops.
+  security registry keys, audit policy changes, defender service stops. Sub-techniques:
+  T1562.001 (Disable or Modify Tools), T1562.002 (Disable Windows Event Logging).
+
+scope: |
+  - Windows endpoints with EDR or process/registry logging
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: APT, malware, defense evasion
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process, registry events
+    SIEM: Security Information and Event Management - process, registry logs
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "Disable-WindowsDefender, auditpol, wevtutil, reg delete for security"
+  statement: "Adversary disables security tools to avoid detection"
+  goal: "Identify T1562 - impair defenses"
+  scope: "All endpoints with process/registry logging, last 7 days"
+
+methodology: "Query-based hunting with IOC matching on process command lines and registry"
+
+hunting_indicators: |
+  - PowerShell: Disable-WindowsDefender, Set-MpPreference, DisableRealtimeMonitoring
+  - auditpol: auditpol /clear, auditpol /remove, auditpol /set
+  - Registry: reg delete for security services, WinDefend, EventLog
+  - Service control: sc stop WinDefend, net stop WinDefend
+  - Event log: wevtutil cl, Clear-EventLog
+  - Tampering: deletion of security event logs, modification of audit policy
+  - AMSI bypass: AmsiContext, AmsiInitFailed (PowerShell)
+
+true_positive_conditions: |
+  - Disable-WindowsDefender or Set-MpPreference -DisableRealtimeMonitoring from non-admin/automation
+  - auditpol /clear or auditpol /remove from non-GPO/security context
+  - reg delete targeting WinDefend, EventLog, security service keys
+  - sc stop WinDefend or net stop WinDefend from non-admin tool
+  - wevtutil cl Security or Clear-EventLog from script/unknown process
+  - AMSI bypass in PowerShell (AmsiContext, AmsiInitFailed)
+  - Modification of security registry: HKLM\SOFTWARE\Policies\Microsoft\Windows Defender
+  - Stopping Windows Defender service from script host (powershell, wscript)
+
+false_positive_conditions: |
+  - GPO deployment: auditpol by Group Policy, domain controller
+  - Legitimate admin: disabling Defender for software install (with approval)
+  - Security testing: authorized red team, penetration test
+  - EDR/AV deployment: replacing Defender with third-party (known process)
+  - System maintenance: wevtutil by log rotation, SIEM agent
+  - Troubleshooting: auditpol /get by admin (read-only)
+  - Development: disabling Defender in isolated dev VM (documented)
+  - Microsoft signed: Windows Update, Defender update (temporary disable)
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM process and registry data"
+    operation: "Run queries for Disable-WindowsDefender, auditpol, wevtutil"
+    success_criteria: "Events returned"
+    outcome: "List of defense impairment indicators"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check parent process, GPO context"
+    success_criteria: "Exclude known benign"
+    outcome: "Filtered list"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate with user, asset"
+    success_criteria: "Context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate or close as FP"
+
+decision_criteria:
+  high_risk:
+    - "Disable-WindowsDefender from script"
+    - "auditpol /clear from non-GPO"
+  medium_risk:
+    - "Set-MpPreference from unknown process"
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident in ticket system"
+  notification_roles: ["SOC Lead", "Incident Response"]
+  ir_playbook_ref: "IR-001-Malware-Response"
+
+metrics:
+  - "Average hunt execution time (target: <2h)"
+  - "True positives per hunt"
+  - "False positive rate"
+
+checklist:
+  pre_hunt:
+    - "Verify EDR/SIEM process and registry data availability"
+    - "Confirm 7-day retention"
+    - "Identify GPO whitelist for auditpol"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+
+use_cases:
+  - scenario: "Defender disable"
+    description: "Malware disables Windows Defender"
+    data_source: "EDR DeviceProcessEvents"
+  - scenario: "Audit log clearing"
+    description: "Attacker clears Security event log"
+    data_source: "EDR, Sysmon"
+
+# Expected output format - required columns for triage and correlation
+output:
+  siem:
+    required_columns:
+      - timestamp
+      - event_code
+      - process_name
+      - command_line
+      - parent_process
+    description: |
+      SIEM (process/registry logs): Command line for Disable-WindowsDefender, auditpol, wevtutil.
+      Key: command_line, parent_process for GPO vs script context.
+  edr:
+    required_columns:
+      - Timestamp
+      - DeviceName
+      - FileName
+      - ProcessCommandLine
+      - InitiatingProcessFileName
+      - RegistryKey
+      - ActionType
+    description: |
+      EDR (DeviceProcessEvents, DeviceRegistryEvents): Process command line and registry modifications.
+      For registry: RegistryKey, ActionType, InitiatingProcessFileName.
+
+# Quick triage - fast verification before full analysis
+triage:
+  steps:
+    - step: 1
+      action: "Check InitiatingProcessFileName / parent process"
+      quick_reject: "Known benign: GPO (gpscript, svchost), domain controller, SCCM"
+      escalate: "Script host (powershell, wscript), unknown process"
+    - step: 2
+      action: "Check if GPO-managed"
+      quick_reject: "auditpol from gpscript, domain policy deployment"
+      escalate: "auditpol /clear from non-GPO, wevtutil cl from script"
+    - step: 3
+      action: "Check target - Defender vs EventLog"
+      quick_reject: "Legitimate admin with approval, security testing (documented)"
+      escalate: "Disable-WindowsDefender from script, reg delete WinDefend"
+  quick_fp_criteria:
+    - "Parent is GPO, SCCM, domain controller"
+    - "Authorized red team / pen test"
+    - "EDR deployment replacing Defender (known process)"
+  quick_tp_criteria:
+    - "Disable-WindowsDefender from powershell/wscript"
+    - "auditpol /clear from non-GPO process"
+    - "reg delete targeting WinDefend, EventLog"
+
+# Response actions when threat confirmed
+response:
+  on_confirmed:
+    - "Open incident in ticket system (reference: escalation.ir_playbook_ref)"
+    - "Restore security tools: re-enable Defender, restore audit policy"
+    - "Collect artifacts: process command line, registry changes, event log"
+    - "Notify SOC Lead and Incident Response per escalation.notification_roles"
+    - "Check for persistence: Run keys, scheduled tasks"
+  ir_playbook_ref: "IR-001-Malware-Response"
+  artifacts_to_collect:
+    - "Process command line (full)"
+    - "Registry modifications (WinDefend, EventLog)"
+    - "Audit policy state before/after"
+    - "Parent process tree"
+  containment_notes: "Restore defenses; isolate host if lateral movement suspected"
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
-    query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+    query_path: "queries/elk.yml"
+    query_ids: [defender_disable, auditpol_wevtutil]
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
-    query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+    query_path: "queries/elk.yml"
+    query_id: defender_disable
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "API"
+    query_path: "queries/elk.yml"
+    query_id: auditpol_wevtutil
+    required_indices: ["sysmon-*"]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
-    query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+    query_path: "queries/ms_defender.yml"
+    query_ids: [defender_disable, registry_tampering]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
-    query_path: "queries/ms_defender_api.json"
+    query_path: "queries/ms_defender.yml"
+    query_id: defender_disable

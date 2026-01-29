@@ -1,6 +1,12 @@
 name: "Data Encrypted for Impact"
 description: "Detect ransomware - mass file encryption, vssadmin delete, bcdedit"
-version: "1.0"
+version: "1.1"
+author: "TH Team"
+created_at: "2025-01-29"
+changelog: |
+  - 1.1 (2025-01-27): Added output, triage, response; migrated to YAML format (elk.yml, ms_defender.yml)
+  - 1.0 (2025-01-29): Initial release with full structure
+
 mitre_technique_id: "T1486"
 mitre_technique_name: "Data Encrypted for Impact"
 
@@ -9,17 +15,218 @@ technique_description: |
   extension changes, vssadmin delete shadows, bcdedit to disable recovery, wbadmin exclusion,
   deletion of shadow copies. Typical patterns: rapid sequential file modifications, processes
   modifying many files with new extensions (.encrypted, .locked), shadow copy deletion.
+  Sub-technique of Impact tactic.
+
+scope: |
+  - Windows endpoints with EDR or file/process logging
+  - SLA: Hunt completion within 24h of trigger
+  - Threat types: Ransomware, impact, availability disruption
+
+environment_requirements:
+  tool_classes:
+    - EDR
+    - SIEM
+    - Data Lake
+  tool_class_descriptions: |
+    EDR: Endpoint Detection and Response - process, file events
+    SIEM: Security Information and Event Management - process, file logs
+    Data Lake: Large-scale analytics (optional)
+  min_retention_days: 30
+  permissions: "Read access to EDR/SIEM data"
+  access_policies: "SOC analyst or higher"
+
+hypothesis:
+  trigger: "vssadmin delete, bcdedit recovery changes, mass file extension changes"
+  statement: "Adversary encrypts data for impact (ransomware)"
+  goal: "Identify T1486 - ransomware indicators"
+  scope: "All endpoints with file/process logging, last 7 days"
+
+methodology: "Query-based hunting with IOC matching on process command lines and file events"
+
+hunting_indicators: |
+  - vssadmin delete shadows /all, vssadmin resize shadowstorage
+  - bcdedit /set {default} recoveryenabled no
+  - wbadmin delete catalog, wbadmin delete systemstatebackup
+  - Mass file extension changes: .encrypted, .locked, .crypto, .ransom
+  - Rapid sequential file modifications (encryption in progress)
+  - Volume Shadow Copy deletion
+  - Processes modifying many files in short time (high file I/O)
+  - Disabling Windows recovery options
+
+true_positive_conditions: |
+  - vssadmin delete shadows from non-admin/backup context
+  - bcdedit modifying recoveryenabled or nointegritychecks
+  - Mass file renames to .encrypted, .locked, .crypto extensions
+  - Rapid sequential file modifications (>100 files in minutes) with extension change
+  - wbadmin delete from non-backup server
+  - Shadow copy deletion followed by file encryption activity
+  - Process with high file modification rate and new extension pattern
+  - Disable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux (recovery tampering)
+
+false_positive_conditions: |
+  - Legitimate backup: VSS creation/deletion by backup software (Veeam, Acronis, Windows Backup)
+  - System admin: bcdedit for dual-boot, recovery configuration
+  - Disk cleanup: vssadmin by storage management tools
+  - Development: mass file operations in build/output directories
+  - Encryption software: BitLocker, VeraCrypt (known, user-initiated)
+  - File sync: OneDrive, Dropbox mass sync (known extensions)
+  - Antivirus quarantine: mass file moves (different pattern)
+  - Legitimate wbadmin: backup server maintenance
+
+operational_steps:
+  - step: 1
+    name: "Gather signals"
+    input: "EDR/SIEM process and file data"
+    operation: "Run queries for vssadmin, bcdedit, wbadmin, file extensions"
+    success_criteria: "Events returned"
+    outcome: "List of ransomware indicators"
+  - step: 2
+    name: "Context analysis"
+    input: "Results from step 1"
+    operation: "Check process context, file modification rate"
+    success_criteria: "Exclude known benign"
+    outcome: "Filtered list"
+  - step: 3
+    name: "Enrich"
+    input: "Filtered events"
+    operation: "Correlate with asset, backup status"
+    success_criteria: "Context added"
+    outcome: "Enriched findings"
+  - step: 4
+    name: "Decision"
+    input: "Enriched findings"
+    operation: "Apply TP/FP criteria"
+    success_criteria: "Classification complete"
+    outcome: "Escalate to IR immediately (ransomware)"
+
+decision_criteria:
+  high_risk:
+    - "vssadmin delete shadows"
+    - "Mass file extension change to .encrypted"
+  medium_risk:
+    - "bcdedit recovery changes"
+  escalation_threshold: "high_risk"
+
+escalation:
+  on_confirmed: "Open incident immediately - ransomware response"
+  notification_roles: ["SOC Lead", "Incident Response", "Management"]
+  ir_playbook_ref: "IR-002-Ransomware-Response"
+
+metrics:
+  - "Average hunt execution time (target: <1h for ransomware)"
+  - "True positives per hunt"
+  - "False positive rate"
+  - "Time to detection"
+
+checklist:
+  pre_hunt:
+    - "Verify EDR/SIEM file and process data availability"
+    - "Confirm 7-day retention"
+    - "Identify backup software whitelist"
+  post_hunt:
+    - "Document findings"
+    - "Update queries if needed"
+    - "Review backup integrity"
+
+use_cases:
+  - scenario: "Ransomware encryption"
+    description: "Mass file encryption with .encrypted extension"
+    data_source: "EDR DeviceFileEvents"
+  - scenario: "Shadow copy deletion"
+    description: "vssadmin delete shadows before encryption"
+    data_source: "EDR DeviceProcessEvents"
+
+# Expected output format - required columns for triage and correlation
+output:
+  siem:
+    required_columns:
+      - timestamp
+      - event_code
+      - process_name
+      - command_line
+      - file_extension
+      - parent_process
+    description: |
+      SIEM (process/file logs): Command line for vssadmin, bcdedit, wbadmin.
+      File events: file_extension, event_type. Key: command_line, file_extension.
+  edr:
+    required_columns:
+      - Timestamp
+      - DeviceName
+      - FileName
+      - ProcessCommandLine
+      - ActionType
+      - InitiatingProcessFileName
+    description: |
+      EDR (DeviceProcessEvents, DeviceFileEvents): Process command line and file operations.
+      For file events: FileName, ActionType, InitiatingProcessFileName.
+
+# Quick triage - CRITICAL: T1486 is ransomware - fast escalation
+triage:
+  steps:
+    - step: 1
+      action: "Check InitiatingProcessFileName / parent process"
+      quick_reject: "Known benign: Veeam, Acronis, Windows Backup, storage management"
+      escalate: "Unknown process, script host (powershell, wscript)"
+    - step: 2
+      action: "Check for vssadmin delete vs backup software"
+      quick_reject: "Backup server, scheduled backup job, known backup tool"
+      escalate: "vssadmin delete shadows from non-backup context"
+    - step: 3
+      action: "Check file extension pattern"
+      quick_reject: "BitLocker, VeraCrypt, OneDrive sync, AV quarantine"
+      escalate: "Mass .encrypted, .locked, .crypto, .ransom extensions"
+  quick_fp_criteria:
+    - "Parent is Veeam, Acronis, Windows Backup"
+    - "Scheduled backup job, backup server"
+    - "BitLocker, VeraCrypt (user-initiated)"
+  quick_tp_criteria:
+    - "vssadmin delete shadows from script/unknown"
+    - "Mass file extension change to .encrypted"
+    - "bcdedit recoveryenabled no from non-admin"
+
+# Response actions - CRITICAL: ransomware - immediate isolation
+response:
+  on_confirmed:
+    - "IMMEDIATE: Open incident - ransomware response (reference: escalation.ir_playbook_ref)"
+    - "IMMEDIATE: Isolate affected host from network"
+    - "Collect artifacts: process command line, file list, timeline"
+    - "Notify SOC Lead, Incident Response, Management per escalation.notification_roles"
+    - "Check backup integrity; do NOT reboot before forensic capture"
+  ir_playbook_ref: "IR-002-Ransomware-Response"
+  artifacts_to_collect:
+    - "Process command line (full)"
+    - "List of encrypted/modified files"
+    - "Timeline of file modifications"
+    - "Shadow copy status"
+  containment_notes: "CRITICAL - isolate immediately; preserve evidence; do not pay ransom without management approval"
 
 data_sources:
-  - tool: "elk"
+  - tool_class: "siem"
+    tool: "elk"
     mode: "manual"
-    query_path: "queries/elk_manual.sql"
-  - tool: "elk"
+    query_path: "queries/elk.yml"
+    query_ids: [vssadmin_bcdedit, mass_file_extension]
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
     mode: "API"
-    query_path: "queries/elk_api.json"
-  - tool: "ms_defender"
+    query_path: "queries/elk.yml"
+    query_id: vssadmin_bcdedit
+    required_indices: ["sysmon-*", "winlogbeat-*"]
+  - tool_class: "siem"
+    tool: "elk"
+    mode: "API"
+    query_path: "queries/elk.yml"
+    query_id: mass_file_extension
+    required_indices: ["sysmon-*"]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "manual"
-    query_path: "queries/ms_defender_manual.kql"
-  - tool: "ms_defender"
+    query_path: "queries/ms_defender.yml"
+    query_ids: [vssadmin_bcdedit, mass_file_extension]
+  - tool_class: "edr"
+    tool: "ms_defender"
     mode: "API"
-    query_path: "queries/ms_defender_api.json"
+    query_path: "queries/ms_defender.yml"
+    query_id: vssadmin_bcdedit

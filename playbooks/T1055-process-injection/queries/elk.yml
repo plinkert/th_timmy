@@ -1,0 +1,62 @@
+# T1055 Process Injection - Elk / Elasticsearch queries
+tool: elk
+tool_class: siem
+
+manual:
+  memory_ops:
+    description: "VirtualAllocEx, WriteProcessMemory, CreateRemoteThread - primary T1055 indicators"
+    sql: |
+      -- T1055 Process Injection: detect VirtualAllocEx, WriteProcessMemory, CreateRemoteThread
+      -- Relative time: last 7 days (change INTERVAL for 30 days: INTERVAL '30 days')
+      SELECT *
+      FROM sysmon_events
+      WHERE event_type IN ('VirtualAllocEx', 'WriteProcessMemory', 'CreateRemoteThread')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  sysmon_event_10:
+    description: "Sysmon Event 10 (Process Access) - suspicious target processes (lsass, csrss, winlogon)"
+    sql: |
+      -- T1055 Process Injection Query 2: Sysmon Event 10 (Process Access) - suspicious target processes
+      -- Hunts for OpenProcess calls targeting high-value processes (lsass, csrss, winlogon)
+      -- Relative time: last 7 days
+      SELECT *
+      FROM sysmon_events
+      WHERE event_code = 10
+        AND (target_process LIKE '%lsass%' OR target_process LIKE '%csrss%' OR target_process LIKE '%winlogon%')
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+  sysmon_event_8:
+    description: "Sysmon Event 8 (CreateRemoteThread) - primary T1055 indicator"
+    sql: |
+      -- T1055 Process Injection Query 3: Sysmon Event 8 (CreateRemoteThread)
+      -- Primary T1055 indicator - CreateRemoteThread API call
+      -- Relative time: last 7 days
+      SELECT *
+      FROM sysmon_events
+      WHERE event_code = 8
+        AND timestamp >= NOW() - INTERVAL '7 days'
+      ORDER BY timestamp DESC;
+
+api:
+  memory_ops:
+    description: "Elasticsearch DSL - VirtualAllocEx, WriteProcessMemory, CreateRemoteThread"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - terms: { "event.code": ["VirtualAllocEx", "WriteProcessMemory", "CreateRemoteThread"] }
+
+  sysmon_event_10:
+    description: "Elasticsearch DSL - Sysmon Event 10, high-value targets"
+    body:
+      query:
+        bool:
+          filter:
+            - range: { "@timestamp": { "gte": "now-7d", "lte": "now" } }
+            - term: { "event.code": 10 }
+            - query_string:
+                query: "winlogon.exe OR lsass.exe OR csrss.exe"
+                fields: ["process.name", "process.target.name", "TargetImage"]

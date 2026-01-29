@@ -1,6 +1,6 @@
 // Microsoft Defender Advanced Hunting - suspicious PowerShell
-// Required placeholders: {{timestamp_start}}, {{timestamp_end}}
+// Relative time: last 7 days (change to ago(30d) for last 30 days)
 DeviceProcessEvents
-| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where Timestamp > ago(7d)
 | where FileName =~ "powershell.exe"
 | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

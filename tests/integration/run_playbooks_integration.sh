@@ -101,12 +101,12 @@ entries = load_queries(valid_dir)
 assert len(entries) >= 1, f'Expected at least 1 query, got {len(entries)}'
 print(f'load_queries: loaded {len(entries)} queries')
 
-# tool_class filter: T1055 edr=3, siem=4
+# tool_class filter: T1055 edr=3, siem=5 (YAML format with query_ids expands to multiple entries)
 from automation_scripts.playbooks.cli_helpers import get_queries_resolved
 edr = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbooks', tool_class='edr')
 siem = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbooks', tool_class='siem')
 assert len(edr) == 3, f'Expected 3 EDR queries, got {len(edr)}'
-assert len(siem) == 4, f'Expected 4 SIEM queries, got {len(siem)}'
+assert len(siem) == 5, f'Expected 5 SIEM queries, got {len(siem)}'
 print('tool_class filter: edr=3, siem=4 OK')
 " 2>&1 || { log_err "Playbook sanity check failed"; FAILED=1; }
 fi

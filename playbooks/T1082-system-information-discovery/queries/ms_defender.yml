@@ -1,0 +1,37 @@
+# T1082 System Information Discovery - Microsoft Defender Advanced Hunting
+tool: ms_defender
+tool_class: edr
+
+manual:
+  system_discovery:
+    description: "systeminfo, hostname, whoami, ipconfig - discovery commands"
+    kql: |
+      // T1082 System Information Discovery - Microsoft Defender Advanced Hunting
+      // Detect system info gathering commands
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where FileName in ("systeminfo.exe", "hostname.exe", "whoami.exe", "ipconfig.exe")
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName
+
+  unusual_parent:
+    description: "Discovery from Office, script hosts, browsers - suspicious parent"
+    kql: |
+      // T1082 System Information Discovery Query 2: Discovery from unusual parent
+      // Hunts for systeminfo/whoami/hostname spawned by Office, script hosts, browsers
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where FileName in ("systeminfo.exe", "hostname.exe", "whoami.exe", "ipconfig.exe")
+      | where InitiatingProcessFileName in ("winword.exe", "excel.exe", "outlook.exe", "powershell.exe", "cmd.exe", "mshta.exe", "wscript.exe", "chrome.exe", "firefox.exe")
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+api:
+  system_discovery:
+    description: "MS Defender API - systeminfo, hostname, whoami, ipconfig"
+    body:
+      Query: |
+        DeviceProcessEvents
+        | where Timestamp > ago(7d)
+        | where FileName in ('systeminfo.exe', 'hostname.exe', 'whoami.exe', 'ipconfig.exe')
+        | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

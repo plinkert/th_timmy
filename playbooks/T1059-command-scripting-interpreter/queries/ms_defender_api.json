@@ -1,3 +1,0 @@
-{
-  "Query": "DeviceProcessEvents | where Timestamp > ago(24h) | where FileName in ('powershell.exe', 'cmd.exe') | where ProcessCommandLine contains 'EncodedCommand' or ProcessCommandLine contains 'IEX' | project Timestamp, DeviceName, FileName, ProcessCommandLine"
-}

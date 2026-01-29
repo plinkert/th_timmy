@@ -1,0 +1,38 @@
+# T1562 Impair Defenses - Microsoft Defender Advanced Hunting
+tool: ms_defender
+tool_class: edr
+
+manual:
+  defender_disable:
+    description: "Disable-WindowsDefender, Set-MpPreference, auditpol, DisableRealtimeMonitoring"
+    kql: |
+      // T1562 Impair Defenses - Microsoft Defender Advanced Hunting
+      // Detect attempts to disable security tools
+      // Relative time: last 7 days
+      DeviceProcessEvents
+      | where Timestamp > ago(7d)
+      | where ProcessCommandLine contains "Disable-WindowsDefender" or ProcessCommandLine contains "Set-MpPreference"
+         or ProcessCommandLine contains "auditpol" or ProcessCommandLine contains "DisableRealtimeMonitoring"
+      | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName
+
+  registry_tampering:
+    description: "Registry modifications - Windows Defender, WinDefend, EventLog"
+    kql: |
+      // T1562 Impair Defenses Query 2: Registry modifications for security services
+      // Hunts for reg delete/add targeting Windows Defender, EventLog
+      // Relative time: last 7 days
+      DeviceRegistryEvents
+      | where Timestamp > ago(7d)
+      | where (RegistryKey contains "Windows Defender" or RegistryKey contains "WinDefend" or RegistryKey contains "EventLog")
+        and (ActionType == "RegistryValueSet" or ActionType == "RegistryKeyDeleted")
+      | project Timestamp, DeviceName, RegistryKey, RegistryValueName, ActionType, InitiatingProcessFileName, InitiatingProcessCommandLine
+
+api:
+  defender_disable:
+    description: "MS Defender API - Disable-WindowsDefender, Set-MpPreference, auditpol"
+    body:
+      Query: |
+        DeviceProcessEvents
+        | where Timestamp > ago(7d)
+        | where ProcessCommandLine contains 'Disable-WindowsDefender' or ProcessCommandLine contains 'Set-MpPreference' or ProcessCommandLine contains 'auditpol' or ProcessCommandLine contains 'DisableRealtimeMonitoring'
+        | project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

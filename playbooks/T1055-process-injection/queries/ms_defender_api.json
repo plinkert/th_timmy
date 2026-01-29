@@ -1,3 +1,0 @@
-{
-  "Query": "DeviceEvents | where Timestamp > ago(24h) | where ActionType in ('CreateRemoteThreadApiCall', 'ProcessMemoryAccess') | project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine"
-}

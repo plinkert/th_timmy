@@ -1,1 +1,1 @@
-{"query": {"bool": {"filter": []}}}
+{"query": {"bool": {"filter": [{"range": {"@timestamp": {"gte": "now-7d", "lte": "now"}}}]}}}
