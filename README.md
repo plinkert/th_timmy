@@ -35,7 +35,7 @@ th_timmy/
 │   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
 │   └── playbooks/           # Playbook Structure (Step 1.1): playbook_validator, query_loader
-├── playbooks/               # MITRE ATT&CK playbooks (template + 5 examples: T1055, T1059, T1562, T1082, T1486)
+├── playbooks/               # MITRE ATT&CK playbooks (template + 5 examples; queries: elk.yml, ms_defender.yml)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
@@ -86,6 +86,7 @@ For running Python and automation from VM04 (including Remote Execution, Reposit
 ## Documentation
 
 - [Implementation phases and status](docs/PHASES.md) — Summary of each step (what it does, status) and links to setup, configuration, and testing
+- [Changelog](CHANGELOG.md) — Release notes and notable changes
 - [Playbook format and API](docs/PLAYBOOKS.md) — Playbook structure, metadata, data_sources, validator, query loader
 - [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) — How Repository Sync (Step 0.2) works and how it fits with Remote Execution
 - [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) — System architecture

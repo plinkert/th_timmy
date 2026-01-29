@@ -69,7 +69,7 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 | | |
 |---|---|
 | **Status** | Closed |
-| **What it does** | Playbook structure with `technique_description` and `data_sources` in metadata.yml. Validator rejects playbooks without required fields. Query loader reads .sql, .json, .kql files. Five example playbooks (T1055, T1059, T1562, T1082, T1486). |
+| **What it does** | Playbook structure with `technique_description` and `data_sources` in metadata.yml. Validator rejects playbooks without required fields. Query loader reads .sql, .json, .kql or .yml/.yaml (YAML: elk.yml, ms_defender.yml with query_id/query_ids). Five example playbooks (T1055, T1059, T1562, T1082, T1486). Sections: output, triage, response (2025-01-27 YAML migration). |
 | **Module README** | [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md), [docs/PLAYBOOKS.md](PLAYBOOKS.md) — format, examples, API. |
 | **Configuration** | TBD (schema in `configs/schemas/`). |
 | **Testing** | [Testing Guide — Playbook Structure tests](TESTING.md#playbook-structure-tests-step-11): unit and integration tests. |
