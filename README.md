@@ -32,7 +32,8 @@ th_timmy/
 │   ├── orchestrators/       # Orchestration
 │   │   ├── remote_executor/ # Remote Execution Service (Step 0.1): remote commands & file transfer from VM04 via SSH
 │   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
-│   │   └── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
+│   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
+│   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
 │   └── ...                  # (collectors, parsers, normalizers, utils — as added)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
@@ -52,6 +53,7 @@ th_timmy/
 - [x] **Step 0.1 (Remote Execution)** — closed
 - [x] **Step 0.2 (Repository Sync)** — closed
 - [x] **Step 0.3 (Configuration Management)** — closed
+- [x] **Step 0.4 (Health Monitoring)** — in place
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation

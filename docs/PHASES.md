@@ -50,6 +50,18 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 ---
 
+## Step 0.4 — Health Monitoring Service
+
+| | |
+|---|---|
+| **Status** | In place |
+| **What it does** | Central collection of VM metrics (CPU, memory, disk, response time, uptime), threshold evaluation, alerts (e-mail, Slack, SMS), and Prometheus exposition on VM04. Runs health_check.sh remotely; unreachable VM returns error without hanging. |
+| **Module README** | [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md) — requirements, config, usage, Prometheus/Grafana, tests. |
+| **Configuration** | [Configuration Guide](CONFIGURATION.md): `health_monitoring` section (check_interval, health_check_script_path, thresholds, alert_channels, prometheus_expose_port). |
+| **Testing** | [Testing Guide — Health Monitoring tests](TESTING.md#health-monitoring-service-tests-step-04): unit and integration tests. |
+
+---
+
 ## Upcoming steps
 
 Further steps (for example VM setup scripts, database configuration, and other components) will be added here as they are defined. Each new step will follow the same layout: status, short description, and links to the module README, configuration, and testing.

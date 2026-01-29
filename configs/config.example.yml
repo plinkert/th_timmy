@@ -168,6 +168,39 @@ config_management:
     env: "env.schema.json"
   schema_dir: "configs/schemas"
 
+# Health Monitoring Service (Step 0.4 – metrics, thresholds, alerts, Prometheus)
+health_monitoring:
+  check_interval: 300
+  health_check_script_path:
+    vm01: "/home/thadmin/th_timmy/hosts/vm01-ingest/health_check.sh"
+    vm02: "/home/thadmin/th_timmy/hosts/vm02-database/health_check.sh"
+    vm03: "/home/thadmin/th_timmy/hosts/vm03-analysis/health_check.sh"
+    vm04: "/home/thadmin/th_timmy/hosts/vm04-orchestrator/health_check.sh"
+    default: "/home/thadmin/th_timmy/hosts/vm04-orchestrator/health_check.sh"
+  thresholds:
+    cpu_warning: 80
+    cpu_critical: 95
+    cpu_sustained_seconds: 300
+    memory_warning: 85
+    memory_critical: 90
+    disk_free_warning_percent: 10
+    response_time_warning_seconds: 2
+  alert_channels:
+    email:
+      smtp_host: ""
+      smtp_port: 587
+      from_addr: ""
+      to_addrs: []
+      # use env: TH_TIMMY_SMTP_USER, TH_TIMMY_SMTP_PASSWORD
+    slack:
+      webhook_url: ""
+      # or env: TH_TIMMY_SLACK_WEBHOOK_URL
+    sms:
+      provider: ""
+      # optional; credentials via env
+  alert_dedup_window_seconds: 900
+  prometheus_expose_port: 9090
+
 # Hardening Configuration (applies to all VMs)
 hardening:
   # SSH Configuration (common for all VMs)

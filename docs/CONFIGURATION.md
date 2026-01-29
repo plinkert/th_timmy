@@ -69,6 +69,20 @@ Main options:
 
 See [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) for usage and tests.
 
+## Health Monitoring (Step 0.4)
+
+The Health Monitoring Service uses the `health_monitoring` section in `configs/config.yml` (see `configs/config.example.yml`).
+
+Main options:
+- **check_interval** — seconds between health check rounds (e.g. 300)
+- **health_check_script_path** — per vm_id or `default`; path on the **remote** VM to health_check.sh (e.g. `/home/thadmin/th_timmy/hosts/vm01-ingest/health_check.sh`). Missing path → status degraded, not crash.
+- **thresholds** — cpu_warning, cpu_critical, cpu_sustained_seconds, memory_warning, memory_critical, disk_free_warning_percent, response_time_warning_seconds
+- **alert_channels** — email (smtp_host, to_addrs; use TH_TIMMY_SMTP_USER, TH_TIMMY_SMTP_PASSWORD), slack (webhook_url or TH_TIMMY_SLACK_WEBHOOK_URL), sms (optional)
+- **alert_dedup_window_seconds** — avoid duplicate alerts for same vm_id + metric in this window (e.g. 900)
+- **prometheus_expose_port** — port for /metrics on VM04 (e.g. 9090)
+
+See [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md) for usage, Prometheus/Grafana, and tests.
+
 ### Configuration Structure
 
 ```yaml

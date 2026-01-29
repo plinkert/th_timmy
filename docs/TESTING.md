@@ -108,6 +108,43 @@ Results are written to `results/config_manager_integration_YYYYMMDD_HHMMSS.txt`.
 
 ---
 
+## Health Monitoring Service tests (Step 0.4)
+
+### Unit tests
+
+Unit tests for the Health Monitoring module (`metrics_collector`, `alert_manager`, `health_monitor`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_metrics_collector.py tests/unit/test_alert_manager.py tests/unit/test_health_monitor.py -v
+```
+
+Or run all unit tests:
+
+```bash
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/ -v
+```
+
+### Integration test
+
+The script `tests/integration/run_health_monitor_integration.sh` runs bootstrap (via `run_python.sh`), health_monitor unit tests, and a sanity check (import + config.health_monitoring). Run it from the project root on VM04.
+
+**Requirements:** VM04 context, `configs/config.yml` with `health_monitoring` (check_interval, health_check_script_path, thresholds; see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live metric collection.
+
+**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_health_monitor_integration.sh
+./tests/integration/run_health_monitor_integration.sh
+```
+
+Results are written to `results/health_monitor_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md).
+
+---
+
 ## Overview
 
 The testing suite includes three main scripts:
