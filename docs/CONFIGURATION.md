@@ -81,6 +81,8 @@ Main options:
 - **alert_dedup_window_seconds** — avoid duplicate alerts for same vm_id + metric in this window (e.g. 900)
 - **prometheus_expose_port** — port for /metrics on VM04 (e.g. 9090)
 
+**Prometheus and Grafana:** Both are installed on **VM04** via `hosts/vm04-orchestrator/docker-compose.yml` (see `install_vm04.sh`). The health monitor exporter exposes `/metrics` on localhost (e.g. 127.0.0.1:9090); Prometheus scrapes this endpoint. Grafana runs on VM04 for dashboards.
+
 See [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md) for usage, Prometheus/Grafana, and tests.
 
 ### Configuration Structure

@@ -39,7 +39,7 @@ th_timmy/
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # e.g. run_remote_executor_integration.sh, run_repo_sync_integration.sh
+│   └── integration/         # e.g. run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_health_monitor_integration.sh
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -53,7 +53,7 @@ th_timmy/
 - [x] **Step 0.1 (Remote Execution)** — closed
 - [x] **Step 0.2 (Repository Sync)** — closed
 - [x] **Step 0.3 (Configuration Management)** — closed
-- [x] **Step 0.4 (Health Monitoring)** — in place
+- [x] **Step 0.4 (Health Monitoring)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -75,7 +75,7 @@ See individual VM README files in `hosts/vmXX-*/README.md` for detailed installa
 
 ### Automation on VM04 (orchestrator)
 
-For running Python and automation from VM04 (including Remote Execution, Repository Sync, and Configuration Management):
+For running Python and automation from VM04 (including Remote Execution, Repository Sync, Configuration Management, and Health Monitoring with Prometheus/Grafana):
 
 - **Bootstrap environment:** `./hosts/vm04-orchestrator/bootstrap_env.sh` — prepares Python venv and dependencies (idempotent).
 - **Run Python / tests:** `./hosts/vm04-orchestrator/run_python.sh` — always use this script instead of calling `python` directly (ensures env is ready; used by n8n and CI).

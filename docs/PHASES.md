@@ -54,7 +54,7 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | In place |
+| **Status** | Closed |
 | **What it does** | Central collection of VM metrics (CPU, memory, disk, response time, uptime), threshold evaluation, alerts (e-mail, Slack, SMS), and Prometheus exposition on VM04. Runs health_check.sh remotely; unreachable VM returns error without hanging. |
 | **Module README** | [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md) — requirements, config, usage, Prometheus/Grafana, tests. |
 | **Configuration** | [Configuration Guide](CONFIGURATION.md): `health_monitoring` section (check_interval, health_check_script_path, thresholds, alert_channels, prometheus_expose_port). |

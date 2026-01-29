@@ -11,6 +11,7 @@ Hardening is the process of securing systems by reducing their attack surface. T
 - SSH key management (Remote Execution, Step 0.1)
 - Repository Sync and secret scanning (Step 0.2)
 - Configuration Management and backups (Step 0.3)
+- Health Monitoring and metrics exposure (Step 0.4)
 - Testing before and after hardening
 - Best practices
 
@@ -46,6 +47,10 @@ Before syncing the repository from VM04 to VM01–VM03, the Repository Sync Serv
 ## Configuration Management and backups (Step 0.3)
 
 Configuration Management backs up config files in encrypted form (e.g. AES) with configurable retention (e.g. 90 days). Backup keys or passphrases must not be stored in the repository; use environment variables (e.g. TH_TIMMY_CONFIG_BACKUP_PASSPHRASE) or a secure key path. See [automation_scripts/orchestrators/config_manager/README.md](../automation_scripts/orchestrators/config_manager/README.md) and the `config_management` section in `configs/config.example.yml`.
+
+## Health Monitoring and metrics exposure (Step 0.4)
+
+Alert credentials (e-mail SMTP, Slack webhook, SMS provider) must not be stored in the repository. Use environment variables (e.g. TH_TIMMY_SMTP_USER, TH_TIMMY_SMTP_PASSWORD, TH_TIMMY_SLACK_WEBHOOK_URL) or the `health_monitoring.alert_channels` section in `configs/config.yml` (with placeholders; real values in `.env` or secrets manager). The Prometheus exporter exposes `/metrics` on 127.0.0.1 (localhost only) on VM04; Prometheus scrapes this endpoint. Do not expose the metrics endpoint to the network.
 
 ## Common Hardening Functions
 

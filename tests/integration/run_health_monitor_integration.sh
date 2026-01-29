@@ -2,22 +2,22 @@
 # Integration test for Health Monitoring Service (Step 0.4).
 # Run on VM04 (orchestrator). Ensures env is ready, runs health_monitor unit tests, collects results.
 #
-# INSTRUKCJA URUCHAMIANIA (Run instructions)
-# ----------------------------------------
-# 1. Środowisko: skrypt uruchamiać na VM04 (orchestrator), z katalogu projektu th_timmy.
-# 2. Przed uruchomieniem:
-#    - Skopiować config.example.yml → config.yml i ustawić vms, health_monitoring (health_check_script_path, thresholds).
-#    - Ustawić run_python.sh jako wykonywalny: chmod +x hosts/vm04-orchestrator/run_python.sh
-#    - Opcjonalnie: klucze SSH w ~/.ssh/th_timmy_keys (dla żywego zbierania metryk z VM).
-# 3. Z roota projektu:
+# Run instructions
+# ---------------
+# 1. Environment: run this script on VM04 (orchestrator), from the th_timmy project directory.
+# 2. Before running:
+#    - Copy config.example.yml → config.yml and set vms, health_monitoring (health_check_script_path, thresholds).
+#    - Ensure run_python.sh is executable: chmod +x hosts/vm04-orchestrator/run_python.sh
+#    - Optional: SSH keys in ~/.ssh/th_timmy_keys (for live metric collection from VMs).
+# 3. From project root:
 #      cd /path/to/th_timmy
 #      chmod +x tests/integration/run_health_monitor_integration.sh
 #      ./tests/integration/run_health_monitor_integration.sh
-#    Z innego katalogu:
+#    Or from another directory:
 #      PROJECT_ROOT=/path/to/th_timmy ./tests/integration/run_health_monitor_integration.sh
-# 4. Wyniki: exit 0 = sukces, exit 1 = błąd; log w results/health_monitor_integration_YYYYMMDD_HHMMSS.txt
-# 5. DEC: po przesłaniu skryptu na VM04 i uruchomieniu, skrypt wykonuje bootstrap (przez run_python.sh)
-#    i testy; zależności są pobierane automatycznie. Wyniki w results/ pozwalają DEV na poprawki.
+# 4. Results: exit 0 = success, exit 1 = failure; log in results/health_monitor_integration_YYYYMMDD_HHMMSS.txt
+# 5. DEC: after uploading the script to VM04 and running it, the script runs bootstrap (via run_python.sh)
+#    and tests; dependencies are fetched automatically. Results in results/ allow DEV to apply fixes.
 #
 # Usage: run from project root or set PROJECT_ROOT/BOOTSTRAP_PROJECT_ROOT.
 
