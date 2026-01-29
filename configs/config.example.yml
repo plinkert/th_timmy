@@ -199,7 +199,13 @@ health_monitoring:
       provider: ""
       # optional; credentials via env
   alert_dedup_window_seconds: 900
-  prometheus_expose_port: 9090
+  # Python exporter: local only (127.0.0.1), Prometheus scrapes via host.docker.internal
+  prometheus_expose_port: 9091
+  prometheus_expose_addr: "127.0.0.1"
+
+# Monitoring stack (Prometheus, Grafana) - used by install_vm04.sh
+monitoring:
+  grafana_admin_password: "admin"  # Change in production
 
 # Hardening Configuration (applies to all VMs)
 hardening:

@@ -22,10 +22,48 @@ services:
     networks:
       - threat-hunting-net
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: threat-hunting-prometheus
+    restart: unless-stopped
+    network_mode: host
+    # Uses host network to scrape localhost:9091 (Python exporter)
+    # Grafana connects via host.docker.internal:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: threat-hunting-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - threat-hunting-net
+    depends_on:
+      - prometheus
+
 networks:
   threat-hunting-net:
     driver: bridge
 
 volumes:
   n8n_data:
+  grafana_data:
+  prometheus_data:
 

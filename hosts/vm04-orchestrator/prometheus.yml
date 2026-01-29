@@ -1,0 +1,14 @@
+# Prometheus configuration for th_timmy Health Monitoring (Step 0.4)
+# Scrapes Python exporter on localhost:9091 (Prometheus uses network_mode: host)
+# Grafana queries Prometheus via host.docker.internal:9090
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'th_timmy'
+    static_configs:
+      - targets: ['localhost:9091']
+    metrics_path: '/metrics'
+    scrape_interval: 30s

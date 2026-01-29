@@ -8,6 +8,8 @@ This folder contains scripts and config for VM-04 (Orchestrator host with n8n in
 
 VM-04 is the orchestrator node. It runs:
 - **n8n** (workflow automation) in Docker
+- **Prometheus + Grafana** (monitoring, Step 0.4) in Docker
+- **Health Monitor** (systemd) – metrics, Prometheus exporter, alerts
 - **Python** tooling and automation scripts
 - **SSH** access to VM01–VM03 for remote execution
 
@@ -34,7 +36,10 @@ Recommended order of actions:
 | **setup_ssh_keys.sh** | Generates SSH keys for VM01–VM03, copies them to targets, enforces key-only auth, writes `~/.ssh/config`. Run when you need passwordless SSH to VM01/02/03. |
 | **harden_vm04.sh** | Security hardening: SSH, firewall, Docker, Fail2ban, logrotate. Optional, usually after install. |
 | **requirements.txt** | Python dependencies for this host (pyyaml, docker, loguru, etc.). Used by `bootstrap_env.sh` and install logic. |
-| **docker-compose.yml** | Defines n8n container and options. Used by `install_vm04.sh` and when you run `docker compose`. |
+| **docker-compose.yml** | Defines n8n, Prometheus, Grafana containers. Used by `install_vm04.sh` and when you run `docker compose`. |
+| **prometheus.yml** | Prometheus config – scrapes Python exporter (localhost:9091). |
+| **grafana/provisioning/** | Grafana datasource provisioning (Prometheus). |
+| **run_health_monitor.py** | Health Monitor runner – exporter + schedule_health_checks. Used by systemd. |
 | **config.example.yml** | Example config for n8n (user, password, port). Copy to `config.yml` and edit. |
 | **config.yml** | Your local n8n config (create from `config.example.yml`). Not committed. |
 | **.env** | Generated for docker-compose (e.g. n8n credentials). Created by install/scripts. Not committed. |

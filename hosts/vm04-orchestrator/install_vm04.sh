@@ -326,6 +326,15 @@ fi
 
 # Create .env file for docker-compose
 ENV_FILE="$VM04_DIR/.env"
+# Grafana password from configs/config.yml or vm04 config
+MAIN_CONFIG="$PROJECT_ROOT/configs/config.yml"
+GRAFANA_CONFIG="$MAIN_CONFIG"
+[ ! -f "$GRAFANA_CONFIG" ] && GRAFANA_CONFIG="$CONFIG_FILE"
+if [ -f "$GRAFANA_CONFIG" ] && python3 -c "import yaml" 2>/dev/null; then
+    GRAFANA_PASS=$(python3 -c "import yaml; f=open('$GRAFANA_CONFIG'); d=yaml.safe_load(f); print((d.get('monitoring') or {}).get('grafana_admin_password', 'admin'))" 2>/dev/null || echo "admin")
+else
+    GRAFANA_PASS="admin"
+fi
 log_info "Creating .env file for docker-compose..."
 cat > "$ENV_FILE" << EOF
 # n8n Environment Variables
@@ -334,55 +343,85 @@ cat > "$ENV_FILE" << EOF
 N8N_BASIC_AUTH_USER=$N8N_USER
 N8N_BASIC_AUTH_PASSWORD=$N8N_PASSWORD
 N8N_SECURE_COOKIE=false
+
+# Grafana (Step 0.4 - monitoring)
+GRAFANA_ADMIN_USER=admin
+GRAFANA_ADMIN_PASSWORD=$GRAFANA_PASS
 EOF
 chown $SUDO_USER:$SUDO_USER "$ENV_FILE"
 chmod 600 "$ENV_FILE"
 log_success ".env file created"
 
 # ============================================
-# 9. Firewall Configuration
+# 9. Copy Prometheus and Grafana configs
+# ============================================
+log_info "Configuring Prometheus and Grafana..."
+if [ ! -f "$VM04_DIR/prometheus.yml" ]; then
+    cp "$SCRIPT_DIR/prometheus.yml" "$VM04_DIR/prometheus.yml"
+    chown $SUDO_USER:$SUDO_USER "$VM04_DIR/prometheus.yml"
+fi
+if [ -d "$SCRIPT_DIR/grafana" ]; then
+    mkdir -p "$VM04_DIR/grafana"
+    cp -r "$SCRIPT_DIR/grafana/"* "$VM04_DIR/grafana/" 2>/dev/null || true
+    chown -R $SUDO_USER:$SUDO_USER "$VM04_DIR/grafana"
+fi
+
+# ============================================
+# 10. Firewall Configuration
 # ============================================
 log_info "Configuring firewall..."
 N8N_PORT_FW=$(parse_config "d.get('network', {}).get('n8n_port', 5678)" "5678")
 ufw allow ${N8N_PORT_FW}/tcp
+ufw allow 3000/tcp
 ufw reload
 
 # ============================================
-# 10. Start n8n (if auto_start=true)
+# 11. Start n8n, Prometheus, Grafana (if auto_start=true)
 # ============================================
 if [ "$AUTO_START" = "True" ] || [ "$AUTO_START" = "true" ]; then
-    log_info "Starting n8n in Docker container..."
+    log_info "Starting n8n, Prometheus, Grafana in Docker..."
     
-    # User must be in docker group - use newgrp or su
     cd "$VM04_DIR"
     
-    # Run as user (docker requires docker group)
     sudo -u $SUDO_USER bash -c "
         cd $VM04_DIR
         docker compose down 2>/dev/null || true
         docker compose up -d
     " || {
-        log_warn "Failed to start n8n automatically"
+        log_warn "Failed to start Docker containers"
         log_info "You can start manually: cd $VM04_DIR && docker compose up -d"
         log_info "Note: You may need to log out and log back in after adding to docker group"
     }
     
-    # Check status after a moment
-    sleep 3
-    if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "threat-hunting-n8n.*Up"; then
-        log_success "n8n started in Docker container"
+    sleep 5
+    if sudo -u $SUDO_USER docker compose -f "$VM04_DIR/docker-compose.yml" ps 2>/dev/null | grep -q "Up"; then
+        log_success "Docker containers started (n8n, Prometheus, Grafana)"
     else
-        log_warn "n8n may not be running yet"
+        log_warn "Some containers may not be running yet"
         log_info "Check status: cd $VM04_DIR && docker compose ps"
-        log_info "Check logs: cd $VM04_DIR && docker compose logs"
     fi
 else
-    log_info "Automatic n8n startup is disabled"
-    log_info "To start n8n: cd $VM04_DIR && docker compose up -d"
+    log_info "Automatic Docker startup is disabled"
+    log_info "To start: cd $VM04_DIR && docker compose up -d"
 fi
 
 # ============================================
-# 11. Environment Variables Configuration in .bashrc
+# 12. Install Health Monitor systemd service
+# ============================================
+log_info "Installing Health Monitor systemd service..."
+SERVICE_FILE="/etc/systemd/system/health_monitor.service"
+if [ -f "$SCRIPT_DIR/health_monitor.service" ]; then
+    sed "s|PROJECT_ROOT_PLACEHOLDER|$PROJECT_ROOT|g" "$SCRIPT_DIR/health_monitor.service" > "$SERVICE_FILE"
+    systemctl daemon-reload
+    systemctl enable health_monitor.service
+    systemctl start health_monitor.service || log_warn "Health Monitor service may need config.yml with vms/health_monitoring"
+    log_success "Health Monitor service installed and started"
+else
+    log_warn "health_monitor.service template not found"
+fi
+
+# ============================================
+# 13. Environment Variables Configuration in .bashrc
 # ============================================
 log_info "Configuring environment variables..."
 BASHRC="$USER_HOME/.bashrc"
@@ -396,22 +435,25 @@ if ! grep -q "LC_ALL=en_US.UTF-8" "$BASHRC" 2>/dev/null; then
 fi
 
 # ============================================
-# 12. Summary
+# 14. Summary
 # ============================================
 log_info "Installation completed successfully!"
 echo ""
 echo "Next steps:"
 echo "1. Run health_check.sh script to verify installation"
 echo "2. Activate virtual environment: source $VENV_DIR/bin/activate"
-echo "3. Check n8n status: cd $VM04_DIR && docker compose ps"
-echo "4. Open in browser: http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "3. Check Docker status: cd $VM04_DIR && docker compose ps"
+echo "4. n8n:  http://$(hostname -I | awk '{print $1}'):$N8N_PORT"
+echo "5. Grafana: http://$(hostname -I | awk '{print $1}'):3000 (admin / $GRAFANA_PASS)"
+echo ""
+echo "Monitoring (Step 0.4):"
+echo "- Health Monitor: systemctl status health_monitor"
+echo "- Prometheus: scrapes Python exporter (127.0.0.1:9091)"
+echo "- Grafana: dashboards, Prometheus datasource pre-configured"
+echo "- For metrics: ensure configs/config.yml has vms and health_monitoring"
 echo ""
 echo "IMPORTANT:"
 echo "- You may need to log out and log back in to access Docker without sudo"
-echo "- Check n8n logs: cd $VM04_DIR && docker compose logs -f n8n"
-echo "- n8n management:"
-echo "  Start:   cd $VM04_DIR && docker compose up -d"
-echo "  Stop:    cd $VM04_DIR && docker compose down"
-echo "  Restart: cd $VM04_DIR && docker compose restart"
+echo "- Docker management: cd $VM04_DIR && docker compose up -d | down | restart"
 echo ""
 

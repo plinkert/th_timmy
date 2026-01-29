@@ -1,0 +1,17 @@
+[Unit]
+Description=th_timmy Health Monitor (Step 0.4) - metrics, Prometheus exporter
+After=network.target docker.service
+
+[Service]
+Type=simple
+User=root
+# PROJECT_ROOT_PLACEHOLDER - replaced by install_vm04.sh
+WorkingDirectory=PROJECT_ROOT_PLACEHOLDER
+ExecStart=PROJECT_ROOT_PLACEHOLDER/venv/bin/python PROJECT_ROOT_PLACEHOLDER/hosts/vm04-orchestrator/run_health_monitor.py
+Restart=always
+RestartSec=10
+Environment=BOOTSTRAP_PROJECT_ROOT=PROJECT_ROOT_PLACEHOLDER
+Environment=PROJECT_ROOT=PROJECT_ROOT_PLACEHOLDER
+
+[Install]
+WantedBy=multi-user.target

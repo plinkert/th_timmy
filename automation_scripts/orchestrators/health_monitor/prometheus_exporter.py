@@ -59,12 +59,14 @@ def update_prometheus_metrics(metrics: SystemMetrics) -> None:
 
 
 def start_prometheus_exporter(
-    port: int = 9090,
+    port: int = 9091,
     *,
     config_path: Optional[Union[str, Path]] = None,
     config: Optional[dict] = None,
+    addr: Optional[str] = None,
 ) -> None:
-    """Start Prometheus HTTP server in a background thread. No-op if already started or prometheus_client missing."""
+    """Start Prometheus HTTP server in a background thread. Binds to addr (default 127.0.0.1) for local-only access.
+    Prometheus (Docker) scrapes via host.docker.internal. No-op if already started or prometheus_client missing."""
     global _server_thread
     if _server_thread is not None and _server_thread.is_alive():
         return
@@ -75,8 +77,11 @@ def start_prometheus_exporter(
         if path.is_file():
             with open(path) as f:
                 config = yaml.safe_load(f) or {}
+    hm = (config or {}).get("health_monitoring") or {}
     if config:
-        port = int((config.get("health_monitoring") or {}).get("prometheus_expose_port", port))
+        port = int(hm.get("prometheus_expose_port", port))
+    if addr is None:
+        addr = hm.get("prometheus_expose_addr", "127.0.0.1")
     try:
         from prometheus_client import start_http_server
     except ImportError:
@@ -86,7 +91,7 @@ def start_prometheus_exporter(
         return
 
     def _run():
-        start_http_server(port)
+        start_http_server(port, addr=addr)
 
     _server_thread = threading.Thread(target=_run, daemon=True)
     _server_thread.start()

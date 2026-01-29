@@ -1,0 +1,12 @@
+# Grafana datasource provisioning - Prometheus (th_timmy metrics)
+# Prometheus uses network_mode: host, so reachable via host.docker.internal:9090
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://host.docker.internal:9090
+    isDefault: true
+    editable: false
