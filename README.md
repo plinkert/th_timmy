@@ -34,12 +34,13 @@ th_timmy/
 │   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
 │   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
-│   └── ...                  # (collectors, parsers, normalizers, utils — as added)
+│   └── playbooks/           # Playbook Structure (Step 1.1): playbook_validator, query_loader
+├── playbooks/               # MITRE ATT&CK playbooks (template + 5 examples: T1055, T1059, T1562, T1082, T1486)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # e.g. run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_health_monitor_integration.sh
+│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -54,6 +55,7 @@ th_timmy/
 - [x] **Step 0.2 (Repository Sync)** — closed
 - [x] **Step 0.3 (Configuration Management)** — closed
 - [x] **Step 0.4 (Health Monitoring)** — closed
+- [x] **Step 1.1 (Playbook Structure with data_sources)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -84,6 +86,7 @@ For running Python and automation from VM04 (including Remote Execution, Reposit
 ## Documentation
 
 - [Implementation phases and status](docs/PHASES.md) — Summary of each step (what it does, status) and links to setup, configuration, and testing
+- [Playbook format and API](docs/PLAYBOOKS.md) — Playbook structure, metadata, data_sources, validator, query loader
 - [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) — How Repository Sync (Step 0.2) works and how it fits with Remote Execution
 - [Enhanced Architecture Documentation](docs/ARCHITECTURE_ENHANCED.md) — System architecture
 - [Data Flow Documentation](docs/DATA_FLOW.md) - Data flow through the system

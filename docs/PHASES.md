@@ -68,13 +68,258 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | In place |
+| **Status** | Closed |
 | **What it does** | Playbook structure with `technique_description` and `data_sources` in metadata.yml. Validator rejects playbooks without required fields. Query loader reads .sql, .json, .kql files. Five example playbooks (T1055, T1059, T1562, T1082, T1486). |
-| **Module README** | [docs/PLAYBOOKS.md](PLAYBOOKS.md) — format, examples, API. |
-| **Testing** | Unit: `tests/unit/test_playbook_validator.py`, `test_query_loader.py`. Integration: `tests/integration/run_playbooks_integration.sh`. |
+| **Module README** | [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md), [docs/PLAYBOOKS.md](PLAYBOOKS.md) — format, examples, API. |
+| **Configuration** | TBD (schema in `configs/schemas/`). |
+| **Testing** | [Testing Guide — Playbook Structure tests](TESTING.md#playbook-structure-tests-step-11): unit and integration tests. |
 
 ---
 
-## Upcoming steps
+## Phase 0 (continued): Management interfaces
 
-Further steps (for example VM setup scripts, database configuration, and other components) will be added here as they are defined. Each new step will follow the same layout: status, short description, and links to the module README, configuration, and testing.
+## Step 0.5 — Management Dashboard (n8n)
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Central n8n interface for VM management: status cards (OK/warning/critical), buttons to trigger repo sync, config backup, and health checks. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 0.6 — Testing Management Interface
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Remote execution of tests (connections, data flow, health) from n8n. Test results and history stored centrally. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 0.7 — Deployment Management Interface
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Manage VM installation and updates from n8n. Run install scripts remotely, collect logs, verify deployment. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 0.8 — Hardening Management Interface
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Run hardening scripts from n8n. Pre/post security tests, before/after reports. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Phase 1 (continued): Threat Hunting foundations
+
+## Step 1.2 — Query Generator
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Auto-generate queries for selected hunts and tools (manual/API). Output saved to `queries_generated/`. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 1.3 — Deterministic Anonymization with Mapping Table
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Anonymize data before AI processing; mapping table for deterministic deanonymization. Mapping stored only on VM01/VM02 (encrypted). |
+| **Module README** | TBD. See [ANONYMIZATION.md](ANONYMIZATION.md). |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 1.4 — n8n UI: Hunt and Tool Selection Form
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Form in n8n for selecting hunts, tools, and mode (manual/API). Triggers query generation and pipeline. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 1.5 — Data Package: Structure and Validation
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Standard DataPackage format (metadata, data, context). JSON schema validation. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 1.6 — Playbook Validator (extended)
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Extended playbook validation: directory structure, file presence, query correctness. (Basic validator is in Step 1.1.) |
+| **Module README** | TBD. See [PLAYBOOKS.md](PLAYBOOKS.md). |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 1.7 — Playbook Management Interface
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | n8n interface for creating, editing, validating, and testing playbooks. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Phase 2: Playbook Engine and Analysis
+
+## Step 2.1 — Playbook Engine (Deterministic Analysis)
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Deterministic analysis engine: run playbook steps, filter data, aggregate, produce findings with evidence references. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 2.2 — Pipeline Integration: n8n → VM01 → VM02 → VM03
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | End-to-end data flow: run queries on VM01, collect results, anonymize on VM02, analyze on VM03, store findings. |
+| **Module README** | TBD. See [DATA_FLOW.md](DATA_FLOW.md). |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 2.3 — Evidence & Findings: Structure and Storage
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Database schema for findings and evidence. Store findings with references to evidence on VM02. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Phase 3: AI Integration
+
+## Step 3.1 — AI Service (OpenAI API Integration)
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Service to validate findings and generate executive summary via OpenAI (or similar) API. Only anonymized data sent to AI. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 3.2 — AI Review Workflow
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | n8n workflow: send findings to AI for validation, store `false_positive` and `ai_feedback` in database. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 3.3 — Executive Summary Generator
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Generate executive summary (Markdown) for stakeholders using AI. Stored in `/reports`. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Phase 4: Deanonymization and Reporting
+
+## Step 4.1 — Deanonymization Service
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Deterministic deanonymization for final reports. Mapping table access only on VM01/VM02. |
+| **Module README** | TBD. See [ANONYMIZATION.md](ANONYMIZATION.md). |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 4.2 — Final Report Generator
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Generate final report (Markdown/PDF) combining executive summary and deanonymized findings. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Step 4.3 — n8n Workflow: Full End-to-End Pipeline
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Complete workflow from hunt selection to final report and notification. |
+| **Module README** | TBD. |
+| **Configuration** | TBD. |
+| **Testing** | TBD. |
+
+---
+
+## Documentation and Tests (DOC-01, DOC-02)
+
+| | |
+|---|---|
+| **Status** | To do |
+| **What it does** | Full documentation: architecture, data flow, anonymization, management dashboard, user guide for hunters. |
+| **Module README** | [ARCHITECTURE_ENHANCED.md](ARCHITECTURE_ENHANCED.md), [DATA_FLOW.md](DATA_FLOW.md), [ANONYMIZATION.md](ANONYMIZATION.md), [USER_GUIDE_HUNTER.md](USER_GUIDE_HUNTER.md). |
+| **Configuration** | N/A. |
+| **Testing** | Documentation review, spell check, link verification. |

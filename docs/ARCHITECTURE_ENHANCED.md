@@ -187,6 +187,7 @@ External Sources → Collectors → Parsers → Normalizers → Database (VM-02)
 - **Repository Sync (Step 0.2)**: Syncs the project from VM04 to VM01–VM03 (sync on VM04, then rsync push). Location: `automation_scripts.orchestrators.repo_sync`. Main functions: `sync_repository_to_vm`, `sync_repository_to_all_vms`, `check_repo_status`, `verify_sync`; uses `git_manager` and `secret_scanner` (gitleaks before sync; sync blocked if secrets are found). Depends on Step 0.1 for verification (e.g. reading `.sync_rev` on targets). Config: `repository` in `configs/config.yml`.
 - **Configuration Management (Step 0.3)**: Central config validation, backup (encrypted, 90-day retention), and sync to VMs. Location: `automation_scripts.orchestrators.config_manager`. Main functions: `get_config`, `update_config`, `backup_config`, `restore_config`, `sync_config_to_vm`; uses `config_validator` (JSON Schema) and `config_backup`. Config: `config_management` in `configs/config.yml`.
 - **Health Monitoring (Step 0.4)**: Central collection of VM metrics (CPU, memory, disk, response time, uptime), threshold evaluation, and alerts (e-mail, Slack, SMS). Location: `automation_scripts.orchestrators.health_monitor`. Main functions: `check_vm_health`, `schedule_health_checks`, `get_health_status`, `collect_system_metrics`, `check_thresholds`, `send_alert`, `start_prometheus_exporter`. Depends on Step 0.1 (runs `health_check.sh` remotely via `execute_remote_command`) and Step 0.2 (health_check.sh paths after sync). Exposes `/metrics` on VM04 (localhost) for Prometheus; Prometheus and Grafana run on VM04 via `hosts/vm04-orchestrator/docker-compose.yml` (install_vm04.sh). Config: `health_monitoring` in `configs/config.yml`.
+- **Playbook Structure (Step 1.1)**: Playbook structure with `technique_description` and `data_sources` in metadata.yml. Location: `automation_scripts.playbooks` and `playbooks/`. Main components: `playbook_validator` (validates technique_description, data_sources, hunting_indicators, TP/FP; rejects playbooks without required fields), `query_loader` (loads .sql, .json, .kql files from `queries/`). Five example playbooks (T1055, T1059, T1562, T1082, T1486) in `playbooks/`. Depends on Step 0.2 (playbooks are synced to VMs). See [docs/PLAYBOOKS.md](PLAYBOOKS.md) for format and examples.
 
 **Technologies**:
 - n8n (Docker container)
@@ -385,10 +386,12 @@ th_timmy/
 │   │   ├── repo_sync/          # Repository Sync (Step 0.2)
 │   │   ├── config_manager/    # Configuration Management (Step 0.3)
 │   │   └── health_monitor/    # Health Monitoring (Step 0.4)
+│   ├── playbooks/             # Playbook Structure (Step 1.1): playbook_validator, query_loader
 │   ├── collectors/
 │   ├── parsers/
 │   ├── normalizers/
 │   └── utils/
+├── playbooks/                 # MITRE ATT&CK playbooks (template + T1055, T1059, T1562, T1082, T1486)
 ├── configs/                  # Configuration files
 ├── docs/                     # Documentation
 ├── tests/                    # Unit and integration tests

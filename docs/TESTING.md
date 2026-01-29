@@ -55,7 +55,7 @@ The script `tests/integration/run_repo_sync_integration.sh` runs bootstrap (via 
 
 **Requirements:** VM04 context, `configs/config.yml` with `repository.main_repo_path` and `repository.vm_repo_paths` (see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live verify/check tests.
 
-**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+**Instructions:** See the script header (Run instructions) for steps. In short:
 
 ```bash
 cd /path/to/th_timmy
@@ -94,7 +94,7 @@ The script `tests/integration/run_config_manager_integration.sh` runs bootstrap 
 
 **Requirements:** VM04 context, `configs/config.yml` with `config_management` (backup_location, config_paths; see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live get/update tests; `TH_TIMMY_CONFIG_BACKUP_PASSPHRASE` for backup tests.
 
-**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+**Instructions:** See the script header (Run instructions) for steps. In short:
 
 ```bash
 cd /path/to/th_timmy
@@ -125,7 +125,7 @@ The script `tests/integration/run_playbooks_integration.sh` runs bootstrap (via 
 
 **Requirements:** VM04 context (or any host with project and run_python.sh).
 
-**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA). In short:
+**Instructions:** See the script header (Run instructions). In short:
 
 ```bash
 cd /path/to/th_timmy
@@ -134,6 +134,8 @@ chmod +x tests/integration/run_playbooks_integration.sh
 ```
 
 Results are written to `results/playbooks_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [docs/PLAYBOOKS.md](PLAYBOOKS.md) (format, examples, validator, query loader).
 
 ---
 
@@ -160,7 +162,7 @@ The script `tests/integration/run_health_monitor_integration.sh` runs bootstrap 
 
 **Requirements:** VM04 context, `configs/config.yml` with `health_monitoring` (check_interval, health_check_script_path, thresholds; see `config.example.yml`). Optional: SSH keys in `~/.ssh/th_timmy_keys` for live metric collection.
 
-**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA) for steps. In short:
+**Instructions:** See the script header (Run instructions) for steps. In short:
 
 ```bash
 cd /path/to/th_timmy

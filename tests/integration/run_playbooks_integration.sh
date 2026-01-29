@@ -3,7 +3,7 @@
 # Run on VM04 (orchestrator). Ensures env is ready, runs playbook unit tests,
 # validates playbooks, loads queries. Results in results/.
 #
-# INSTRUKCJA URUCHAMIANIA (Run instructions)
+# Run instructions
 # ----------------------------------------
 # 1. Środowisko: skrypt uruchamiać na VM04 (orchestrator), z katalogu projektu th_timmy.
 # 2. Przed uruchomieniem:
@@ -58,7 +58,7 @@ FAILED=0
 if [ -x "$RUN_PYTHON" ] && [ -d "$PROJECT_ROOT/tests/unit" ]; then
   log_info "Running playbook unit tests via run_python.sh..."
   if BOOTSTRAP_PROJECT_ROOT="$PROJECT_ROOT" "$RUN_PYTHON" -m pytest \
-    tests/unit/test_playbook_validator.py tests/unit/test_query_loader.py \
+    tests/unit/test_playbook_validator.py tests/unit/test_query_loader.py tests/unit/test_cli_helpers.py \
     -v --tb=short -q 2>&1; then
     log_info "Playbook unit tests passed."
   else
@@ -100,6 +100,14 @@ print('playbook_invalid: correctly rejected')
 entries = load_queries(valid_dir)
 assert len(entries) >= 1, f'Expected at least 1 query, got {len(entries)}'
 print(f'load_queries: loaded {len(entries)} queries')
+
+# tool_class filter: T1055 edr=3, siem=4
+from automation_scripts.playbooks.cli_helpers import get_queries_resolved
+edr = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbooks', tool_class='edr')
+siem = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbooks', tool_class='siem')
+assert len(edr) == 3, f'Expected 3 EDR queries, got {len(edr)}'
+assert len(siem) == 4, f'Expected 4 SIEM queries, got {len(siem)}'
+print('tool_class filter: edr=3, siem=4 OK')
 " 2>&1 || { log_err "Playbook sanity check failed"; FAILED=1; }
 fi
 
