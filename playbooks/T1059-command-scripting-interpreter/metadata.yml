@@ -1,0 +1,25 @@
+name: "Command and Scripting Interpreter"
+description: "Detect suspicious PowerShell, cmd, bash usage (encoded commands, download cradle)"
+version: "1.0"
+mitre_technique_id: "T1059"
+mitre_technique_name: "Command and Scripting Interpreter"
+
+technique_description: |
+  Adversaries abuse command and scripting interpreters to execute arbitrary commands. Common vectors:
+  PowerShell (encoded commands, download cradle, Invoke-Expression), cmd.exe, bash. Typical indicators:
+  base64-encoded arguments, -EncodedCommand, IEX/Invoke-Expression, web requests from script hosts,
+  unusual parent processes spawning interpreters.
+
+data_sources:
+  - tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual.sql"
+  - tool: "elk"
+    mode: "API"
+    query_path: "queries/elk_api.json"
+  - tool: "ms_defender"
+    mode: "manual"
+    query_path: "queries/ms_defender_manual.kql"
+  - tool: "ms_defender"
+    mode: "API"
+    query_path: "queries/ms_defender_api.json"

@@ -1,0 +1,6 @@
+// T1082 System Information Discovery - Microsoft Defender Advanced Hunting
+// Detect system info gathering commands
+DeviceProcessEvents
+| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where FileName in ("systeminfo.exe", "hostname.exe", "whoami.exe", "ipconfig.exe")
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

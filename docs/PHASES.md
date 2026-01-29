@@ -62,6 +62,19 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 ---
 
+---
+
+## Step 1.1 — Playbook Structure with data_sources
+
+| | |
+|---|---|
+| **Status** | In place |
+| **What it does** | Playbook structure with `technique_description` and `data_sources` in metadata.yml. Validator rejects playbooks without required fields. Query loader reads .sql, .json, .kql files. Five example playbooks (T1055, T1059, T1562, T1082, T1486). |
+| **Module README** | [docs/PLAYBOOKS.md](PLAYBOOKS.md) — format, examples, API. |
+| **Testing** | Unit: `tests/unit/test_playbook_validator.py`, `test_query_loader.py`. Integration: `tests/integration/run_playbooks_integration.sh`. |
+
+---
+
 ## Upcoming steps
 
 Further steps (for example VM setup scripts, database configuration, and other components) will be added here as they are defined. Each new step will follow the same layout: status, short description, and links to the module README, configuration, and testing.

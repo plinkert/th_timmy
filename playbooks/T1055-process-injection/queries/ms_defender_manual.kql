@@ -1,0 +1,6 @@
+// T1055 Process Injection - Microsoft Defender Advanced Hunting
+// Detect cross-process memory operations and remote thread creation
+DeviceEvents
+| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where ActionType in ("CreateRemoteThreadApiCall", "ProcessMemoryAccess")
+| project Timestamp, DeviceName, ActionType, FileName, ProcessCommandLine, InitiatingProcessFileName

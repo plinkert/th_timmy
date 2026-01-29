@@ -1,0 +1,14 @@
+name: "Valid Test Playbook"
+description: "Fixture for integration tests"
+version: "1.0"
+technique_description: |
+  Valid playbook fixture for integration testing.
+  Contains technique_description and data_sources.
+
+data_sources:
+  - tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual.sql"
+  - tool: "elk"
+    mode: "API"
+    query_path: "queries/elk_api.json"

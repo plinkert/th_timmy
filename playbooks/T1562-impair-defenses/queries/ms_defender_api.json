@@ -1,0 +1,3 @@
+{
+  "Query": "DeviceProcessEvents | where Timestamp > ago(24h) | where ProcessCommandLine contains 'Disable-WindowsDefender' or ProcessCommandLine contains 'Set-MpPreference' or ProcessCommandLine contains 'auditpol' | project Timestamp, DeviceName, FileName, ProcessCommandLine"
+}

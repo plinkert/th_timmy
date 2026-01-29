@@ -108,6 +108,35 @@ Results are written to `results/config_manager_integration_YYYYMMDD_HHMMSS.txt`.
 
 ---
 
+## Playbook Structure tests (Step 1.1)
+
+### Unit tests
+
+Unit tests for the Playbook module (`playbook_validator`, `query_loader`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_playbook_validator.py tests/unit/test_query_loader.py -v
+```
+
+### Integration test
+
+The script `tests/integration/run_playbooks_integration.sh` runs bootstrap (via `run_python.sh`), playbook unit tests, validates fixtures and all 5 MITRE playbooks. Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh).
+
+**Instructions:** See the script header (INSTRUKCJA URUCHAMIANIA). In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_playbooks_integration.sh
+./tests/integration/run_playbooks_integration.sh
+```
+
+Results are written to `results/playbooks_integration_YYYYMMDD_HHMMSS.txt`.
+
+---
+
 ## Health Monitoring Service tests (Step 0.4)
 
 ### Unit tests

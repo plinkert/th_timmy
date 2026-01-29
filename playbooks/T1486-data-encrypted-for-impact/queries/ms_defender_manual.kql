@@ -1,0 +1,8 @@
+// T1486 Data Encrypted for Impact - Microsoft Defender Advanced Hunting
+// Detect ransomware: vssadmin delete, bcdedit, mass file changes
+DeviceProcessEvents
+| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where ProcessCommandLine contains "vssadmin" and ProcessCommandLine contains "delete"
+   or ProcessCommandLine contains "bcdedit"
+   or ProcessCommandLine contains "wbadmin"
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

@@ -1,0 +1,11 @@
+{
+  "query": {
+    "bool": {
+      "filter": [
+        { "range": { "@timestamp": { "gte": "{{timestamp_start}}", "lte": "{{timestamp_end}}" } } },
+        { "terms": { "process.name": ["powershell.exe", "cmd.exe", "bash"] } },
+        { "query_string": { "query": "EncodedCommand OR IEX OR Invoke-Expression" } }
+      ]
+    }
+  }
+}

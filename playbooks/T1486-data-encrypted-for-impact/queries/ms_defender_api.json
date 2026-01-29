@@ -1,0 +1,3 @@
+{
+  "Query": "DeviceProcessEvents | where Timestamp > ago(24h) | where ProcessCommandLine contains 'vssadmin' and ProcessCommandLine contains 'delete' or ProcessCommandLine contains 'bcdedit' | project Timestamp, DeviceName, FileName, ProcessCommandLine"
+}

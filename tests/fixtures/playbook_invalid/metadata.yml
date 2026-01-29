@@ -1,0 +1,5 @@
+name: "Invalid Test Playbook"
+description: "Fixture without data_sources - should fail validation"
+version: "1.0"
+# Missing: technique_description
+# Missing: data_sources

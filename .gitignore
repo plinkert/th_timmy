@@ -54,8 +54,15 @@ results/
 *.xlsx
 *.json
 !configs/*.example.*
+!configs/schemas/*.json
 !playbooks/*/examples/*.csv
 !playbooks/*/queries/*.csv
+# Allow playbook and test fixture query files (must follow *.sql, *.json)
+!playbooks/*/queries/*.sql
+!playbooks/*/queries/*.json
+!playbooks/*/queries/*.kql
+!tests/fixtures/playbook_valid/queries/*.sql
+!tests/fixtures/playbook_valid/queries/*.json
 
 # OS
 .DS_Store

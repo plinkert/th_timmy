@@ -1,0 +1,25 @@
+name: "Impair Defenses"
+description: "Detect disabling AV, EDR, logs (Disable-WindowsDefender, auditpol, reg delete)"
+version: "1.0"
+mitre_technique_id: "T1562"
+mitre_technique_name: "Impair Defenses"
+
+technique_description: |
+  Adversaries impair or disable security tools and logging to avoid detection. Common actions:
+  Disable-WindowsDefender, Set-MpPreference, auditpol /clear, reg delete for security services,
+  stopping Windows Defender, tampering with event logs. Typical indicators: processes modifying
+  security registry keys, audit policy changes, defender service stops.
+
+data_sources:
+  - tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual.sql"
+  - tool: "elk"
+    mode: "API"
+    query_path: "queries/elk_api.json"
+  - tool: "ms_defender"
+    mode: "manual"
+    query_path: "queries/ms_defender_manual.kql"
+  - tool: "ms_defender"
+    mode: "API"
+    query_path: "queries/ms_defender_api.json"

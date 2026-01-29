@@ -1,0 +1,6 @@
+// Microsoft Defender Advanced Hunting - suspicious PowerShell
+// Required placeholders: {{timestamp_start}}, {{timestamp_end}}
+DeviceProcessEvents
+| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where FileName =~ "powershell.exe"
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName

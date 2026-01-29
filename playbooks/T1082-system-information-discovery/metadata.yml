@@ -1,0 +1,25 @@
+name: "System Information Discovery"
+description: "Detect system info gathering (systeminfo, hostname, whoami, env)"
+version: "1.0"
+mitre_technique_id: "T1082"
+mitre_technique_name: "System Information Discovery"
+
+technique_description: |
+  Adversaries gather system information to understand the environment before further actions.
+  Common commands: systeminfo, hostname, whoami, ipconfig, set (env vars), uname. Typical
+  indicators: rapid succession of discovery commands, discovery from unusual parent processes,
+  batch execution of systeminfo/whoami/hostname in a single session.
+
+data_sources:
+  - tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual.sql"
+  - tool: "elk"
+    mode: "API"
+    query_path: "queries/elk_api.json"
+  - tool: "ms_defender"
+    mode: "manual"
+    query_path: "queries/ms_defender_manual.kql"
+  - tool: "ms_defender"
+    mode: "API"
+    query_path: "queries/ms_defender_api.json"

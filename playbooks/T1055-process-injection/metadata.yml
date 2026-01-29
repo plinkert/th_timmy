@@ -1,0 +1,25 @@
+name: "Process Injection"
+description: "Detect code injection into processes (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)"
+version: "1.0"
+mitre_technique_id: "T1055"
+mitre_technique_name: "Process Injection"
+
+technique_description: |
+  Process Injection is a technique where adversaries inject malicious code into the address space of
+  another process to evade defenses. Common APIs include VirtualAllocEx, WriteProcessMemory,
+  CreateRemoteThread. Typical indicators: suspicious cross-process memory writes, remote thread
+  creation from non-browser processes, unusual parent-child process relationships.
+
+data_sources:
+  - tool: "elk"
+    mode: "manual"
+    query_path: "queries/elk_manual.sql"
+  - tool: "elk"
+    mode: "API"
+    query_path: "queries/elk_api.json"
+  - tool: "ms_defender"
+    mode: "manual"
+    query_path: "queries/ms_defender_manual.kql"
+  - tool: "ms_defender"
+    mode: "API"
+    query_path: "queries/ms_defender_api.json"

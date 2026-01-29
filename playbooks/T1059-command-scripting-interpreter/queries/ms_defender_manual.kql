@@ -1,0 +1,7 @@
+// T1059 Command and Scripting Interpreter - Microsoft Defender Advanced Hunting
+// Detect suspicious PowerShell, cmd with encoded commands
+DeviceProcessEvents
+| where Timestamp between (datetime({{timestamp_start}}) .. datetime({{timestamp_end}}))
+| where FileName in ("powershell.exe", "cmd.exe")
+| where ProcessCommandLine contains "EncodedCommand" or ProcessCommandLine contains "IEX" or ProcessCommandLine contains "Invoke-Expression"
+| project Timestamp, DeviceName, FileName, ProcessCommandLine, InitiatingProcessFileName
