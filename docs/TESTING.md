@@ -139,6 +139,37 @@ Results are written to `results/playbooks_integration_YYYYMMDD_HHMMSS.txt`.
 
 ---
 
+## Query Generator tests (Step 1.2)
+
+### Unit tests
+
+Unit tests for the Query Generator module (`query_templates`, `query_generator`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_query_templates.py tests/unit/test_query_generator.py -v
+```
+
+### Integration test
+
+The script `tests/integration/run_query_generator_integration.sh` runs bootstrap (via `run_python.sh`), query_generator unit tests, and a sanity check (generate_queries with T1059, T1055, T1562; elk+ms_defender; manual mode). Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh). Playbooks T1059, T1055, T1562 must exist in `playbooks/`.
+
+**Instructions:** See the script header (Run instructions). In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_query_generator_integration.sh
+./tests/integration/run_query_generator_integration.sh
+```
+
+Results are written to `results/query_generator_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md) (Query Generator section).
+
+---
+
 ## Health Monitoring Service tests (Step 0.4)
 
 ### Unit tests

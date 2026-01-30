@@ -50,6 +50,7 @@ test_results/
 
 # Results and data
 results/
+queries_generated/
 *.csv
 *.xlsx
 *.json

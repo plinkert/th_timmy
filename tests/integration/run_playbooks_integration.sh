@@ -107,7 +107,7 @@ edr = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbo
 siem = get_queries_resolved('T1055-process-injection', playbooks_dir=root/'playbooks', tool_class='siem')
 assert len(edr) == 3, f'Expected 3 EDR queries, got {len(edr)}'
 assert len(siem) == 5, f'Expected 5 SIEM queries, got {len(siem)}'
-print('tool_class filter: edr=3, siem=4 OK')
+print('tool_class filter: edr=3, siem=5 OK')
 " 2>&1 || { log_err "Playbook sanity check failed"; FAILED=1; }
 fi
 

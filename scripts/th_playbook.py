@@ -36,6 +36,7 @@ from automation_scripts.playbooks.cli_helpers import (
     get_queries_resolved,
     validate_playbook_cli,
 )
+from automation_scripts.playbooks.query_generator import generate_queries
 
 
 def _playbooks_dir() -> Path:
@@ -157,6 +158,32 @@ def cmd_queries(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_generate(args: argparse.Namespace) -> int:
+    """Generate query files for selected hunts and tools."""
+    root = Path(_PROJECT_ROOT) if _PROJECT_ROOT else get_playbooks_dir().parent
+    pb_dir = root / "playbooks"
+    out_dir = root / "queries_generated"
+    if getattr(args, "output_dir", None):
+        out_dir = Path(args.output_dir)
+    try:
+        paths = generate_queries(
+            hunt_list=args.hunts,
+            tool_list=args.tools,
+            mode=args.mode,
+            output_dir=out_dir,
+            time_range_days=args.days,
+            playbooks_dir=pb_dir,
+            project_root=root,
+        )
+        print(f"Generated {len(paths)} files in {out_dir}")
+        for p in paths:
+            print(f"  {p.name}")
+        return 0
+    except Exception as e:
+        print(f"Error: {e}", file=sys.stderr)
+        return 1
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     """Validate playbook(s)."""
     pb_dir = _playbooks_dir()
@@ -212,6 +239,17 @@ def main() -> int:
     p_queries.add_argument("--hours", type=int, default=24, help="Hours for time range (default: 24)")
     p_queries.add_argument("--tool-class", choices=["siem", "edr", "data_lake"], help="Filter queries by tool class (analyst selects available tool)")
     p_queries.set_defaults(func=cmd_queries)
+
+    # generate
+    p_generate = sub.add_parser("generate", help="Generate query files for hunts and tools")
+    p_generate.add_argument("hunts", nargs="+", help="Playbook IDs (e.g. T1059 T1055 T1562)")
+    p_generate.add_argument("-t", "--tools", nargs="+", default=["elk", "ms_defender"],
+                            help="Tools (default: elk ms_defender)")
+    p_generate.add_argument("-m", "--mode", choices=["manual", "API"], default="manual",
+                            help="Mode (default: manual)")
+    p_generate.add_argument("-d", "--days", type=int, default=7, help="Time range days (default: 7)")
+    p_generate.add_argument("-o", "--output-dir", help="Output directory (default: queries_generated/)")
+    p_generate.set_defaults(func=cmd_generate)
 
     # validate
     p_validate = sub.add_parser("validate", help="Validate playbook(s)")

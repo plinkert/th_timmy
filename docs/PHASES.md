@@ -132,11 +132,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Auto-generate queries for selected hunts and tools (manual/API). Output saved to `queries_generated/`. |
-| **Module README** | TBD. |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Closed |
+| **What it does** | Auto-generate queries for selected hunts and tools (manual/API). Loads from playbooks via query_loader, filters by tool and mode, optionally substitutes placeholders, saves to `queries_generated/`. |
+| **Module README** | [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md) — Query Generator section, generate_queries(), adding templates. |
+| **Configuration** | output_dir (default: PROJECT_ROOT/queries_generated), time_range_days (default: 7). |
+| **Testing** | [Testing Guide — Query Generator tests](TESTING.md#query-generator-tests-step-12): unit and integration tests. |
 
 ---
 

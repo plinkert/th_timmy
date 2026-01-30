@@ -235,6 +235,10 @@ python scripts/th_playbook.py queries T1055-process-injection --resolve --hours 
 # Validate playbook(s)
 python scripts/th_playbook.py validate
 python scripts/th_playbook.py validate T1055-process-injection
+
+# Generate query files (Step 1.2)
+python scripts/th_playbook.py generate T1059 T1055 T1562 -t elk ms_defender -m manual
+python scripts/th_playbook.py generate T1055 -t ms_defender -m API -d 14
 ```
 
 Set `PROJECT_ROOT` or `BOOTSTRAP_PROJECT_ROOT` if not running from project root.
