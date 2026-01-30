@@ -34,13 +34,13 @@ th_timmy/
 │   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
 │   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
-│   └── playbooks/           # Playbook Structure (Step 1.1): playbook_validator, query_loader
+│   └── playbooks/           # Step 1.1: playbook_validator, query_loader; Step 1.2: query_generator
 ├── playbooks/               # MITRE ATT&CK playbooks (template + 5 examples; queries: elk.yml, ms_defender.yml)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh
+│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh, run_query_generator_integration.sh
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -56,6 +56,7 @@ th_timmy/
 - [x] **Step 0.3 (Configuration Management)** — closed
 - [x] **Step 0.4 (Health Monitoring)** — closed
 - [x] **Step 1.1 (Playbook Structure with data_sources)** — closed
+- [x] **Step 1.2 (Query Generator)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation

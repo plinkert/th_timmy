@@ -202,6 +202,25 @@ except QueryLoadError as e:
     print(f"Load failed: {e}")
 ```
 
+### generate_queries (Query Generator, Step 1.2)
+
+Generates ready-to-use query files from playbooks. Loads via query_loader, filters by tool and mode, substitutes placeholders (e.g. `{{days}}`), saves to `queries_generated/`:
+
+```python
+from automation_scripts.playbooks import generate_queries
+
+paths = generate_queries(
+    hunt_list=["T1059", "T1055", "T1562"],
+    tool_list=["elk", "ms_defender"],
+    mode="manual",
+    output_dir="queries_generated",
+    time_range_days=7,
+)
+# Returns list of Path; files: {hunt}_{tool}_{mode}_{query_id}.{sql|kql|json}
+```
+
+See [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md) for adding new templates.
+
 ### Recommended Fields (hypothesis, environment_requirements, operational_steps, escalation)
 
 | Field | Description |
