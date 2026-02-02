@@ -1,10 +1,11 @@
-name: "Process Injection"
-description: "Detect code injection into processes (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread)"
-version: "1.2"
+name: "Process Injection (T1055) Comprehensive Threat Hunting Playbook"
+description: "Comprehensive playbook for detecting and responding to process injection on Windows, Linux, and macOS systems. Includes indicators, scenarios, triage, quick classification, and response steps."
+version: "2.0"
 author: "TH Team"
-created_at: "2025-01-29"
+created_at: "2026-02-02"
 changelog: |
-  - 1.2 (2025-01-27): Migrated queries to YAML format (elk.yml, ms_defender.yml) - one file per tool, query_id/query_ids
+  - 2.0 (2026-02-02): Merged best elements of two prior playbooks; added Linux and macOS support, triage section, quick FP/TP, data_sources and response procedures.
+  - 1.2 (2025-01-27): Migrated queries to YAML format (elk.yml, ms_defender.yml)
   - 1.1 (2025-01-29): Added output, triage, response; required_indices in data_sources
   - 1.0 (2025-01-29): Initial release with full structure
 
@@ -12,19 +13,12 @@ mitre_technique_id: "T1055"
 mitre_technique_name: "Process Injection"
 
 technique_description: |
-  Process Injection is a technique where adversaries inject malicious code into the address space of
-  another process to evade defenses. Common APIs include VirtualAllocEx, WriteProcessMemory,
-  CreateRemoteThread. Sub-techniques: DLL Injection (T1055.001), PE Injection (T1055.002),
-  Thread Execution Hijacking (T1055.003), Process Hollowing (T1055.012). Typical indicators:
-  suspicious cross-process memory writes, remote thread creation from non-browser processes,
-  unusual parent-child process relationships, NtMapViewOfSection, VirtualAllocEx/WriteProcessMemory
-  sequence targeting another process.
+  Process injection allows execution of malicious code in the context of another, trusted process. Attackers may inject code using multiple sub-techniques (DLL injection, PE injection, thread hijacking, process hollowing, APC injection, reflective DLL injection, process doppelgänging). The technique is used to hide activity (e.g. hide C2 communication in a browser), privilege escalation (inheriting target process privileges), credential theft (injection into lsass.exe), and persistence. Implementations exist on Windows, Linux (ptrace/mmap/memfd_create) and macOS (task_for_pid/mach_vm_write/DYLD_INSERT_LIBRARIES).
 
 scope: |
-  - Windows endpoints with EDR or Sysmon
-  - Linux endpoints (ptrace, /proc) - optional
-  - SLA: Hunt completion within 24h of trigger
-  - Threat types: APT, malware, defense evasion
+  - Systems in scope: Windows (workstations and servers, including DC), Linux (application and infrastructure servers), macOS (workstations).
+  - SLA: Hunt completion within 24 hours of trigger.
+  - Threat types: APT, ransomware, banking malware, red-team frameworks (Cobalt Strike, Metasploit, Sliver), supply-chain campaigns.
 
 environment_requirements:
   tool_classes:
@@ -32,124 +26,180 @@ environment_requirements:
     - SIEM
     - Data Lake
   tool_class_descriptions: |
-    EDR: Endpoint Detection and Response - process events, memory operations, CreateRemoteThread
-    SIEM: Security Information and Event Management - Sysmon logs, log aggregation, query interface
-    Data Lake: Large-scale analytics (optional)
+    EDR – logs process events (creation, termination), memory operations, shells and modules, and exposes telemetry API/ETW (e.g. CreateRemoteThreadApiCall, ProcessMemoryAccess).
+    SIEM – aggregates logs (Sysmon, Windows EventLog, auditd, macOS Unified Logs) and enables correlation with network telemetry.
+    Data Lake – (optional) enables processing of large data volumes and correlation over longer time windows.
   min_retention_days: 30
-  permissions: "Read access to EDR/SIEM data"
-  access_policies: "SOC analyst or higher"
+  permissions: "Read access to EDR/SIEM data and permissions to run queries in Data Lake."
+  access_policies: "SOC analyst or higher."
 
 hypothesis:
-  trigger: "Suspicious cross-process memory operations or CreateRemoteThread from non-browser process"
-  statement: "Adversary injects code into another process to evade detection"
-  goal: "Identify process injection activity (T1055)"
-  scope: "All endpoints with EDR/Sysmon, last 7 days"
+  trigger: "Alert from EDR/SIEM indicating suspicious memory operations (e.g. PROCESS_VM_WRITE), remote thread creation, or injection into high-risk process."
+  statement: "If a process allocates memory in another process, writes code, and then creates a thread in that process context, especially when the target is a system process or credential-storing process, then we are dealing with process injection."
+  goal: "Identify and classify injection events for early intrusion detection and prevention of credential theft or privilege escalation."
+  scope: "All protected endpoints (Windows, Linux, macOS)."
 
-methodology: "Query-based hunting with IOC/IOA matching on EDR and SIEM data"
+methodology: |
+  Query-based hunting with IOC/IOA correlation. Correlate process access events (Sysmon Event 10), thread creation (Event 8), module load (Event 7), as well as auditd syscalls (ptrace, mmap, process_vm_writev) and macOS EndpointSecurity events. Establish sequence: handle open → memory allocation → memory write → thread create/suspend → process resume. Use 5–10 second time windows for correlation.
 
 hunting_indicators: |
-  - Memory manipulation API calls: VirtualAllocEx, WriteProcessMemory, NtMapViewOfSection
-  - Remote thread creation: CreateRemoteThread, NtCreateThreadEx, RtlCreateUserThread
-  - Sysmon event codes: 10 (Process Access), 7 (Image Loaded), 8 (CreateRemoteThread)
-  - Cross-process memory operations (source process != target process)
-  - Unusual parent-child: e.g. Office spawning CreateRemoteThread to lsass, svchost
-  - DLL injection into high-value targets: lsass.exe, explorer.exe, browser processes
-  - Process hollowing: suspended process creation followed by memory overwrite
+  - **Windows API:** VirtualAlloc/VirtualAllocEx, VirtualProtect/VirtualProtectEx, WriteProcessMemory, NtMapViewOfSection, NtUnmapViewOfSection, NtWriteVirtualMemory, CreateRemoteThread/NtCreateThreadEx/RtlCreateUserThread, SetThreadContext, ResumeThread.
+  - **Sysmon events:**
+    * *Event 1 (Process Create)* – establishes command line and parent process.
+    * *Event 7 (Image Loaded)* – monitor unusual DLLs injected into processes.
+    * *Event 8 (CreateRemoteThread)* – detects remote thread creation in another process.
+    * *Event 10 (ProcessAccess)* – identifies handles to other processes; filter on PROCESS_VM_OPERATION, PROCESS_VM_WRITE, PROCESS_CREATE_THREAD permissions.
+  - **Enumerative functions:** EnumProcesses, EnumProcessModules, CreateToolhelp32Snapshot and OpenProcess (dynamic process selection).
+  - **Linux systems:** ptrace, process_vm_writev, memfd_create, mmap for memory write/execute; observe auditd events with TargetPID pointing to sensitive processes (sshd, init).
+  - **macOS systems:** task_for_pid, mach_vm_write and DYLD_INSERT_LIBRARIES anomalies (dylib injection).
+  - **Unusual behaviour:** processes without command line connecting to network (e.g. notepad.exe), LoadLibrary calls from temp directories, injection into high-risk processes (lsass.exe, winlogon.exe, svchost.exe, explorer.exe, browsers).
+  - **Common targets/injectors:** powershell.exe, cmd.exe, rundll32.exe, regsvr32.exe, vbc.exe, services.exe, spoolsv.exe, chrome.exe, notepad.exe.
 
 true_positive_conditions: |
-  - CreateRemoteThread/NtCreateThreadEx from process A into process B where A is not a known
-    legitimate injector (browsers, AV, EDR, debuggers, dev tools)
-  - WriteProcessMemory or NtWriteVirtualMemory from untrusted process to lsass, csrss, winlogon
-  - VirtualAllocEx + WriteProcessMemory + CreateRemoteThread sequence in single process chain
-  - Process hollowing: CreateProcess(CREATE_SUSPENDED) + NtUnmapViewOfSection + WriteProcessMemory
-  - Injection from script host (powershell.exe, wscript.exe) into system process
-  - Unusual module load (DLL) in process context from non-standard path (Temp, AppData)
+  - Event sequence: OpenProcess with PROCESS_VM_WRITE/PROCESS_VM_OPERATION permissions, VirtualAllocEx, WriteProcessMemory and CreateRemoteThread in same time context (5–10 s).
+  - Remote thread created by script process (powershell.exe, wscript.exe) or Office macro in target process (lsass.exe, winlogon.exe, svchost.exe), especially when source file is from user directory.
+  - Process created in suspended state (CREATE_SUSPENDED), followed by section unmap (NtUnmapViewOfSection), allocation, write and resume – typical process hollowing pattern.
+  - Memory write and remote thread creation in Linux system processes (sshd, systemd) via ptrace/process_vm_writev.
+  - Dylib injection in macOS processes (DYLD_INSERT_LIBRARIES anomalies) with task_for_pid/mach_vm_write.
+  - Multiple injection attempts from same source process (loop) or correlation with malware detection (Cobalt Strike beacon, Mimikatz, Qbot).
 
 false_positive_conditions: |
-  - Legitimate software: antivirus, EDR, DLP, browser sandbox (Chrome, Edge child processes)
-  - Debuggers and development tools: Visual Studio, WinDbg, Process Explorer, Process Hacker
-  - Windows components: WerFault, dwm.exe, font cache, Windows Update
-  - Known benign injectors: .NET runtime (clr.dll injection), Java (jvm.dll), legitimate plugins
-  - Browser extensions loading into browser process (expected behavior)
-  - Software installation/update: MSI, InstallShield, legitimate updaters
-  - Single VirtualAllocEx without subsequent WriteProcessMemory (may be normal allocation)
+  - Injection use by security tools: antivirus/EDR (e.g. CrowdStrike, SentinelOne), DLP, monitoring agents, browser sandboxes (Chrome Renderer).
+  - Debuggers, profilers and development tools (visualstudio.exe, windbg.exe, Process Explorer) that open handles and create remote threads for process introspection.
+  - .NET subsystem injecting CLR into managed processes and dynamic plugin loading; browser plugins, extensions and sandboxes.
+  - Installation and update processes (msiexec, installers), system services (Windows Update, WerFault) and audio/video services using dynamic library loading.
+  - Single VirtualAllocEx call without subsequent WriteProcessMemory/RemoteThread; process enumeration without further action (e.g. task manager).
 
 operational_steps:
   - step: 1
     name: "Gather signals"
-    input: "EDR/SIEM data"
-    operation: "Run queries for CreateRemoteThreadApiCall, ProcessMemoryAccess, Sysmon Event 10"
-    success_criteria: "Events returned"
-    outcome: "List of suspicious process injection events"
+    input: "Data from EDR/SIEM/Data Lake (Sysmon Event 1, 7, 8, 10; auditd ptrace/mmap/process_vm_writev; EndpointSecurity; EDR API)."
+    operation: "Run SIEM/EDR queries to obtain process creation, module load, remote thread and process access events; include network logs for C2 traffic correlation."
+    success_criteria: "Data containing potential injections collected."
+    outcome: "List of candidates (injection events)."
   - step: 2
     name: "Context analysis"
-    input: "Results from step 1"
-    operation: "Check parent process, target process, command line"
-    success_criteria: "Exclude known benign injectors"
-    outcome: "Filtered list for enrichment"
+    input: "List of candidates"
+    operation: "Identify source and target process, verify signature/certificate, disk location, command line and user context; correlate API sequences in time window; exclude processes from known safe list (AV/EDR/debuggers)."
+    success_criteria: "Only suspicious sequences remain."
+    outcome: "Focused list of suspicious injections."
   - step: 3
-    name: "Enrich"
-    input: "Filtered events"
-    operation: "Correlate with AD, threat intel"
-    success_criteria: "User/asset context added"
-    outcome: "Enriched findings"
+    name: "Enrichment"
+    input: "List of suspicious injections"
+    operation: "Add reputation data (file hash, vendor info), host context (system role, criticality) and network telemetry (IP addresses, domains). If possible, capture target process memory snapshot for dynamic analysis."
+    success_criteria: "Each event enriched with reputational and network context."
+    outcome: "Enriched incidents ready for classification."
   - step: 4
     name: "Decision"
-    input: "Enriched findings"
-    operation: "Apply TP/FP criteria"
-    success_criteria: "Classification complete"
-    outcome: "Escalate to IR or close as FP"
+    input: "Enriched incidents"
+    operation: "Apply true/false positive criteria; determine risk level (high/medium/low) per decision_criteria; decide on escalation."
+    success_criteria: "Events classified and assigned to further actions."
+    outcome: "Incidents escalated to IR or marked as FP."
 
 decision_criteria:
   high_risk:
-    - "CreateRemoteThread from script host to lsass"
-    - "WriteProcessMemory to csrss/winlogon"
+    - "Injection into credential-storing processes (lsass.exe, winlogon.exe, ssh daemon) with memory write and remote thread sequence."
+    - "Injection from script process or Office macro into system services (services.exe, svchost.exe), especially if source process is in user directory."
+    - "Process hollowing or PE injection leading to malicious malware hidden in trusted process."
+    - "Linux/macOS events with ptrace/mach_vm_write in high-sensitivity processes without matching arguments."
   medium_risk:
-    - "CreateRemoteThread from unknown process"
+    - "Injection into less critical processes (e.g. notepad.exe, calc.exe) without immediate malicious activity."
+    - "Injection performed by signed but unknown applications; requires additional analysis."
   escalation_threshold: "high_risk"
 
 escalation:
-  on_confirmed: "Open incident in ticket system"
-  notification_roles: ["SOC Lead", "Incident Response"]
-  ir_playbook_ref: "IR-001-Malware-Response"
+  on_confirmed: "Create ticket in ticketing system; isolate host (if policy allows); secure target process memory dump and binary files; conduct forensic analysis; initiate IR procedure."
+  notification_roles: ["SOC Lead", "Incident Response", "IT Operations", "IAM Team"]
+  ir_playbook_ref: "IR-T1055-Response"
 
 metrics:
-  - "Average hunt execution time (target: <2h)"
-  - "True positives per hunt"
-  - "False positive rate"
-  - "Data coverage (endpoints with EDR)"
+  - "Average hunt execution time (target <2 h)."
+  - "True positives per hunt."
+  - "False positive rate (percentage of events classified as FP)."
+  - "Data coverage (percentage of hosts with Sysmon/auditd/EndpointSecurity enabled)."
+  - "Mean time to detect and isolate injection process (MTTD/MTTI)."
 
 checklist:
   pre_hunt:
-    - "Verify EDR/SIEM data availability"
-    - "Confirm 7-day retention"
-    - "Check baseline for known benign injectors"
+    - "Verify Sysmon (Event 1, 7, 8, 10), auditd (ptrace, mmap, process_vm_writev) and EndpointSecurity configuration; ensure all hosts are covered by logging."
+    - "Confirm minimum data retention (30 days)."
+    - "Update whitelist of known legitimate injectors (AV/EDR/debuggers) and high-risk list (lsass.exe, winlogon.exe, sshd)."
   post_hunt:
-    - "Document findings"
-    - "Update queries if needed"
+    - "Document results and update detection rules (e.g. Sigma, KQL, YARA) based on new observations."
+    - "Analyse false positive causes; adjust filters (e.g. exclude known tools, installation processes)."
+    - "Share findings and trends with IR team and hardening team."
 
 use_cases:
-  - scenario: "Process injection from Office"
-    description: "Malware injected via macro into lsass"
-    data_source: "EDR DeviceEvents"
-  - scenario: "Process hollowing"
-    description: "Suspended process + memory overwrite"
-    data_source: "Sysmon Event 1, 10"
+  - scenario: "Office macro injecting code into LSASS"
+    description: "Microsoft Word file with macro launches cmd.exe/powershell.exe, which opens handle to lsass.exe, allocates memory, injects shellcode and creates remote thread. Correlate Event 10 with 0x1fffff/PROCESS_VM_WRITE permissions and Event 8 in lsass.exe, and verify source process originates from user directory."
+    data_source: "Sysmon Event 10 and 8, Office logs and EDR alerts, network telemetry (C2 server calls)."
+  - scenario: "Process hollowing in explorer.exe"
+    description: "Malware creates explorer.exe in suspended mode, removes original memory section and injects malicious PE; then resumes process. Monitor CreateProcess with CREATE_SUSPENDED flag, NtUnmapViewOfSection, VirtualAllocEx, WriteProcessMemory, SetThreadContext, ResumeThread and subsequent network connections or privileges."
+    data_source: "Sysmon Event 1, 7, 8, 10; EDR API; memory dumps; network telemetry."
+  - scenario: "ptrace injection on Linux"
+    description: "Attacker uses ptrace or process_vm_writev to inject code into sshd process. Hunt includes searching auditd events with syscall=ptrace/process_vm_writev targeting critical processes and correlating with new executables in /dev/shm or execve calls."
+    data_source: "auditd, Sysmon for Linux, Linux EDR/agent."
+  - scenario: "Injection via browser extension"
+    description: "Malicious browser extension uses CreateRemoteThread to inject module into chrome.exe to hide C2 traffic. Monitor chrome.exe for injection APIs (VirtualAllocEx, WriteProcessMemory, CreateRemoteThread) and unexpected network connections to C2 domains; verify installed extensions list and reputation."
+    data_source: "Sysmon Event 7, 8, 10; browser telemetry; EDR modules monitoring extensions."
 
-# Expected output format - required columns for triage and correlation
+triage:
+  steps:
+    - step: 1
+      name: "Source verification"
+      operation: "Check initiating process name, location and signature; if process originates from security software (AV/EDR), debugger or other known system component, mark incident as potential FP."
+    - step: 2
+      name: "Target verification"
+      operation: "Identify target process; if it is lsass.exe, winlogon.exe, csrss.exe, services.exe, svchost.exe, explorer.exe, sshd or other high-risk process, raise incident priority."
+    - step: 3
+      name: "API sequence analysis"
+      operation: "Verify full sequence occurred: memory allocation, memory write, thread create/suspend/resume. Single events (e.g. VirtualAllocEx alone) without WriteProcessMemory and CreateRemoteThread should be treated as FP."
+    - step: 4
+      name: "Behavioural context"
+      operation: "Check if target process exhibits anomalies: unexpected network traffic, abnormal DLL modules or missing command line. Compare with baseline for given host."
+    - step: 5
+      name: "IoC correlation"
+      operation: "Compare source and target file hash with malware database; check if IP/domain seen in network traffic is on blocklists."
+  quick_tp_criteria:
+    - "WriteProcessMemory and CreateRemoteThread from cmd.exe, powershell.exe or macro file in lsass.exe/winlogon.exe with VM_WRITE and VM_OPERATION permissions."
+    - "Process hollowing detected via CreateProcess(CREATE_SUSPENDED) → NtUnmapViewOfSection → VirtualAllocEx → WriteProcessMemory → SetThreadContext/ResumeThread."
+    - "Linux/macOS: ptrace/mach_vm_write + executable file in /dev/shm or DYLD_INSERT_LIBRARIES anomaly in system process."
+  quick_fp_criteria:
+    - "Source process is known AV/EDR component or debugger (e.g. MsMpEng.exe, Procmon.exe, windbg.exe); operations may be benign."
+    - "Event involves browser process or .NET (CLR) environment loaded into user process; no WriteProcessMemory/RemoteThread sequence."
+    - "Software installer or system update (e.g. msiexec.exe, wuauclt.exe) performs memory allocation without creating remote threads."
+
+response:
+  actions:
+    - "Confirm escalation per decision_criteria."
+    - "Perform host isolation or network segmentation."
+    - "Secure artifacts: target process memory dump, binary files, registry, Sysmon/auditd logs, Prefetch (Windows), /proc files (Linux)."
+    - "Run forensic tools for memory analysis (Volatility, Rekall) and injected code identification."
+    - "Notify IAM team of possible credential theft; enforce password reset."
+    - "Initiate IR procedure (IR-T1055-Response) to remove malware and restore system."
+  ir_playbook_ref: "IR-T1055-Response"
+  artifacts_to_collect:
+    - "Target process memory dump"
+    - "Source and target binary files"
+    - "Registry (Run, Services)"
+    - "Sysmon/auditd logs"
+    - "Prefetch (Windows), /proc files (Linux)"
+  containment_notes: "Isolation per IR procedure; avoid alerting attacker."
+
 output:
   siem:
     required_columns:
       - timestamp
-      - event_code
+      - host
+      - event_id
       - process_name
-      - target_process
+      - target_process_name
+      - granted_access
+      - image_path
       - command_line
       - parent_process
     description: |
-      SIEM (Sysmon): Event 8 (CreateRemoteThread), Event 10 (Process Access).
-      Adapt event_type/event_code to schema: Sysmon 8=CreateRemoteThread, 10=ProcessAccess.
-      For custom EDR ingest: VirtualAllocEx, WriteProcessMemory map to memory operations.
+      SIEM should provide Sysmon events (1, 7, 8, 10) and auditd/macos events; these fields enable correlation of source and target process, operation type and command line. Additional columns (file hash, path, certificate) may enrich analysis.
   edr:
     required_columns:
       - Timestamp
@@ -158,53 +208,32 @@ output:
       - FileName
       - ProcessCommandLine
       - InitiatingProcessFileName
+      - InitiatingProcessFolderPath
+      - ReportId
     description: |
-      EDR (DeviceEvents): CreateRemoteThreadApiCall, ProcessMemoryAccess.
-      Include InitiatingProcessFileName for parent-child analysis.
-
-# Quick triage - fast verification before full analysis
-triage:
-  steps:
-    - step: 1
-      action: "Check InitiatingProcessFileName / parent process"
-      quick_reject: "Known benign: svchost, SearchIndexer, browser child, AV/EDR process"
-      escalate: "Unknown or script host (powershell, wscript, mshta)"
-    - step: 2
-      action: "Check target process"
-      quick_reject: "Self-injection (same PID) or browser sandbox"
-      escalate: "lsass, csrss, winlogon, explorer, system process"
-    - step: 3
-      action: "Check command line for injection tooling"
-      quick_reject: "Legitimate: Visual Studio, WinDbg, Process Explorer"
-      escalate: "Obfuscated, encoded, or suspicious path (Temp, AppData)"
-    - step: 4
-      action: "Correlate with creation time"
-      quick_reject: "Single event, no sequence"
-      escalate: "VirtualAllocEx + WriteProcessMemory + CreateRemoteThread sequence"
-  quick_fp_criteria:
-    - "Parent is known AV/EDR/browser"
-    - "Target is same process (self)"
-    - "Single VirtualAllocEx without WriteProcessMemory"
-  quick_tp_criteria:
-    - "Script host (powershell, wscript) -> lsass/csrss/winlogon"
-    - "Office (winword, excel) -> CreateRemoteThread"
-    - "Process hollowing pattern (suspended + overwrite)"
-
-# Response actions when threat confirmed
-response:
-  on_confirmed:
-    - "Open incident in ticket system (reference: escalation.ir_playbook_ref)"
-    - "Isolate affected host from network (if policy allows)"
-    - "Collect artifacts: memory dump, process list, prefetch, MFT"
-    - "Notify SOC Lead and Incident Response per escalation.notification_roles"
-    - "Preserve timeline: do not reboot before forensic capture"
-  ir_playbook_ref: "IR-001-Malware-Response"
-  artifacts_to_collect:
-    - "Memory dump (if critical host)"
-    - "Process tree snapshot"
-    - "Relevant registry keys (Run, Services)"
-    - "Prefetch and recent files"
-  containment_notes: "Isolation decision per IR playbook; avoid alerting attacker"
+      EDR telemetry (e.g. Microsoft Defender for Endpoint) contains CreateRemoteThreadApiCall, ProcessMemoryAccess, SuspiciousScriptDetection events; required columns allow mapping processes, identifying source files and analysing initiator path. Use built-in parsers (KQL) for API sequence search.
+  linux:
+    required_columns:
+      - syscall
+      - exe
+      - pid
+      - uid
+      - target_pid
+      - path
+      - return
+    description: |
+      For Linux systems collect auditd logs for ptrace, mmap, process_vm_writev and eBPF; these fields establish source and target process, operation type and result. Correlate with system logs (/var/log/messages) and network telemetry.
+  macos:
+    required_columns:
+      - timestamp
+      - process_name
+      - pid
+      - parent_process
+      - subsystem
+      - event_type
+      - image
+    description: |
+      On macOS use EndpointSecurity (ES_EVENT_TYPE_NOTIFY_EXEC, ES_EVENT_TYPE_NOTIFY_MMAP) and unified logs; these fields help detect task_for_pid/mach_vm_write and dylib injection. Also monitor DYLD_INSERT_LIBRARIES entries.
 
 data_sources:
   - tool_class: "siem"
@@ -212,7 +241,13 @@ data_sources:
     mode: "manual"
     query_path: "queries/elk.yml"
     query_ids: [memory_ops, sysmon_event_10, sysmon_event_8]
-    required_indices: ["sysmon-*", "winlogbeat-*"]
+    required_indices:
+      - "logs-endpoint.events*"
+      - "logs-windows.sysmon*"
+      - "logs-linux.auditd*"
+      - "logs-macos.endpoint*"
+    description: |
+      Query set for ELK (Kibana), supporting Sysmon, auditd and unified logs. Queries identify VirtualAllocEx/WriteProcessMemory/CreateRemoteThread sequence and ptrace/mach_vm_write threads. Indices may vary by SIEM configuration – adjust as needed.
   - tool_class: "siem"
     tool: "elk"
     mode: "API"
@@ -230,6 +265,12 @@ data_sources:
     mode: "manual"
     query_path: "queries/ms_defender.yml"
     query_ids: [cross_process, script_hosts]
+    required_tables:
+      - "DeviceProcessEvents"
+      - "DeviceImageLoadEvents"
+      - "DeviceNetworkEvents"
+    description: |
+      KQL queries for Microsoft Defender for Endpoint monitoring CreateRemoteThreadApiCall, VirtualAllocExApiCall, ProcessMemoryAccessDetected events. Correlate results with process and network communication info.
   - tool_class: "edr"
     tool: "ms_defender"
     mode: "API"
