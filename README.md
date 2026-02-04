@@ -40,7 +40,7 @@ th_timmy/
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh, run_query_generator_integration.sh
+│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh, run_query_generator_integration.sh, run_n8n_hunt_selection_integration.sh
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -57,6 +57,7 @@ th_timmy/
 - [x] **Step 0.4 (Health Monitoring)** — closed
 - [x] **Step 1.1 (Playbook Structure with data_sources)** — closed
 - [x] **Step 1.2 (Query Generator)** — closed
+- [x] **Step 1.4 (n8n UI Hunt Selection)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
