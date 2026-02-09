@@ -6,19 +6,19 @@
 #
 # Run instructions
 # ----------------------------------------
-# 1. Środowisko: skrypt uruchamiać na VM04 (orchestrator), z katalogu projektu th_timmy.
-# 2. Przed uruchomieniem:
-#    - Skopiować config.example.yml → config.yml jeśli potrzeba.
-#    - Ustawić run_python.sh jako wykonywalny: chmod +x hosts/vm04-orchestrator/run_python.sh
+# 1. Environment: run script on VM04 (orchestrator), from project directory th_timmy.
+# 2. Before running:
+#    - Copy config.example.yml → config.yml if needed.
+#    - Make run_python.sh executable: chmod +x hosts/vm04-orchestrator/run_python.sh
 # 3. Z roota projektu:
 #      cd /path/to/th_timmy
 #      chmod +x tests/integration/run_query_generator_integration.sh
 #      ./tests/integration/run_query_generator_integration.sh
 #    Z innego katalogu:
 #      PROJECT_ROOT=/path/to/th_timmy ./tests/integration/run_query_generator_integration.sh
-# 4. Wyniki: exit 0 = sukces, exit 1 = błąd; log w results/query_generator_integration_YYYYMMDD_HHMMSS.txt
-# 5. DEC: po przesłaniu skryptu na VM04 i uruchomieniu, skrypt wykonuje bootstrap (przez run_python.sh)
-#    i testy; zależności są pobierane automatycznie. Wyniki w results/ pozwalają DEV na poprawki.
+# 4. Results: exit 0 = success, exit 1 = failure; log in results/query_generator_integration_YYYYMMDD_HHMMSS.txt
+# 5. DEC: after uploading script to VM04 and running, script performs bootstrap (via run_python.sh)
+#    and tests; dependencies are fetched automatically. Results in results/ allow DEV to apply fixes.
 #
 # Usage: run from project root or set PROJECT_ROOT/BOOTSTRAP_PROJECT_ROOT.
 

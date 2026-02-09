@@ -116,6 +116,30 @@ engine = create_engine(
 - Scheduled playbook runs
 - Data collection automation
 
+### Hunt Selection Form (Step 1.4)
+
+The **Hunt Selection** form in n8n lets you choose hunts, tools, and mode, then generates ready-to-use query files.
+
+**How to use**:
+1. Open n8n: `http://VM04_IP:5678`
+2. Import the workflow: **File > Import from File** → select `hosts/vm04-orchestrator/n8n/workflows/hunt-selection-workflow.json`
+3. Activate the workflow (toggle **Active**)
+4. Open the form URL (shown in the Form Trigger node: **Production URL** or **Test URL**)
+5. Select at least one hunt (T1055, T1059, T1562, T1082, T1486)
+6. Select at least one tool (elk, ms_defender)
+7. Choose mode: **manual** or **API**
+8. Submit the form
+
+**Result**:
+- Queries are generated and saved to `queries_generated/`
+- A session ID is created; session data is stored in `queries_generated/sessions/{session_id}.json`
+- The form shows status (success/error) and the number of generated files
+
+**Error handling**:
+- **No hunt selected** → Select at least one hunt
+- **No tool selected** → Select at least one tool
+- **Unsupported tool** → Use elk or ms_defender only
+
 ## Working with Playbooks
 
 ### Playbook Structure

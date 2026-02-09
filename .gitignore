@@ -89,6 +89,7 @@ htmlcov/
 
 # n8n
 n8n_data/
+!hosts/vm04-orchestrator/n8n/workflows/*.json
 
 # ML Models (large files)
 ml_models/*.pkl

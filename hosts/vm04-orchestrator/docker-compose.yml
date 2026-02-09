@@ -37,6 +37,24 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.enable-lifecycle'
 
+  hunt_api:
+    image: python:3.10-slim
+    container_name: threat-hunting-hunt-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    working_dir: /app
+    volumes:
+      - ../../:/app
+    environment:
+      - PYTHONPATH=/app
+      - PROJECT_ROOT=/app
+    command: >
+      sh -c "pip install -q fastapi uvicorn pyyaml pydantic &&
+      uvicorn automation_scripts.playbooks.hunt_api:app --host 0.0.0.0 --port 8000"
+    networks:
+      - threat-hunting-net
+
   grafana:
     image: grafana/grafana:latest
     container_name: threat-hunting-grafana

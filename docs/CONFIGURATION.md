@@ -85,6 +85,37 @@ Main options:
 
 See [automation_scripts/orchestrators/health_monitor/README.md](../automation_scripts/orchestrators/health_monitor/README.md) for usage, Prometheus/Grafana, and tests.
 
+## Management Dashboard (Step 0.5)
+
+The Management Dashboard uses the `management_dashboard` section in `configs/config.yml` (see `configs/config.example.yml`).
+
+Main options:
+- **api_enabled** — enable dashboard API endpoints in hunt_api
+- **roles** — admin, hunter, read_only (lists of usernames; role passed via `X-User-Role` header)
+- **refresh_interval_seconds** — cache refresh interval (e.g. 300)
+
+**Environment variables:**
+- **TH_DASHBOARD_API_KEY** — optional; if set, require X-API-Key or Authorization header for API key auth
+
+See [hosts/vm04-orchestrator/README.md](../hosts/vm04-orchestrator/README.md) (Management Dashboard section) for workflow import and usage.
+
+## Deterministic Anonymization (Step 1.3)
+
+The Deterministic Anonymization module uses the `anonymization` section in `configs/config.yml` (see `configs/config.example.yml`).
+
+**Environment variables** (preferred over config for production):
+- **TH_ANONYMIZATION_PASSPHRASE** — passphrase; key derived via Scrypt
+- **TH_ANONYMIZATION_SECRET** — raw secret or base64 (32 bytes)
+- **TH_ANONYMIZATION_SECRET_PATH** — path to key file
+
+**Config options** (in `anonymization` section):
+- **secret** — dev only; do not use in production
+- **secret_path** — path to 32-byte key file
+- **mapping_encryption_key_path** — optional: separate key for encrypting mapping values (AES-256)
+- **mapping_db_path** — SQLite path for mapping store (VM01/VM02); default in-memory for tests
+
+See [automation_scripts/anonymization/README.md](../automation_scripts/anonymization/README.md) and [ANONYMIZATION.md](ANONYMIZATION.md) for usage and security.
+
 ### Configuration Structure
 
 ```yaml

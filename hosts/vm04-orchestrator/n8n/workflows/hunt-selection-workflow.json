@@ -1,0 +1,102 @@
+{
+  "name": "Hunt Selection - Query Generation (Step 1.4)",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Threat Hunting - Query Generation",
+        "formDescription": "Select hunts, tools, and mode. Queries will be generated and saved to queries_generated/.",
+        "formPath": "hunt-selection",
+        "formElements": {
+          "values": [
+            {
+              "fieldLabel": "Hunts (select at least one)",
+              "fieldName": "hunts",
+              "elementType": "checkboxes",
+              "fieldOptions": {
+                "values": [
+                  { "option": "T1055" },
+                  { "option": "T1059" },
+                  { "option": "T1562" },
+                  { "option": "T1082" },
+                  { "option": "T1486" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Tools (select at least one)",
+              "fieldName": "tools",
+              "elementType": "checkboxes",
+              "fieldOptions": {
+                "values": [
+                  { "option": "elk" },
+                  { "option": "ms_defender" }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Mode",
+              "fieldName": "mode",
+              "elementType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  { "option": "manual" },
+                  { "option": "API" }
+                ]
+              },
+              "defaultValue": "manual"
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "respondWith": "allIncomingItems"
+          }
+        }
+      },
+      "id": "form-trigger-1",
+      "name": "Form Trigger",
+      "type": "@n8n/n8n-nodes-base.formTrigger",
+      "typeVersion": 1.1,
+      "position": [240, 300],
+      "webhookId": "hunt-selection-form"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hunt_api:8000/generate-queries",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ hunts: $json.hunts || [], tools: $json.tools || [], mode: $json.mode || 'manual', time_range_days: 7 }) }}",
+        "options": {}
+      },
+      "id": "http-request-1",
+      "name": "HTTP Request - Generate Queries",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 300]
+    }
+  ],
+  "connections": {
+    "Form Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request - Generate Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "meta": {
+    "instanceId": "threat-hunting-lab"
+  },
+  "pinData": {}
+}

@@ -170,6 +170,123 @@ Results are written to `results/query_generator_integration_YYYYMMDD_HHMMSS.txt`
 
 ---
 
+## Deterministic Anonymization tests (Step 1.3)
+
+### Unit tests
+
+Unit tests for the anonymization module (`mapping_store`, `security`, `deterministic_anonymizer`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_mapping_store.py tests/unit/test_security.py tests/unit/test_deterministic_anonymizer.py -v
+```
+
+Set `TH_ANONYMIZATION_PASSPHRASE` for security tests (or use config).
+
+### Integration test
+
+The script `tests/integration/run_anonymization_integration.sh` runs bootstrap (via `run_python.sh`), anonymization unit tests, and a sanity check (create_anonymizer, anonymize_dict, deanonymize roundtrip). Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh). Env: `TH_ANONYMIZATION_PASSPHRASE` (set by script).
+
+**Instructions:**
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_anonymization_integration.sh
+./tests/integration/run_anonymization_integration.sh
+```
+
+Results are written to `results/anonymization_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/anonymization/README.md](../automation_scripts/anonymization/README.md), [docs/ANONYMIZATION.md](ANONYMIZATION.md).
+
+---
+
+## Management Dashboard tests (Step 0.5)
+
+### Unit tests
+
+Unit tests for the Management Dashboard API (`management_api.dashboard`) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_management_dashboard.py -v
+```
+
+### Integration test
+
+The script `tests/integration/run_management_dashboard_integration.sh` runs bootstrap (via `run_python.sh`), management dashboard unit tests, and a sanity check (GET /api/v1/dashboard/status with real config). Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh). Dependencies: fastapi, uvicorn. Optional: `configs/config.yml` for status sanity (copy from config.example.yml).
+
+**Instructions:**
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_management_dashboard_integration.sh
+./tests/integration/run_management_dashboard_integration.sh
+```
+
+Results are written to `results/management_dashboard_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [hosts/vm04-orchestrator/README.md](../hosts/vm04-orchestrator/README.md) (Management Dashboard section).
+
+---
+
+## Data Package tests (Step 1.5)
+
+### Unit tests
+
+Unit tests for the DataPackage module are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_data_package.py -v
+```
+
+### Integration test
+
+The script `tests/integration/run_data_package_integration.sh` runs bootstrap (via `run_python.sh`), DataPackage unit tests, and a sanity check (create, validate, to_json, from_json). Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh).
+
+**Instructions:**
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_data_package_integration.sh
+./tests/integration/run_data_package_integration.sh
+```
+
+Results are written to `results/data_package_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/data_package/README.md](../automation_scripts/data_package/README.md).
+
+---
+
+## n8n Hunt Selection tests (Step 1.4)
+
+### Integration test
+
+The script `tests/integration/run_n8n_hunt_selection_integration.sh` runs hunt_api tests via TestClient: POST /generate-queries, session storage, validation (empty hunts), GET /health, GET /playbooks. Run it from the project root.
+
+**Requirements:** VM04 context (or any host with project and run_python.sh). Dependencies: fastapi, uvicorn (from requirements.txt via bootstrap).
+
+**Instructions:** See the script header (Run instructions). In short:
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_n8n_hunt_selection_integration.sh
+./tests/integration/run_n8n_hunt_selection_integration.sh
+```
+
+Results are written to `results/n8n_hunt_selection_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [hosts/vm04-orchestrator/README.md](../hosts/vm04-orchestrator/README.md) (Hunt API, workflow), [docs/USER_GUIDE_HUNTER.md](USER_GUIDE_HUNTER.md) (Hunt Selection form).
+
+---
+
 ## Health Monitoring Service tests (Step 0.4)
 
 ### Unit tests

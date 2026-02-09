@@ -342,6 +342,62 @@ docker compose logs -f n8n
 **Web UI:** `http://<VM04_IP>:5678`  
 **Login:** from `config.yml`: `basic_auth_user` and `basic_auth_password`.
 
+### Hunt Selection workflow (Step 1.4)
+
+The **Hunt Selection** workflow lets hunters choose hunts, tools, and mode via a form, then generates query files.
+
+**Import workflow:**
+1. In n8n: **File > Import from File**
+2. Select `hosts/vm04-orchestrator/n8n/workflows/hunt-selection-workflow.json`
+3. Activate the workflow
+4. Open the form URL (Form Trigger node → Production URL or Test URL)
+
+**Hunt API (hunt_api):** The workflow calls the Hunt API at `http://hunt_api:8000`. The Hunt API runs as a Docker service (see docker-compose.yml). To run it on the host instead:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_hunt_api.py
+# Or via run_python:
+./hosts/vm04-orchestrator/run_python.sh -c "
+import uvicorn
+from automation_scripts.playbooks.hunt_api import app
+uvicorn.run(app, host='0.0.0.0', port=8000)
+"
+```
+
+When hunt_api runs on the host, n8n in Docker must reach it. Add `extra_hosts: host.docker.internal:host-gateway` to the n8n service and use `http://host.docker.internal:8000` in the workflow URL.
+
+**Endpoints:**
+- `POST /generate-queries` – body: `{ hunts: [], tools: [], mode: "manual" }` – returns `{ session_id, count, paths }`
+- `GET /health` – health check
+- `GET /playbooks` – list playbooks (for dynamic form options)
+
+### Management Dashboard workflow (Step 0.5)
+
+The **Management Dashboard** workflow provides status cards and action buttons for VM management.
+
+**Import workflow:**
+1. In n8n: **File > Import from File**
+2. Select `hosts/vm04-orchestrator/n8n/workflows/management-dashboard.json`
+3. Activate the workflow
+4. Use webhooks (from n8n or external UI):
+   - **GET** `https://<n8n>/webhook/dashboard-status` – VM status (vm01–vm04, colors: green/orange/red)
+   - **POST** `https://<n8n>/webhook/dashboard-sync` – Sync Repository (admin only)
+   - **POST** `https://<n8n>/webhook/dashboard-backup` – Backup Config (admin only)
+   - **POST** `https://<n8n>/webhook/dashboard-refresh` – Refresh status (hunter/admin)
+
+**Dashboard API** (hunt_api, same port 8000):
+- `GET /api/v1/dashboard/status` – VM status cards (healthy→green, warning→orange, critical→red)
+- `POST /api/v1/dashboard/sync-repo` – trigger sync (admin; header `X-User-Role: admin`)
+- `POST /api/v1/dashboard/backup-config` – backup central config (admin)
+- `POST /api/v1/dashboard/refresh` – force status refresh (hunter/admin)
+
+**Roles:** `X-User-Role` header: `admin` (all actions), `hunter` (refresh, read), `read_only` (status only). `POST` without admin → 403.
+
+**Schedule:** Workflow runs every 5 min to refresh status cache.
+
+**Config:** `management_dashboard` in `configs/config.yml`. Optional: `TH_DASHBOARD_API_KEY` for API key auth.
+
 ---
 
 ## SSH Key Management (setup_ssh_keys.sh)

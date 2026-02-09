@@ -540,6 +540,21 @@ See [ANONYMIZATION.md](ANONYMIZATION.md) for detailed anonymization policy.
 }
 ```
 
+### Data Package (Step 1.5)
+
+Standard format for threat hunting pipeline data. Created after query results are collected and anonymized; passed to Playbook Engine (Step 2.1) and AI (Step 3.1).
+
+**Location**: `automation_scripts.data_package`
+
+**Structure**: id, source, timestamp, data (list of records), anonymized (bool), context (optional)
+
+**Pipeline position**:
+```
+Query results → Anonymization → DataPackage.create() → validate() → Playbook Engine / AI
+```
+
+See [automation_scripts/data_package/README.md](../automation_scripts/data_package/README.md) and [configs/schemas/data_package_schema.json](../configs/schemas/data_package_schema.json).
+
 ### Output Formats
 
 - **JSON**: Analysis results in JSON format

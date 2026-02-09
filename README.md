@@ -34,13 +34,16 @@ th_timmy/
 │   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
 │   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
-│   └── playbooks/           # Step 1.1: playbook_validator, query_loader; Step 1.2: query_generator
+│   ├── playbooks/           # Step 1.1: playbook_validator, query_loader; Step 1.2: query_generator, hunt_api
+│   ├── anonymization/       # Step 1.3: DeterministicAnonymizer, MappingStore (HMAC-SHA256, AES-256)
+│   ├── data_package/       # Step 1.5: DataPackage, validate(), JSON Schema
+│   └── security/            # get_anonymization_secret, encrypt/decrypt_mapping_value
 ├── playbooks/               # MITRE ATT&CK playbooks (template + 5 examples; queries: elk.yml, ms_defender.yml)
 ├── configs/                 # Configuration files (VM IPs, remote execution, etc.)
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # run_remote_executor_integration.sh, run_repo_sync_integration.sh, run_config_manager_integration.sh, run_health_monitor_integration.sh, run_playbooks_integration.sh, run_query_generator_integration.sh, run_n8n_hunt_selection_integration.sh
+│   └── integration/         # run_*_integration.sh (remote_executor, repo_sync, config_manager, health_monitor, management_dashboard, playbooks, query_generator, anonymization, data_package, n8n_hunt_selection)
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -55,9 +58,12 @@ th_timmy/
 - [x] **Step 0.2 (Repository Sync)** — closed
 - [x] **Step 0.3 (Configuration Management)** — closed
 - [x] **Step 0.4 (Health Monitoring)** — closed
+- [x] **Step 0.5 (Management Dashboard)** — closed
 - [x] **Step 1.1 (Playbook Structure with data_sources)** — closed
 - [x] **Step 1.2 (Query Generator)** — closed
+- [x] **Step 1.3 (Deterministic Anonymization)** — closed
 - [x] **Step 1.4 (n8n UI Hunt Selection)** — closed
+- [x] **Step 1.5 (Data Package)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation
@@ -88,6 +94,7 @@ For running Python and automation from VM04 (including Remote Execution, Reposit
 ## Documentation
 
 - [Implementation phases and status](docs/PHASES.md) — Summary of each step (what it does, status) and links to setup, configuration, and testing
+- [Quick Instructions](docs/INSTRUCTIONS.md) — Bootstrap, integration tests, configuration, Hunt Selection, Anonymization
 - [Changelog](CHANGELOG.md) — Release notes and notable changes
 - [Playbook format and API](docs/PLAYBOOKS.md) — Playbook structure, metadata, data_sources, validator, query loader
 - [Repository Sync Design](docs/REPO_SYNC_DESIGN.md) — How Repository Sync (Step 0.2) works and how it fits with Remote Execution
@@ -142,7 +149,7 @@ See [Configuration Documentation](docs/CONFIGURATION.md) for detailed instructio
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Business Source License 1.1 (BSL 1.1) - see the [LICENSE](LICENSE) file for details. The license will change to Apache License 2.0 on the Change Date specified in the LICENSE file.
 
 **Important**: This software is designed for threat hunting operations in a lab environment. Users are responsible for implementing appropriate security measures and complying with data protection regulations.
 

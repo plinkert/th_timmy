@@ -82,11 +82,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Central n8n interface for VM management: status cards (OK/warning/critical), buttons to trigger repo sync, config backup, and health checks. |
-| **Module README** | TBD. |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Closed |
+| **What it does** | Central n8n interface for VM management: status cards (OK/warning/critical), buttons to trigger repo sync, config backup, and health checks. API endpoints in hunt_api (/api/v1/dashboard/*); workflow management-dashboard.json. |
+| **Module README** | [hosts/vm04-orchestrator/README.md](../hosts/vm04-orchestrator/README.md) — Management Dashboard section. |
+| **Configuration** | `management_dashboard` in config; `TH_DASHBOARD_API_KEY` optional; `X-User-Role` header (admin/hunter/read_only). |
+| **Testing** | [Testing Guide — Management Dashboard tests](TESTING.md#management-dashboard-tests-step-05): unit and integration tests. |
 
 ---
 
@@ -144,11 +144,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Anonymize data before AI processing; mapping table for deterministic deanonymization. Mapping stored only on VM01/VM02 (encrypted). |
-| **Module README** | TBD. See [ANONYMIZATION.md](ANONYMIZATION.md). |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Closed |
+| **What it does** | Anonymize data before AI processing; mapping table for deterministic deanonymization. Mapping stored only on VM01/VM02 (encrypted). HMAC-SHA256 pseudonymization; `DeterministicAnonymizer`, `MappingStore`, `create_anonymizer`. |
+| **Module README** | [automation_scripts/anonymization/README.md](../automation_scripts/anonymization/README.md), [automation_scripts/security/README.md](../automation_scripts/security/README.md). See [ANONYMIZATION.md](ANONYMIZATION.md). |
+| **Configuration** | `anonymization` in config; env: `TH_ANONYMIZATION_PASSPHRASE`, `TH_ANONYMIZATION_SECRET`, `TH_ANONYMIZATION_SECRET_PATH`. |
+| **Testing** | [Testing Guide — Anonymization tests](TESTING.md#deterministic-anonymization-tests-step-13): unit and integration tests. |
 
 ---
 
@@ -156,11 +156,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Form in n8n for selecting hunts, tools, and mode (manual/API). Triggers query generation and pipeline. |
-| **Module README** | TBD. |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Closed |
+| **What it does** | Form in n8n for selecting hunts, tools, and mode (manual/API). Hunt API (hunt_api.py) provides POST /generate-queries; workflow calls it and stores session_id in queries_generated/sessions/. |
+| **Module README** | [hosts/vm04-orchestrator/README.md](../hosts/vm04-orchestrator/README.md) — Hunt API, workflow import, run_hunt_api.py. |
+| **Configuration** | hunt_api runs in Docker (port 8000) or on host via run_hunt_api.py. Workflow: hosts/vm04-orchestrator/n8n/workflows/hunt-selection-workflow.json. |
+| **Testing** | [Testing Guide — n8n Hunt Selection tests](TESTING.md#n8n-hunt-selection-tests-step-14): integration tests for hunt_api. |
 
 ---
 
@@ -168,11 +168,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Standard DataPackage format (metadata, data, context). JSON schema validation. |
-| **Module README** | TBD. |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Closed |
+| **What it does** | Standard DataPackage format (id, source, timestamp, data, anonymized, context). JSON Schema validation; validate(), to_dict(), from_dict(); 5 MB size limit. |
+| **Module README** | [automation_scripts/data_package/README.md](../automation_scripts/data_package/README.md). |
+| **Configuration** | Schema: `configs/schemas/data_package_schema.json`; size limit configurable in validate(). |
+| **Testing** | [Testing Guide — Data Package tests](TESTING.md#data-package-tests-step-15): unit and integration tests. |
 
 ---
 

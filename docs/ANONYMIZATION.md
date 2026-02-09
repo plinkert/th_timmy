@@ -321,15 +321,32 @@ CREATE TABLE anonymization_mappings (
 
 ## Implementation
 
-### Implementation Locations
+### Step 1.3 – Deterministic Anonymization (Implemented)
+
+**Location**: `automation_scripts/anonymization/`
+
+**Modules**:
+- `deterministic_anonymizer.py` – `DeterministicAnonymizer`, `create_anonymizer` – HMAC-SHA256 pseudonymization
+- `mapping_store.py` – `MappingStore`, `InMemoryMappingStore`, `SQLiteMappingStore` – original↔pseudonym storage
+- `../security/security.py` – `get_anonymization_secret`, `encrypt_mapping_value`, `decrypt_mapping_value` – AES-256 for mapping encryption
+
+**Key Functions**:
+- `anonymize(value, field_type)` – pseudonymize and store mapping
+- `deanonymize(pseudonym)` – lookup original via MappingStore
+- `anonymize_dict(data, fields)` – anonymize PII keys in dict (recursive)
+- `anonymize_list(items, field_type)` – anonymize list items
+
+**Secret**: From `TH_ANONYMIZATION_PASSPHRASE`, `TH_ANONYMIZATION_SECRET`, or `anonymization.secret_path` in config. See [automation_scripts/anonymization/README.md](../automation_scripts/anonymization/README.md).
+
+### Implementation Locations (Pipeline)
 
 1. **VM-01 (Normalizers)**: Initial anonymization during normalization
 2. **VM-02 (Database)**: Mapping storage and retrieval
 3. **VM-03 (Analysis)**: Deanonymization for authorized users
 
-### Anonymization Module
+### Future Anonymization Module (Normalizers)
 
-**Location**: `automation-scripts/normalizers/anonymization.py`
+**Location**: `automation-scripts/normalizers/anonymization.py` (TBD)
 
 **Key Functions**:
 - `detect_pii(data)`: Detect PII in data
@@ -337,9 +354,9 @@ CREATE TABLE anonymization_mappings (
 - `anonymize_data(data)`: Anonymize entire dataset
 - `store_mapping(original, anonymized, field_type)`: Store mapping
 
-### Deanonymization Module
+### Deanonymization Module (TBD)
 
-**Location**: `automation-scripts/utils/deanonymization.py`
+**Location**: `automation_scripts/utils/deanonymization.py` (TBD)
 
 **Key Functions**:
 - `request_deanonymization(anonymized_value, user)`: Request deanonymization

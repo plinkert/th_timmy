@@ -1,0 +1,216 @@
+{
+  "name": "Management Dashboard (Step 0.5)",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {"field": "minutes", "minutesInterval": 5}
+          ]
+        }
+      },
+      "id": "schedule-1",
+      "name": "Schedule - Every 5 min",
+      "type": "@n8n/n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [240, 100]
+    },
+    {
+      "parameters": {
+        "path": "dashboard-status",
+        "httpMethod": "GET",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-status",
+      "name": "Webhook - Get Status",
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 240],
+      "webhookId": "dashboard-status"
+    },
+    {
+      "parameters": {
+        "path": "dashboard-sync",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-sync",
+      "name": "Webhook - Sync Repo",
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 380],
+      "webhookId": "dashboard-sync"
+    },
+    {
+      "parameters": {
+        "path": "dashboard-backup",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-backup",
+      "name": "Webhook - Backup Config",
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 520],
+      "webhookId": "dashboard-backup"
+    },
+    {
+      "parameters": {
+        "path": "dashboard-refresh",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-refresh",
+      "name": "Webhook - Refresh Status",
+      "type": "@n8n/n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 660],
+      "webhookId": "dashboard-refresh"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://hunt_api:8000/api/v1/dashboard/status",
+        "options": {}
+      },
+      "id": "http-status",
+      "name": "HTTP - Get Status",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 240]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "http://hunt_api:8000/api/v1/dashboard/status?refresh=true",
+        "options": {}
+      },
+      "id": "http-refresh-schedule",
+      "name": "HTTP - Refresh Status (Schedule)",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 100]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hunt_api:8000/api/v1/dashboard/sync-repo",
+        "options": {}
+      },
+      "id": "http-sync",
+      "name": "HTTP - Sync Repo",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hunt_api:8000/api/v1/dashboard/backup-config",
+        "options": {}
+      },
+      "id": "http-backup",
+      "name": "HTTP - Backup Config",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://hunt_api:8000/api/v1/dashboard/refresh",
+        "options": {}
+      },
+      "id": "http-refresh",
+      "name": "HTTP - Refresh",
+      "type": "@n8n/n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [460, 660]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-status",
+      "name": "Respond to Webhook - Status",
+      "type": "@n8n/n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 240]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-sync",
+      "name": "Respond to Webhook - Sync",
+      "type": "@n8n/n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 380]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-backup",
+      "name": "Respond to Webhook - Backup",
+      "type": "@n8n/n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 520]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "id": "respond-refresh",
+      "name": "Respond to Webhook - Refresh",
+      "type": "@n8n/n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [680, 660]
+    }
+  ],
+  "connections": {
+    "Schedule - Every 5 min": {
+      "main": [[{"node": "HTTP - Refresh Status (Schedule)", "type": "main", "index": 0}]]
+    },
+    "Webhook - Get Status": {
+      "main": [[{"node": "HTTP - Get Status", "type": "main", "index": 0}]]
+    },
+    "Webhook - Sync Repo": {
+      "main": [[{"node": "HTTP - Sync Repo", "type": "main", "index": 0}]]
+    },
+    "Webhook - Backup Config": {
+      "main": [[{"node": "HTTP - Backup Config", "type": "main", "index": 0}]]
+    },
+    "Webhook - Refresh Status": {
+      "main": [[{"node": "HTTP - Refresh", "type": "main", "index": 0}]]
+    },
+    "HTTP - Get Status": {
+      "main": [[{"node": "Respond to Webhook - Status", "type": "main", "index": 0}]]
+    },
+    "HTTP - Sync Repo": {
+      "main": [[{"node": "Respond to Webhook - Sync", "type": "main", "index": 0}]]
+    },
+    "HTTP - Backup Config": {
+      "main": [[{"node": "Respond to Webhook - Backup", "type": "main", "index": 0}]]
+    },
+    "HTTP - Refresh": {
+      "main": [[{"node": "Respond to Webhook - Refresh", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {"executionOrder": "v1"},
+  "staticData": null,
+  "meta": {"instanceId": "threat-hunting-lab"},
+  "pinData": {}
+}

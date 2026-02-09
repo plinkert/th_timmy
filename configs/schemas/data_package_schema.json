@@ -1,0 +1,42 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DataPackage",
+  "description": "Standard data package for threat hunting pipeline",
+  "type": "object",
+  "required": ["id", "source", "timestamp", "data", "anonymized"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256,
+      "description": "Unique package identifier"
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Data source (elk, ms_defender, manual, etc.)"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Creation timestamp (ISO 8601)"
+    },
+    "data": {
+      "type": "array",
+      "items": { "type": "object" },
+      "maxItems": 100000,
+      "description": "Query results (list of records)"
+    },
+    "anonymized": {
+      "type": "boolean",
+      "description": "Whether data has been anonymized (required true before AI)"
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional context (playbook_id, hunt_id, tool, mode, etc.)"
+    }
+  },
+  "additionalProperties": false
+}
