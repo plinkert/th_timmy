@@ -265,6 +265,35 @@ Results are written to `results/data_package_integration_YYYYMMDD_HHMMSS.txt`.
 
 ---
 
+## Playbook Engine tests (Step 2.1)
+
+### Unit tests
+
+Unit tests for the Playbook Engine (`playbook_engine`: Finding, run_analysis, threshold rule, field normalization) are run via `run_python.sh`:
+
+```bash
+cd /path/to/th_timmy
+./hosts/vm04-orchestrator/run_python.sh -m pytest tests/unit/test_playbook_engine.py -v
+```
+
+### Integration test
+
+The script `tests/integration/run_playbook_engine_integration.sh` runs playbook_engine unit tests and a sanity check (DataPackage + run_analysis with threshold rule → one finding with expected evidence_ids). Run it from the project root.
+
+**Instructions:**
+
+```bash
+cd /path/to/th_timmy
+chmod +x tests/integration/run_playbook_engine_integration.sh
+./tests/integration/run_playbook_engine_integration.sh
+```
+
+Results are written to `results/playbook_engine_integration_YYYYMMDD_HHMMSS.txt`.
+
+**Details:** [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md) (Playbook Engine section).
+
+---
+
 ## n8n Hunt Selection tests (Step 1.4)
 
 ### Integration test

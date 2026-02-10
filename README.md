@@ -34,7 +34,7 @@ th_timmy/
 │   │   ├── repo_sync/       # Repository Sync (Step 0.2): sync on VM04, push to VM01–VM03 via rsync over SSH
 │   │   ├── config_manager/  # Configuration Management (Step 0.3): config sync, validation, backup, rollback
 │   │   └── health_monitor/  # Health Monitoring (Step 0.4): metrics, thresholds, alerts, Prometheus
-│   ├── playbooks/           # Step 1.1: playbook_validator, query_loader; Step 1.2: query_generator, hunt_api
+│   ├── playbooks/           # Step 1.1: playbook_validator, query_loader; Step 1.2: query_generator, hunt_api; Step 2.1: playbook_engine
 │   ├── anonymization/       # Step 1.3: DeterministicAnonymizer, MappingStore (HMAC-SHA256, AES-256)
 │   ├── data_package/       # Step 1.5: DataPackage, validate(), JSON Schema
 │   └── security/            # get_anonymization_secret, encrypt/decrypt_mapping_value
@@ -43,7 +43,7 @@ th_timmy/
 ├── docs/                    # Documentation
 ├── tests/                   # Unit and integration tests
 │   ├── unit/                # pytest unit tests (audit_logger, remote_executor, ssh_client, ssh_key_manager)
-│   └── integration/         # run_*_integration.sh (remote_executor, repo_sync, config_manager, health_monitor, management_dashboard, playbooks, query_generator, anonymization, data_package, n8n_hunt_selection)
+│   └── integration/         # run_*_integration.sh (remote_executor, repo_sync, config_manager, health_monitor, management_dashboard, playbooks, query_generator, anonymization, data_package, playbook_engine, n8n_hunt_selection)
 ├── pytest.ini               # pytest configuration
 └── results/                 # Analysis results (gitignored)
 ```
@@ -64,6 +64,7 @@ th_timmy/
 - [x] **Step 1.3 (Deterministic Anonymization)** — closed
 - [x] **Step 1.4 (n8n UI Hunt Selection)** — closed
 - [x] **Step 1.5 (Data Package)** — closed
+- [x] **Step 2.1 (Playbook Engine)** — closed
 - [ ] VM setup scripts
 - [ ] Database configuration
 - [ ] Component implementation

@@ -1,13 +1,15 @@
 """
-Playbook structure and validation (Step 1.1), Query Generator (Step 1.2).
+Playbook structure and validation (Step 1.1), Query Generator (Step 1.2), Playbook Engine (Step 2.1).
 
 Provides playbook_validator for metadata.yml validation (technique_description, data_sources),
 query_loader for loading query files from playbook queries/ directory,
 query_generator for generating ready-to-use query files,
-and CLI helpers for browsing playbooks (list, show, get_queries_resolved).
+cli_helpers for browsing playbooks,
+and playbook_engine for deterministic analysis (run_analysis, Finding).
 """
 
 from .playbook_validator import validate_playbook, ValidationResult
+from .playbook_engine import Finding, run_analysis
 from .query_loader import load_queries, QueryEntry, QueryLoadError
 from .query_generator import generate_queries, resolve_playbook_dir, QueryGeneratorError
 from .query_templates import (
@@ -40,4 +42,6 @@ __all__ = [
     "get_queries_resolved",
     "get_playbooks_dir",
     "validate_playbook_cli",
+    "Finding",
+    "run_analysis",
 ]

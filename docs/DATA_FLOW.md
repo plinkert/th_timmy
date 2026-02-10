@@ -555,6 +555,10 @@ Query results → Anonymization → DataPackage.create() → validate() → Play
 
 See [automation_scripts/data_package/README.md](../automation_scripts/data_package/README.md) and [configs/schemas/data_package_schema.json](../configs/schemas/data_package_schema.json).
 
+### Playbook Engine (Step 2.1)
+
+Deterministic analysis of a validated DataPackage: `run_analysis(data_package, playbook_metadata)` returns a list of **Finding** objects. Each finding has `finding_id`, `description`, `severity`, `evidence_ids` (indices into `DataPackage.data`), `timestamp`, `playbook_id`, `context`. Rules are defined in playbook metadata as `analysis_rules` (e.g. threshold: count events per group in optional time window). Optional `field_mapping` maps source fields to canonical names (event_time, src_ip, etc.). Engine has no access to deanonymization or MappingStore; only evidence indices and already-anonymized data are used.
+
 ### Output Formats
 
 - **JSON**: Analysis results in JSON format

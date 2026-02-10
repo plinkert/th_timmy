@@ -206,11 +206,11 @@ This document lists the main implementation steps (phases) of the Threat Hunting
 
 | | |
 |---|---|
-| **Status** | To do |
-| **What it does** | Deterministic analysis engine: run playbook steps, filter data, aggregate, produce findings with evidence references. |
-| **Module README** | TBD. |
-| **Configuration** | TBD. |
-| **Testing** | TBD. |
+| **Status** | Done |
+| **What it does** | Deterministic analysis engine: `run_analysis(DataPackage, playbook_metadata)` applies `analysis_rules` (e.g. threshold) with optional `field_mapping`, returns `List[Finding]` with evidence_ids (indices in DataPackage.data). |
+| **Module README** | [automation_scripts/playbooks/README.md](../automation_scripts/playbooks/README.md) (run_analysis, Finding, analysis_rules, field_mapping). |
+| **Configuration** | Playbook `metadata.yml`: optional `analysis_rules`, `field_mapping`. Schema: [configs/schemas/playbook_metadata.json](../configs/schemas/playbook_metadata.json). |
+| **Testing** | Unit: `tests/unit/test_playbook_engine.py`. Integration: `tests/integration/run_playbook_engine_integration.sh`. See [TESTING.md](TESTING.md#playbook-engine-tests-step-21). |
 
 ---
 
